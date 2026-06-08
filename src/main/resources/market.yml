@@ -26,3 +26,48 @@ market:
     iron_plate:
       base-price: 28
       target-daily-amount: 384
+    machine_parts:
+      base-price: 72
+      target-daily-amount: 160
+    biofuel:
+      base-price: 10
+      target-daily-amount: 768
+    wood_log:
+      base-price: 2
+      target-daily-amount: 2048
+    wood_plank:
+      base-price: 3
+      target-daily-amount: 2048
+    wood_scrap:
+      base-price: 1
+      target-daily-amount: 2048
+    charcoal:
+      base-price: 9
+      target-daily-amount: 768
+    raw_fish:
+      base-price: 3
+      target-daily-amount: 1536
+    processed_fish:
+      base-price: 11
+      target-daily-amount: 512
+    fish_oil:
+      base-price: 24
+      target-daily-amount: 256
+    fish_waste:
+      base-price: 2
+      target-daily-amount: 1536
+    milk:
+      base-price: 8
+      target-daily-amount: 512
+    egg:
+      base-price: 4
+      target-daily-amount: 1024
+    wool:
+      base-price: 6
+      target-daily-amount: 768
+    animal_waste:
+      base-price: 2
+      target-daily-amount: 1536
+    fertilizer:
+      base-price: 14
+      target-daily-amount: 512
