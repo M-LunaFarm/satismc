@@ -47,6 +47,7 @@ public final class MachineTickService {
     private final IslandBoostService boosts;
     private final FactoryIslandService islands;
     private final int maxPerCycle;
+    private final int maxBackfillCycles;
     private final Set<String> recoveryTypes;
     private final double limitedEfficiency;
     private final double breakWear;
@@ -56,7 +57,7 @@ public final class MachineTickService {
     public MachineTickService(JavaPlugin plugin, MachineService machines, MachineDefinitionService definitions, StorageService storage,
                               RecipeService recipes, ResourceNodeService nodes, PowerNetworkService power,
                               IslandBoostService boosts, FactoryIslandService islands, int maxPerCycle,
-                              Set<String> recoveryTypes, double limitedEfficiency, double breakWear) {
+                              int maxBackfillCycles, Set<String> recoveryTypes, double limitedEfficiency, double breakWear) {
         this.plugin = plugin;
         this.machines = machines;
         this.definitions = definitions;
@@ -67,6 +68,7 @@ public final class MachineTickService {
         this.boosts = boosts;
         this.islands = islands;
         this.maxPerCycle = Math.max(1, maxPerCycle);
+        this.maxBackfillCycles = Math.max(1, maxBackfillCycles);
         this.recoveryTypes = Set.copyOf(recoveryTypes);
         this.limitedEfficiency = Math.max(0.05, Math.min(1.0, limitedEfficiency));
         this.breakWear = Math.max(1.0, breakWear);
@@ -97,45 +99,67 @@ public final class MachineTickService {
         int start = Math.floorMod(tickCursor, snapshot.size());
         for (int offset = 0; offset < limit; offset++) {
             MachineInstance machine = snapshot.get((start + offset) % snapshot.size());
-            definitions.get(machine.typeId()).ifPresent(definition -> process(machine, definition));
+            definitions.get(machine.typeId()).ifPresent(definition -> {
+                int cycles = cyclesDue(machine, definition);
+                for (int cycle = 0; cycle < cycles; cycle++) {
+                    if (!process(machine, definition, cycle > 0)) {
+                        break;
+                    }
+                }
+            });
         }
         tickCursor = (start + limit) % snapshot.size();
     }
 
-    private void process(MachineInstance machine, MachineDefinition definition) {
+    private int cyclesDue(MachineInstance machine, MachineDefinition definition) {
+        long last = machine.lastProcessAt();
+        if (last <= 0) {
+            return 1;
+        }
+        long cycleMillis = cycleMillis(definition);
+        long elapsed = Instant.now().toEpochMilli() - last;
+        if (elapsed < cycleMillis) {
+            return 0;
+        }
+        return (int) Math.max(1, Math.min(maxBackfillCycles, elapsed / cycleMillis));
+    }
+
+    private boolean process(MachineInstance machine, MachineDefinition definition, boolean backfill) {
         if (machine.wear() >= breakWear) {
             if (machine.status() != MachineStatus.BROKEN) {
                 setStatus(machine, MachineStatus.BROKEN);
             }
-            return;
+            return false;
         }
-        if (isCoolingDown(machine, definition)) {
-            return;
+        if (!backfill && isCoolingDown(machine, definition)) {
+            return false;
         }
         if (!passesMaintenanceGate(machine)) {
-            return;
+            return false;
         }
         double ratio = power.powerRatio(machine.islandUuid());
         if (!definition.isGenerator() && !definition.isBattery() && ratio <= 0.0) {
             setStatus(machine, MachineStatus.NO_POWER);
-            return;
+            return false;
         }
         if (!definition.isGenerator() && !definition.isBattery() && ratio < 1.0
                 && ThreadLocalRandom.current().nextDouble() > ratio) {
             setStatus(machine, MachineStatus.IDLE);
-            return;
+            return false;
         }
         if (definition.isLogistics()) {
-            processLogistics(machine, definition);
-        } else if (definition.isGenerator()) {
-            processGenerator(machine);
-        } else if (machine.typeId().equals("harvester_t1")) {
-            processHarvester(machine, definition);
-        } else if (definition.nodeType() != null || machine.typeId().equals("miner_drill_t1")) {
-            processNodeProducer(machine, definition);
-        } else {
-            processRecipe(machine);
+            return processLogistics(machine, definition);
         }
+        if (definition.isGenerator()) {
+            return processGenerator(machine);
+        }
+        if (machine.typeId().equals("harvester_t1")) {
+            return processHarvester(machine, definition);
+        }
+        if (definition.nodeType() != null || machine.typeId().equals("miner_drill_t1")) {
+            return processNodeProducer(machine, definition);
+        }
+        return processRecipe(machine);
     }
 
     private boolean isCoolingDown(MachineInstance machine, MachineDefinition definition) {
@@ -143,8 +167,11 @@ public final class MachineTickService {
         if (last <= 0) {
             return false;
         }
-        long cycleMillis = Math.max(1L, definition.cycleTicks()) * 50L;
-        return Instant.now().toEpochMilli() - last < cycleMillis;
+        return Instant.now().toEpochMilli() - last < cycleMillis(definition);
+    }
+
+    private long cycleMillis(MachineDefinition definition) {
+        return Math.max(1L, definition.cycleTicks()) * 50L;
     }
 
     private boolean passesMaintenanceGate(MachineInstance machine) {
@@ -165,25 +192,26 @@ public final class MachineTickService {
         return true;
     }
 
-    private void processGenerator(MachineInstance machine) {
+    private boolean processGenerator(MachineInstance machine) {
         VirtualInventory input = inputInventory(machine);
         if (!input.remove("biofuel", 1)) {
             VirtualInventory islandStorage = storage.islandStorage(machine.islandUuid());
             if (!islandStorage.remove("biofuel", 1)) {
                 setStatus(machine, MachineStatus.INPUT_MISSING);
-                return;
+                return false;
             }
             storage.save(islandStorage);
         }
         storage.save(input);
         setStatus(machine, MachineStatus.RUNNING);
+        return true;
     }
 
-    private void processHarvester(MachineInstance machine, MachineDefinition definition) {
+    private boolean processHarvester(MachineInstance machine, MachineDefinition definition) {
         VirtualInventory output = outputInventory(machine);
         Location location = location(machine.location());
         if (location == null) {
-            return;
+            return false;
         }
         int harvested = 0;
         long amountPerCrop = Math.max(1, Math.round(boosts.boosts(machine.islandUuid()).agricultureBoost()));
@@ -195,7 +223,7 @@ public final class MachineTickService {
                     if (!output.add("wheat", amountPerCrop)) {
                         setStatus(machine, MachineStatus.OUTPUT_FULL);
                         storage.save(output);
-                        return;
+                        return false;
                     }
                     ageable.setAge(0);
                     block.setBlockData(ageable);
@@ -205,9 +233,10 @@ public final class MachineTickService {
         }
         storage.save(output);
         setStatus(machine, harvested > 0 ? MachineStatus.RUNNING : MachineStatus.INPUT_MISSING);
+        return harvested > 0;
     }
 
-    private void processNodeProducer(MachineInstance machine, MachineDefinition definition) {
+    private boolean processNodeProducer(MachineInstance machine, MachineDefinition definition) {
         VirtualInventory output = outputInventory(machine);
         Optional<ResourceNode> node = machine.linkedResourceNodeId() == null
                 ? nodes.nearest(machine.islandUuid(), machine.location(), 12, definition.nodeType())
@@ -217,22 +246,23 @@ public final class MachineTickService {
                 .findFirst();
         if (node.isEmpty() || node.get().remaining() <= 0 || node.get().requiredMachineTier() > definition.tier()) {
             setStatus(machine, MachineStatus.INPUT_MISSING);
-            return;
+            return false;
         }
         long amount = Math.max(1, Math.round(definition.amountPerCycle() * node.get().purity()));
         amount = Math.min(amount, node.get().remaining());
         if (!output.add(node.get().resourceId(), amount)) {
             setStatus(machine, MachineStatus.OUTPUT_FULL);
-            return;
+            return false;
         }
         node.get().remaining(node.get().remaining() - amount);
         machine.linkedResourceNodeId(node.get().nodeId());
         storage.save(output);
         nodes.save(node.get());
         setStatus(machine, MachineStatus.RUNNING);
+        return true;
     }
 
-    private void processRecipe(MachineInstance machine) {
+    private boolean processRecipe(MachineInstance machine) {
         VirtualInventory input = inputInventory(machine);
         VirtualInventory output = outputInventory(machine);
         for (RecipeDefinition recipe : recipes.recipesFor(machine.typeId())) {
@@ -243,13 +273,14 @@ public final class MachineTickService {
                 storage.save(input);
                 storage.save(output);
                 setStatus(machine, MachineStatus.RUNNING);
-                return;
+                return true;
             }
         }
         setStatus(machine, MachineStatus.INPUT_MISSING);
+        return false;
     }
 
-    private void processLogistics(MachineInstance machine, MachineDefinition definition) {
+    private boolean processLogistics(MachineInstance machine, MachineDefinition definition) {
         VirtualInventory islandStorage = storage.islandStorage(machine.islandUuid());
         long remaining = definition.logisticsThroughput();
         long moved = 0;
@@ -287,6 +318,7 @@ public final class MachineTickService {
             storage.save(islandStorage);
         }
         setStatus(machine, moved > 0 ? MachineStatus.RUNNING : MachineStatus.IDLE);
+        return moved > 0;
     }
 
     private long fillInput(VirtualInventory source, VirtualInventory target, MachineDefinition definition, long limit) {

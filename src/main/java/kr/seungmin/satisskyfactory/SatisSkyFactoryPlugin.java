@@ -108,6 +108,7 @@ public final class SatisSkyFactoryPlugin extends JavaPlugin {
                 boosts,
                 islands,
                 configs.main().getInt("settings.max-machines-per-cycle", 200),
+                configs.main().getInt("settings.max-backfill-cycles", 60),
                 Set.copyOf(configs.main().getStringList("limits.recovery-machine-types")),
                 configs.file("maintenance.yml").getDouble("maintenance.limited-efficiency", 0.5),
                 configs.file("maintenance.yml").getDouble("maintenance.break-wear", 100.0)
