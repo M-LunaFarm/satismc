@@ -226,8 +226,38 @@ public final class DatabaseService {
                       created_at INTEGER NOT NULL
                     )
                     """);
+            applyIncrementalMigrations(connection, statement);
         } catch (SQLException exception) {
             throw new IllegalStateException("Failed to migrate SQLite database", exception);
+        }
+    }
+
+    private void applyIncrementalMigrations(Connection connection, Statement statement) throws SQLException {
+        addColumnIfMissing(connection, statement, "factory_islands", "emergency_contracts_used_today",
+                "INTEGER NOT NULL DEFAULT 0");
+        addColumnIfMissing(connection, statement, "machines", "power_network_id", "TEXT");
+        addColumnIfMissing(connection, statement, "machines", "item_network_id", "TEXT");
+        addColumnIfMissing(connection, statement, "machines", "linked_resource_node_id", "TEXT");
+        addColumnIfMissing(connection, statement, "machines", "config_json", "TEXT NOT NULL DEFAULT '{}'");
+        addColumnIfMissing(connection, statement, "machines", "wear", "REAL NOT NULL DEFAULT 0");
+        statement.executeUpdate("UPDATE schema_version SET version = 2");
+    }
+
+    private void addColumnIfMissing(Connection connection, Statement statement, String table, String column, String definition) throws SQLException {
+        if (!hasColumn(connection, table, column)) {
+            statement.executeUpdate("ALTER TABLE " + table + " ADD COLUMN " + column + " " + definition);
+        }
+    }
+
+    private boolean hasColumn(Connection connection, String table, String column) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement("PRAGMA table_info(" + table + ")");
+             ResultSet rs = statement.executeQuery()) {
+            while (rs.next()) {
+                if (column.equalsIgnoreCase(rs.getString("name"))) {
+                    return true;
+                }
+            }
+            return false;
         }
     }
 
