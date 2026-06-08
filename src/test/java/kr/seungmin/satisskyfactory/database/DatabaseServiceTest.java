@@ -6,6 +6,7 @@ import kr.seungmin.satisskyfactory.model.ItemNetwork;
 import kr.seungmin.satisskyfactory.model.MachineInstance;
 import kr.seungmin.satisskyfactory.model.MachineStatus;
 import kr.seungmin.satisskyfactory.model.MaintenanceStatus;
+import kr.seungmin.satisskyfactory.model.PowerNetwork;
 import kr.seungmin.satisskyfactory.model.ResourceNode;
 import kr.seungmin.satisskyfactory.storage.VirtualInventory;
 import org.bukkit.block.BlockFace;
@@ -48,6 +49,7 @@ class DatabaseServiceTest {
                         "island_unlocks",
                         "market_daily",
                         "market_personal_daily",
+                        "power_networks",
                         "item_networks",
                         "machine_network_links",
                         "ledger",
@@ -229,6 +231,53 @@ class DatabaseServiceTest {
                     .findFirst()
                     .orElseThrow();
             assertEquals(networkId, conveyor.itemNetworkId());
+        }
+    }
+
+    @Test
+    void powerNetworksAndLinksSurviveReopen() {
+        UUID islandUuid = UUID.fromString("00000000-0000-0000-0000-000000000501");
+        UUID ownerUuid = UUID.fromString("00000000-0000-0000-0000-000000000502");
+        UUID generatorId = UUID.fromString("00000000-0000-0000-0000-000000000503");
+        UUID grinderId = UUID.fromString("00000000-0000-0000-0000-000000000504");
+        UUID batteryId = UUID.fromString("00000000-0000-0000-0000-000000000505");
+        UUID networkId = UUID.fromString("00000000-0000-0000-0000-000000000506");
+        File dataFolder = tempDir.resolve("power-network-db").toFile();
+
+        try (DatabaseHandle handle = openDatabase(dataFolder)) {
+            handle.database().saveMachine(new MachineInstance(generatorId, islandUuid, ownerUuid, "bio_generator_t1", 1,
+                    new BlockKey("world", 0, 64, 0)));
+            handle.database().saveMachine(new MachineInstance(grinderId, islandUuid, ownerUuid, "grinder_t1", 1,
+                    new BlockKey("world", 1, 64, 0)));
+            handle.database().saveMachine(new MachineInstance(batteryId, islandUuid, ownerUuid, "battery_t1", 1,
+                    new BlockKey("world", -1, 64, 0)));
+            handle.database().replacePowerNetworks(islandUuid, java.util.List.of(new PowerNetwork(
+                    networkId,
+                    islandUuid,
+                    20.0,
+                    8.0,
+                    12.0,
+                    100.0,
+                    1.0,
+                    1234L,
+                    Set.of(generatorId, grinderId, batteryId)
+            )));
+        }
+
+        try (DatabaseHandle handle = openDatabase(dataFolder)) {
+            PowerNetwork network = handle.database().loadPowerNetworks(islandUuid).stream().findFirst().orElseThrow();
+            assertEquals(networkId, network.networkId());
+            assertEquals(20.0, network.generationPerSecond());
+            assertEquals(8.0, network.consumptionPerSecond());
+            assertEquals(12.0, network.batteryStored());
+            assertEquals(100.0, network.batteryCapacity());
+            assertEquals(1.0, network.powerRatio());
+            assertEquals(Set.of(generatorId, grinderId, batteryId), network.connectedMachineIds());
+            MachineInstance generator = handle.database().loadMachines().stream()
+                    .filter(machine -> machine.machineId().equals(generatorId))
+                    .findFirst()
+                    .orElseThrow();
+            assertEquals(networkId, generator.powerNetworkId());
         }
     }
 

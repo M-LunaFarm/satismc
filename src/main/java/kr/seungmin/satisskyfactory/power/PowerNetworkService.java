@@ -1,21 +1,31 @@
 package kr.seungmin.satisskyfactory.power;
 
+import kr.seungmin.satisskyfactory.database.DatabaseService;
 import kr.seungmin.satisskyfactory.machine.MachineDefinitionService;
 import kr.seungmin.satisskyfactory.machine.MachineService;
 import kr.seungmin.satisskyfactory.model.MachineDefinition;
 import kr.seungmin.satisskyfactory.model.MachineInstance;
 import kr.seungmin.satisskyfactory.model.MachineStatus;
+import kr.seungmin.satisskyfactory.model.PowerNetwork;
 import kr.seungmin.satisskyfactory.recipe.RecipeDefinition;
 import kr.seungmin.satisskyfactory.recipe.RecipeService;
 import kr.seungmin.satisskyfactory.storage.StorageService;
 import kr.seungmin.satisskyfactory.storage.VirtualInventory;
 
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 public final class PowerNetworkService {
+    private static final String NETWORK_UUID_PREFIX = "satisskyfactory:power-network:";
     private static final String POWER_CHARGE_ITEM = "power_charge";
+    private final DatabaseService database;
     private final MachineService machines;
     private final MachineDefinitionService definitions;
     private final RecipeService recipes;
@@ -23,7 +33,9 @@ public final class PowerNetworkService {
     private final Map<UUID, NetworkState> cache = new ConcurrentHashMap<>();
     private long cycleId;
 
-    public PowerNetworkService(MachineService machines, MachineDefinitionService definitions, RecipeService recipes, StorageService storage) {
+    public PowerNetworkService(DatabaseService database, MachineService machines, MachineDefinitionService definitions,
+                               RecipeService recipes, StorageService storage) {
+        this.database = database;
         this.machines = machines;
         this.definitions = definitions;
         this.recipes = recipes;
@@ -42,6 +54,68 @@ public final class PowerNetworkService {
     public NetworkState state(UUID islandUuid) {
         NetworkState cached = cache.get(islandUuid);
         return cached == null ? calculate(islandUuid, false) : cached;
+    }
+
+    public List<PowerNetwork> rebuildIsland(UUID islandUuid) {
+        cache.remove(islandUuid);
+        List<MachineInstance> connected = machines.byIsland(islandUuid).stream()
+                .filter(this::hasPowerRole)
+                .sorted(Comparator.comparing(machine -> machine.location().databaseKey()))
+                .toList();
+        if (connected.isEmpty()) {
+            clearIslandPowerIds(islandUuid);
+            database.replacePowerNetworks(islandUuid, List.of());
+            return List.of();
+        }
+        UUID networkId = networkId(islandUuid);
+        for (MachineInstance machine : connected) {
+            if (!networkId.equals(machine.powerNetworkId())) {
+                machine.powerNetworkId(networkId);
+                machines.saveLater(machine);
+            }
+        }
+        Set<UUID> connectedMachineIds = connected.stream()
+                .map(MachineInstance::machineId)
+                .collect(Collectors.toCollection(java.util.LinkedHashSet::new));
+        NetworkState state = state(islandUuid);
+        PowerNetwork network = new PowerNetwork(
+                networkId,
+                islandUuid,
+                state.generation(),
+                state.consumption(),
+                state.batteryStored(),
+                state.batteryCapacity(),
+                state.ratio(),
+                Instant.now().toEpochMilli(),
+                connectedMachineIds
+        );
+        database.replacePowerNetworks(islandUuid, List.of(network));
+        return List.of(network);
+    }
+
+    public List<PowerNetwork> load(UUID islandUuid) {
+        return database.loadPowerNetworks(islandUuid);
+    }
+
+    private void clearIslandPowerIds(UUID islandUuid) {
+        for (MachineInstance machine : machines.byIsland(islandUuid)) {
+            if (machine.powerNetworkId() != null) {
+                machine.powerNetworkId(null);
+                machines.saveLater(machine);
+            }
+        }
+    }
+
+    private boolean hasPowerRole(MachineInstance machine) {
+        return definitions.get(machine.typeId())
+                .map(definition -> definition.isGenerator()
+                        || definition.isBattery()
+                        || definition.powerConsumption() > 0.0)
+                .orElse(false);
+    }
+
+    private UUID networkId(UUID islandUuid) {
+        return UUID.nameUUIDFromBytes((NETWORK_UUID_PREFIX + islandUuid).getBytes(StandardCharsets.UTF_8));
     }
 
     private NetworkState calculate(UUID islandUuid, boolean mutateBattery) {

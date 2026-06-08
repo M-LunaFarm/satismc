@@ -8,6 +8,7 @@ import kr.seungmin.satisskyfactory.model.FactoryIsland;
 import kr.seungmin.satisskyfactory.model.MachineInstance;
 import kr.seungmin.satisskyfactory.model.MachineStatus;
 import kr.seungmin.satisskyfactory.node.ResourceNodeService;
+import kr.seungmin.satisskyfactory.power.PowerNetworkService;
 import org.bukkit.Location;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -22,14 +23,17 @@ public final class FactoryLifecycleListener implements Listener {
     private final ResourceNodeService nodes;
     private final MachineService machines;
     private final ItemNetworkService itemNetworks;
+    private final PowerNetworkService power;
 
     public FactoryLifecycleListener(FactoryIslandService islands, SuperiorSkyblockHook skyblock,
-                                    ResourceNodeService nodes, MachineService machines, ItemNetworkService itemNetworks) {
+                                    ResourceNodeService nodes, MachineService machines, ItemNetworkService itemNetworks,
+                                    PowerNetworkService power) {
         this.islands = islands;
         this.skyblock = skyblock;
         this.nodes = nodes;
         this.machines = machines;
         this.itemNetworks = itemNetworks;
+        this.power = power;
     }
 
     @EventHandler
@@ -42,6 +46,7 @@ public final class FactoryLifecycleListener implements Listener {
                     .map(ref -> ref.islandUuid().equals(island.islandUuid()))
                     .orElse(false));
             itemNetworks.rebuildIsland(island.islandUuid());
+            power.rebuildIsland(island.islandUuid());
             islands.save(island);
         });
     }
@@ -66,6 +71,7 @@ public final class FactoryLifecycleListener implements Listener {
                 machine.status(MachineStatus.IDLE);
                 machines.saveLater(machine);
                 itemNetworks.rebuildIsland(machine.islandUuid());
+                power.rebuildIsland(machine.islandUuid());
             }
         }
     }

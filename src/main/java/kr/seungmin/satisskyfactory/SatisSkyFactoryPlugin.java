@@ -94,7 +94,7 @@ public final class SatisSkyFactoryPlugin extends JavaPlugin {
         machines.dirtySaves(dirtySaves);
         nodes.dirtySaves(dirtySaves);
         itemNetworks = new ItemNetworkService(database, machines, machineDefinitions);
-        power = new PowerNetworkService(machines, machineDefinitions, recipes, storage);
+        power = new PowerNetworkService(database, machines, machineDefinitions, recipes, storage);
         market = new MarketService(storage, economy, database, itemRegistry);
         contracts = new ContractService(storage, economy, database, boosts);
         maintenance = new MaintenanceService(machines, economy, database);
@@ -104,7 +104,7 @@ public final class SatisSkyFactoryPlugin extends JavaPlugin {
         loadDefinitions();
         islands.load();
         machines.load();
-        rebuildItemNetworks();
+        rebuildNetworks();
 
         restartRuntimeTasks();
 
@@ -268,6 +268,7 @@ public final class SatisSkyFactoryPlugin extends JavaPlugin {
                 research,
                 nodes,
                 itemNetworks,
+                power,
                 configs.main(),
                 configs.file("maintenance.yml"),
                 boosts
@@ -293,15 +294,19 @@ public final class SatisSkyFactoryPlugin extends JavaPlugin {
                 skyblock,
                 nodes,
                 machines,
-                itemNetworks
+                itemNetworks,
+                power
         ), this);
     }
 
-    private void rebuildItemNetworks() {
+    private void rebuildNetworks() {
         machines.all().stream()
                 .map(machine -> machine.islandUuid())
                 .distinct()
-                .forEach(itemNetworks::rebuildIsland);
+                .forEach(islandUuid -> {
+                    itemNetworks.rebuildIsland(islandUuid);
+                    power.rebuildIsland(islandUuid);
+                });
     }
 
     private void registerPlaceholders() {
