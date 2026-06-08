@@ -9,6 +9,7 @@ research:
       unlocks:
         - battery_t1
         - conveyor_t1
+        - filter_distributor_t1
     advanced_processing:
       cost-research-points: 160
       cost-money: 50000

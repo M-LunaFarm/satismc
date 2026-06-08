@@ -178,6 +178,23 @@ machines:
     maintenance-score: 2
     wear-per-cycle: 0.015
     required-unlocks: [tier_2_logistics]
+  filter_distributor_t1:
+    display: "Filter Distributor T1"
+    material: COMPARATOR
+    placed-block: COMPARATOR
+    tier: 2
+    input-capacity: 64
+    output-capacity: 64
+    power-consumption: 2.0
+    cycle-ticks: 40
+    logistics-throughput: 24
+    logistics:
+      allowed-items: [iron_ore, crushed_iron, iron_ingot, iron_plate, machine_parts]
+      blocked-items: []
+    factory-score: 4
+    maintenance-score: 3
+    wear-per-cycle: 0.015
+    required-unlocks: [tier_2_logistics]
   storage_t1:
     display: "Storage T1"
     material: CHEST

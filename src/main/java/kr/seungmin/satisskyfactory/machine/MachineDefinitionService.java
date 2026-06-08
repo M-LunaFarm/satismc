@@ -50,6 +50,8 @@ public final class MachineDefinitionService {
                     config.getInt(path + "amount-per-cycle", 1),
                     config.getInt(path + "logistics-throughput",
                             config.getInt(path + "logistics-throughput-per-minute", 0)),
+                    stringList(config, path + "logistics.allowed-items", path + "allowed-items"),
+                    stringList(config, path + "logistics.blocked-items", path + "blocked-items"),
                     config.getLong(path + "factory-score", Math.max(1, config.getInt(path + "tier", 1))),
                     config.getLong(path + "maintenance-score", config.getLong(path + "factory-score", Math.max(1, config.getInt(path + "tier", 1)))),
                     config.getDouble(path + "wear-per-cycle", 0.02),
@@ -81,6 +83,14 @@ public final class MachineDefinitionService {
             return Math.max(1, (int) Math.round(config.getLong(path + "cycle-ms") / 50.0));
         }
         return config.getInt(path + "cycle-ticks", 80);
+    }
+
+    private java.util.List<String> stringList(FileConfiguration config, String firstPath, String secondPath) {
+        java.util.List<String> values = new java.util.ArrayList<>(config.getStringList(firstPath));
+        if (!values.isEmpty()) {
+            return values;
+        }
+        return config.getStringList(secondPath);
     }
 
     public Optional<MachineDefinition> get(String typeId) {

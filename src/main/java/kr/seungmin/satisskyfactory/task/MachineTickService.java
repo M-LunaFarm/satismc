@@ -500,7 +500,7 @@ public final class MachineTickService {
                 continue;
             }
             VirtualInventory output = outputInventory(target);
-            long transfer = moveAny(output, buffer, remaining);
+            long transfer = moveAny(output, buffer, remaining, definition);
             if (transfer > 0) {
                 storage.save(output);
                 moved += transfer;
@@ -517,7 +517,7 @@ public final class MachineTickService {
                     continue;
                 }
                 VirtualInventory input = inputInventory(target);
-                long transfer = fillInput(buffer, input, target, targetDefinition, remaining);
+                long transfer = fillInput(buffer, input, target, targetDefinition, definition, remaining);
                 if (transfer > 0) {
                     storage.save(input);
                     moved += transfer;
@@ -541,7 +541,7 @@ public final class MachineTickService {
                         continue;
                     }
                     VirtualInventory input = inputInventory(target);
-                    long transfer = fillInput(storageInventory, input, target, targetDefinition, remaining);
+                    long transfer = fillInput(storageInventory, input, target, targetDefinition, definition, remaining);
                     if (transfer > 0) {
                         storage.save(input);
                         moved += transfer;
@@ -560,7 +560,7 @@ public final class MachineTickService {
                     break;
                 }
                 VirtualInventory storageInventory = inputInventory(storageNode);
-                long transfer = moveAny(buffer, storageInventory, remaining);
+                long transfer = moveAny(buffer, storageInventory, remaining, definition);
                 if (transfer > 0) {
                     storage.save(storageInventory);
                     moved += transfer;
@@ -581,12 +581,16 @@ public final class MachineTickService {
                 .orElse(false);
     }
 
-    private long fillInput(VirtualInventory source, VirtualInventory target, MachineInstance machine, MachineDefinition definition, long limit) {
+    private long fillInput(VirtualInventory source, VirtualInventory target, MachineInstance machine,
+                           MachineDefinition definition, MachineDefinition logisticsDefinition, long limit) {
         Map<String, Long> desired = desiredInputs(machine, definition);
         long moved = 0;
         for (Map.Entry<String, Long> entry : desired.entrySet()) {
             if (moved >= limit) {
                 break;
+            }
+            if (!passesLogisticsFilter(logisticsDefinition, entry.getKey())) {
+                continue;
             }
             long need = Math.max(0, entry.getValue() - target.amount(entry.getKey()));
             long amount = Math.min(need, Math.min(source.amount(entry.getKey()), limit - moved));
@@ -621,11 +625,14 @@ public final class MachineTickService {
         return selectedRecipeId == null || selectedRecipeId.isBlank() || selectedRecipeId.equals(recipe.id());
     }
 
-    private long moveAny(VirtualInventory source, VirtualInventory target, long limit) {
+    private long moveAny(VirtualInventory source, VirtualInventory target, long limit, MachineDefinition logisticsDefinition) {
         long moved = 0;
         for (Map.Entry<String, Long> entry : new ArrayList<>(source.items().entrySet())) {
             if (moved >= limit) {
                 break;
+            }
+            if (!passesLogisticsFilter(logisticsDefinition, entry.getKey())) {
+                continue;
             }
             long amount = Math.min(entry.getValue(), limit - moved);
             amount = Math.min(amount, Math.max(0, target.capacity() - target.used()));
@@ -634,6 +641,13 @@ public final class MachineTickService {
             }
         }
         return moved;
+    }
+
+    private boolean passesLogisticsFilter(MachineDefinition definition, String itemId) {
+        if (!definition.logisticsAllowedItems().isEmpty() && !definition.logisticsAllowedItems().contains(itemId)) {
+            return false;
+        }
+        return !definition.logisticsBlockedItems().contains(itemId);
     }
 
     private VirtualInventory inputInventory(MachineInstance machine) {

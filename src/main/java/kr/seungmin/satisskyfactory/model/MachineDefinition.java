@@ -23,6 +23,8 @@ public record MachineDefinition(
         int range,
         int amountPerCycle,
         int logisticsThroughput,
+        List<String> logisticsAllowedItems,
+        List<String> logisticsBlockedItems,
         long factoryScore,
         long maintenanceScore,
         double wearPerCycle,
