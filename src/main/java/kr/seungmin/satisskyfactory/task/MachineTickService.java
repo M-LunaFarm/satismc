@@ -1,5 +1,6 @@
 package kr.seungmin.satisskyfactory.task;
 
+import kr.seungmin.satisskyfactory.machine.IslandBoostService;
 import kr.seungmin.satisskyfactory.machine.MachineDefinitionService;
 import kr.seungmin.satisskyfactory.machine.MachineService;
 import kr.seungmin.satisskyfactory.model.BlockKey;
@@ -24,6 +25,7 @@ import org.bukkit.scheduler.BukkitTask;
 
 import java.time.Instant;
 import java.util.Optional;
+import java.util.concurrent.ThreadLocalRandom;
 
 public final class MachineTickService {
     private final JavaPlugin plugin;
@@ -33,11 +35,13 @@ public final class MachineTickService {
     private final RecipeService recipes;
     private final ResourceNodeService nodes;
     private final PowerNetworkService power;
+    private final IslandBoostService boosts;
     private final int maxPerCycle;
     private BukkitTask task;
 
     public MachineTickService(JavaPlugin plugin, MachineService machines, MachineDefinitionService definitions, StorageService storage,
-                              RecipeService recipes, ResourceNodeService nodes, PowerNetworkService power, int maxPerCycle) {
+                              RecipeService recipes, ResourceNodeService nodes, PowerNetworkService power,
+                              IslandBoostService boosts, int maxPerCycle) {
         this.plugin = plugin;
         this.machines = machines;
         this.definitions = definitions;
@@ -45,6 +49,7 @@ public final class MachineTickService {
         this.recipes = recipes;
         this.nodes = nodes;
         this.power = power;
+        this.boosts = boosts;
         this.maxPerCycle = maxPerCycle;
     }
 
@@ -77,6 +82,11 @@ public final class MachineTickService {
             setStatus(machine, MachineStatus.NO_POWER);
             return;
         }
+        if (!definition.isGenerator() && !definition.isBattery() && ratio < 1.0
+                && ThreadLocalRandom.current().nextDouble() > ratio) {
+            setStatus(machine, MachineStatus.IDLE);
+            return;
+        }
         if (definition.isGenerator()) {
             processGenerator(machine);
         } else if (machine.typeId().equals("harvester_t1")) {
@@ -105,12 +115,13 @@ public final class MachineTickService {
             return;
         }
         int harvested = 0;
+        long amountPerCrop = Math.max(1, Math.round(boosts.boosts(machine.islandUuid()).agricultureBoost()));
         int range = Math.max(1, definition.range());
         for (int x = -range; x <= range; x++) {
             for (int z = -range; z <= range; z++) {
                 Block block = location.clone().add(x, 0, z).getBlock();
                 if (block.getType() == Material.WHEAT && block.getBlockData() instanceof Ageable ageable && ageable.getAge() >= ageable.getMaximumAge()) {
-                    if (!output.add("wheat", 1)) {
+                    if (!output.add("wheat", amountPerCrop)) {
                         setStatus(machine, MachineStatus.OUTPUT_FULL);
                         storage.save(output);
                         return;

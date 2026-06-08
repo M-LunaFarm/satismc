@@ -8,12 +8,14 @@ import kr.seungmin.satisskyfactory.database.DatabaseService;
 import kr.seungmin.satisskyfactory.economy.EconomyModeFactory;
 import kr.seungmin.satisskyfactory.economy.EconomyService;
 import kr.seungmin.satisskyfactory.gui.FactoryGuiService;
+import kr.seungmin.satisskyfactory.hook.PlaceholderHook;
 import kr.seungmin.satisskyfactory.hook.SuperiorSkyblockHook;
 import kr.seungmin.satisskyfactory.item.CustomItemFactory;
 import kr.seungmin.satisskyfactory.item.ItemRegistry;
 import kr.seungmin.satisskyfactory.listener.FactoryGuiListener;
 import kr.seungmin.satisskyfactory.listener.MachineListener;
 import kr.seungmin.satisskyfactory.machine.FactoryIslandService;
+import kr.seungmin.satisskyfactory.machine.IslandBoostService;
 import kr.seungmin.satisskyfactory.machine.MachineDefinitionService;
 import kr.seungmin.satisskyfactory.machine.MachineService;
 import kr.seungmin.satisskyfactory.machine.MaintenanceService;
@@ -41,6 +43,7 @@ public final class SatisSkyFactoryPlugin extends JavaPlugin {
     private StorageService storage;
     private FactoryIslandService islands;
     private MachineService machines;
+    private IslandBoostService boosts;
     private ResourceNodeService nodes;
     private PowerNetworkService power;
     private MarketService market;
@@ -50,6 +53,7 @@ public final class SatisSkyFactoryPlugin extends JavaPlugin {
     private FactoryGuiService gui;
     private DirtySaveService dirtySaves;
     private MachineTickService ticker;
+    private PlaceholderHook placeholderHook;
 
     @Override
     public void onEnable() {
@@ -74,6 +78,7 @@ public final class SatisSkyFactoryPlugin extends JavaPlugin {
         storage = new StorageService(database, configs.main().getInt("storage.default-capacity", 10000));
         islands = new FactoryIslandService(skyblock, database);
         machines = new MachineService(database, machineDefinitions, storage);
+        boosts = new IslandBoostService(skyblock);
         nodes = new ResourceNodeService(database);
         dirtySaves = new DirtySaveService(this, database);
         storage.dirtySaves(dirtySaves);
@@ -98,6 +103,7 @@ public final class SatisSkyFactoryPlugin extends JavaPlugin {
                 recipes,
                 nodes,
                 power,
+                boosts,
                 configs.main().getInt("settings.max-machines-per-cycle", 200)
         );
         ticker.start(configs.main().getLong("settings.tick-interval", 40));
@@ -105,6 +111,7 @@ public final class SatisSkyFactoryPlugin extends JavaPlugin {
 
         registerCommands();
         registerListeners();
+        registerPlaceholders();
         getLogger().info("SatisSkyFactory enabled using " + economy.name() + " economy.");
     }
 
@@ -115,6 +122,9 @@ public final class SatisSkyFactoryPlugin extends JavaPlugin {
         }
         if (dirtySaves != null) {
             dirtySaves.stop();
+        }
+        if (placeholderHook != null) {
+            placeholderHook.unregister();
         }
         if (database != null) {
             database.close();
@@ -148,6 +158,8 @@ public final class SatisSkyFactoryPlugin extends JavaPlugin {
                 contracts,
                 maintenance,
                 research,
+                boosts,
+                power,
                 gui,
                 itemFactory,
                 itemRegistry,
@@ -170,8 +182,18 @@ public final class SatisSkyFactoryPlugin extends JavaPlugin {
                 islands,
                 gui,
                 messages,
-                configs.main()
+                configs.main(),
+                boosts
         ), this);
         getServer().getPluginManager().registerEvents(new FactoryGuiListener(), this);
+    }
+
+    private void registerPlaceholders() {
+        if (!getServer().getPluginManager().isPluginEnabled("PlaceholderAPI")) {
+            return;
+        }
+        placeholderHook = new PlaceholderHook(this, islands, machines, storage, power, boosts, research);
+        placeholderHook.register();
+        getLogger().info("Registered PlaceholderAPI expansion: satisskyfactory");
     }
 }

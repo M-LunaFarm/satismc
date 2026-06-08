@@ -53,6 +53,13 @@ public final class SuperiorSkyblockHook {
         return superiorPlayer == null ? Optional.empty() : islandRef(invoke(superiorPlayer, "getIsland"));
     }
 
+    public Optional<IslandRef> getIslandByUuid(UUID islandUuid) {
+        if (!available) {
+            return Optional.empty();
+        }
+        return islandRef(invokeStatic("getIslandByUUID", new Class<?>[]{UUID.class}, islandUuid));
+    }
+
     public boolean canBuildFactory(Player player, Location location) {
         Optional<IslandRef> locationIsland = getIslandAt(location);
         return locationIsland.isPresent()

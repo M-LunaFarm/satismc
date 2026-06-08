@@ -7,6 +7,7 @@ version = "1.0.0"
 
 val paperApiVersion = providers.gradleProperty("paperApiVersion").orElse("1.21.1-R0.1-SNAPSHOT")
 val superiorSkyblockApiVersion = providers.gradleProperty("superiorSkyblockApiVersion").orElse("2024.1")
+val placeholderApiVersion = providers.gradleProperty("placeholderApiVersion").orElse("2.12.2")
 
 java {
     toolchain {
@@ -18,6 +19,7 @@ dependencies {
     compileOnly("io.papermc.paper:paper-api:${paperApiVersion.get()}")
     compileOnly("com.bgsoftware:SuperiorSkyblockAPI:${superiorSkyblockApiVersion.get()}")
     compileOnly("com.github.MilkBowl:VaultAPI:1.7")
+    compileOnly("me.clip:placeholderapi:${placeholderApiVersion.get()}")
     implementation("org.xerial:sqlite-jdbc:3.46.1.0")
     implementation("com.zaxxer:HikariCP:5.1.0")
 }

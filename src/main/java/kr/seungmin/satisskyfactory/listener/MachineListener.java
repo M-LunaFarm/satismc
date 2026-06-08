@@ -5,6 +5,7 @@ import kr.seungmin.satisskyfactory.gui.FactoryGuiService;
 import kr.seungmin.satisskyfactory.hook.SuperiorSkyblockHook;
 import kr.seungmin.satisskyfactory.item.CustomItemFactory;
 import kr.seungmin.satisskyfactory.machine.FactoryIslandService;
+import kr.seungmin.satisskyfactory.machine.IslandBoostService;
 import kr.seungmin.satisskyfactory.machine.MachineDefinitionService;
 import kr.seungmin.satisskyfactory.machine.MachineService;
 import kr.seungmin.satisskyfactory.model.FactoryIsland;
@@ -32,10 +33,12 @@ public final class MachineListener implements Listener {
     private final FactoryGuiService gui;
     private final MessageService messages;
     private final Set<String> recoveryTypes;
+    private final IslandBoostService boosts;
+    private final int baseMachineLimit;
 
     public MachineListener(CustomItemFactory itemFactory, MachineDefinitionService definitions, MachineService machines,
                            SuperiorSkyblockHook skyblock, FactoryIslandService islands, FactoryGuiService gui,
-                           MessageService messages, FileConfiguration config) {
+                           MessageService messages, FileConfiguration config, IslandBoostService boosts) {
         this.itemFactory = itemFactory;
         this.definitions = definitions;
         this.machines = machines;
@@ -44,6 +47,8 @@ public final class MachineListener implements Listener {
         this.gui = gui;
         this.messages = messages;
         this.recoveryTypes = Set.copyOf(config.getStringList("limits.recovery-machine-types"));
+        this.boosts = boosts;
+        this.baseMachineLimit = config.getInt("limits.base-machines-per-island", 128);
     }
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
@@ -67,6 +72,11 @@ public final class MachineListener implements Listener {
             }
             FactoryIsland island = islands.getOrCreate(islandRef);
             if (island.maintenanceStatus() == MaintenanceStatus.LOCKED && !recoveryTypes.contains(typeId)) {
+                messages.send(player, "place-denied");
+                return;
+            }
+            int machineLimit = boosts.boosts(islandRef.raw()).machineLimit(baseMachineLimit);
+            if (machines.byIsland(island.islandUuid()).size() >= machineLimit) {
                 messages.send(player, "place-denied");
                 return;
             }

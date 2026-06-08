@@ -7,6 +7,7 @@ import kr.seungmin.satisskyfactory.hook.SuperiorSkyblockHook;
 import kr.seungmin.satisskyfactory.item.CustomItemFactory;
 import kr.seungmin.satisskyfactory.item.ItemRegistry;
 import kr.seungmin.satisskyfactory.machine.FactoryIslandService;
+import kr.seungmin.satisskyfactory.machine.IslandBoostService;
 import kr.seungmin.satisskyfactory.machine.MachineDefinitionService;
 import kr.seungmin.satisskyfactory.machine.MachineService;
 import kr.seungmin.satisskyfactory.machine.MaintenanceService;
@@ -14,6 +15,7 @@ import kr.seungmin.satisskyfactory.market.MarketService;
 import kr.seungmin.satisskyfactory.model.FactoryContext;
 import kr.seungmin.satisskyfactory.model.FactoryIsland;
 import kr.seungmin.satisskyfactory.node.ResourceNodeService;
+import kr.seungmin.satisskyfactory.power.PowerNetworkService;
 import kr.seungmin.satisskyfactory.research.ResearchService;
 import kr.seungmin.satisskyfactory.storage.StorageService;
 import org.bukkit.Bukkit;
@@ -42,6 +44,8 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
     private final ContractService contracts;
     private final MaintenanceService maintenance;
     private final ResearchService research;
+    private final IslandBoostService boosts;
+    private final PowerNetworkService power;
     private final FactoryGuiService gui;
     private final CustomItemFactory itemFactory;
     private final ItemRegistry items;
@@ -50,7 +54,8 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
 
     public FactoryCommand(FactoryIslandService islands, MachineService machines, MachineDefinitionService definitions,
                           StorageService storage, ResourceNodeService nodes, MarketService market, ContractService contracts,
-                          MaintenanceService maintenance, ResearchService research, FactoryGuiService gui, CustomItemFactory itemFactory,
+                          MaintenanceService maintenance, ResearchService research, IslandBoostService boosts,
+                          PowerNetworkService power, FactoryGuiService gui, CustomItemFactory itemFactory,
                           ItemRegistry items, MessageService messages, Runnable reload) {
         this.islands = islands;
         this.machines = machines;
@@ -61,6 +66,8 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
         this.contracts = contracts;
         this.maintenance = maintenance;
         this.research = research;
+        this.boosts = boosts;
+        this.power = power;
         this.gui = gui;
         this.itemFactory = itemFactory;
         this.items = items;
@@ -250,6 +257,10 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
         player.sendMessage("Debt: " + island.maintenanceDebt() + " (" + island.maintenanceStatus() + ")");
         player.sendMessage("Machines: " + machines.byIsland(island.islandUuid()).size());
         player.sendMessage("Storage used: " + storage.islandStorage(island.islandUuid()).used());
+        var boost = boosts.boosts(island.islandUuid());
+        player.sendMessage("Boosts: agriculture x" + String.format(Locale.US, "%.2f", boost.agricultureBoost())
+                + ", machine slots +" + boost.factorySlotBonus()
+                + ", contract slots +" + boost.contractSlotBonus());
     }
 
     private void research(Player player, FactoryIsland island, String[] args) {
@@ -314,7 +325,12 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
             if (args[2].equalsIgnoreCase("island")) {
                 sender.sendMessage(context.factoryIsland().islandUuid().toString());
             } else if (args[2].equalsIgnoreCase("networks")) {
-                sender.sendMessage("Island-wide MVP network, machines=" + machines.byIsland(context.factoryIsland().islandUuid()).size());
+                var state = power.state(context.factoryIsland().islandUuid());
+                sender.sendMessage("Island-wide MVP network, machines=" + machines.byIsland(context.factoryIsland().islandUuid()).size()
+                        + ", ratio=" + String.format(Locale.US, "%.2f", state.ratio())
+                        + ", generation=" + String.format(Locale.US, "%.1f", state.generation())
+                        + ", consumption=" + String.format(Locale.US, "%.1f", state.consumption())
+                        + ", battery=" + state.batteryStored() + "/" + String.format(Locale.US, "%.0f", state.batteryCapacity()));
             }
         });
     }
