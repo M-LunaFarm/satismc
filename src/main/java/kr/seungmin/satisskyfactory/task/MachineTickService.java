@@ -251,8 +251,10 @@ public final class MachineTickService {
     }
 
     private long selectedRecipeCycleMillis(MachineInstance machine, MachineDefinition definition, long fallbackMillis) {
+        Optional<FactoryIsland> island = islands.find(machine.islandUuid());
         List<RecipeDefinition> supportedRecipes = recipes.recipesFor(machine.typeId()).stream()
                 .filter(recipe -> supportsRecipe(machine, definition, recipe))
+                .filter(recipe -> recipeAvailable(island, recipe, definition))
                 .filter(recipe -> recipe.cycleMillis() > 0)
                 .toList();
         if (supportedRecipes.isEmpty()) {
@@ -538,21 +540,21 @@ public final class MachineTickService {
             setStatus(machine, MachineStatus.INPUT_MISSING);
             return false;
         }
+        Optional<FactoryIsland> island = islands.find(machine.islandUuid());
+        boolean inputReady = false;
         for (RecipeDefinition recipe : recipes.recipesFor(machine.typeId())) {
             if (!supportsRecipe(machine, definition, recipe)) {
                 continue;
             }
-            if (recipe.minTier() > definition.tier()) {
-                continue;
-            }
-            Optional<FactoryIsland> island = islands.find(machine.islandUuid());
-            if (!recipe.researchRequired().isEmpty()
-                    && (island.isEmpty() || !research.unlocked(island.get()).containsAll(recipe.researchRequired()))) {
+            if (!recipeAvailable(island, recipe, definition)) {
                 continue;
             }
             Map<String, Long> produced = recipeOutput(recipe);
-            if (recipe.input().entrySet().stream().allMatch(entry -> input.amount(entry.getKey()) >= entry.getValue())
-                    && canAddAll(output, produced)) {
+            boolean hasInput = recipe.input().entrySet().stream().allMatch(entry -> input.amount(entry.getKey()) >= entry.getValue());
+            if (hasInput) {
+                inputReady = true;
+            }
+            if (hasInput && canAddAll(output, produced)) {
                 recipe.input().forEach(input::remove);
                 produced.forEach(output::add);
                 recipeNode.ifPresent(node -> consumeRecipeNode(machine, definition, node));
@@ -562,7 +564,7 @@ public final class MachineTickService {
                 return true;
             }
         }
-        setStatus(machine, MachineStatus.INPUT_MISSING);
+        setStatus(machine, inputReady ? MachineStatus.OUTPUT_FULL : MachineStatus.INPUT_MISSING);
         return false;
     }
 
@@ -737,8 +739,12 @@ public final class MachineTickService {
             desired.put("biofuel", 16L);
             return desired;
         }
+        Optional<FactoryIsland> island = islands.find(machine.islandUuid());
         for (RecipeDefinition recipe : recipes.recipesFor(definition.typeId())) {
             if (!supportsRecipe(machine, definition, recipe)) {
+                continue;
+            }
+            if (!recipeAvailable(island, recipe, definition)) {
                 continue;
             }
             recipe.input().forEach((item, amount) -> desired.merge(item, Math.max(amount * 4, amount), Math::max));
@@ -752,6 +758,15 @@ public final class MachineTickService {
         }
         String selectedRecipeId = machine.selectedRecipeId();
         return selectedRecipeId == null || selectedRecipeId.isBlank() || selectedRecipeId.equals(recipe.id());
+    }
+
+    private boolean recipeAvailable(Optional<FactoryIsland> island, RecipeDefinition recipe, MachineDefinition definition) {
+        int tier = island.map(FactoryIsland::tier).orElse(definition.tier());
+        if (recipe.minTier() > tier) {
+            return false;
+        }
+        return recipe.researchRequired().isEmpty()
+                || (island.isPresent() && research.unlocked(island.get()).containsAll(recipe.researchRequired()));
     }
 
     private long moveAny(VirtualInventory source, VirtualInventory target, long limit, MachineDefinition logisticsDefinition) {

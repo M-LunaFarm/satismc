@@ -15,6 +15,8 @@ import kr.seungmin.satisskyfactory.model.BlockKey;
 import kr.seungmin.satisskyfactory.model.FactoryIsland;
 import kr.seungmin.satisskyfactory.model.MachineDefinition;
 import kr.seungmin.satisskyfactory.model.MachineInstance;
+import kr.seungmin.satisskyfactory.recipe.RecipeDefinition;
+import kr.seungmin.satisskyfactory.recipe.RecipeService;
 import kr.seungmin.satisskyfactory.research.ResearchService;
 import kr.seungmin.satisskyfactory.storage.StorageService;
 import kr.seungmin.satisskyfactory.storage.VirtualInventory;
@@ -40,6 +42,7 @@ public final class FactoryGuiListener implements Listener {
     private final ResearchService research;
     private final FactoryGuiService gui;
     private final MachineService machines;
+    private final RecipeService recipes;
     private final StorageService storage;
     private final ItemRegistry items;
     private final CustomItemFactory itemFactory;
@@ -49,7 +52,7 @@ public final class FactoryGuiListener implements Listener {
     private final MessageService messages;
 
     public FactoryGuiListener(FactoryIslandService islands, ContractService contracts, ResearchService research, FactoryGuiService gui,
-                              MachineService machines, StorageService storage, ItemRegistry items, CustomItemFactory itemFactory,
+                              MachineService machines, RecipeService recipes, StorageService storage, ItemRegistry items, CustomItemFactory itemFactory,
                               MarketService market, MachineDefinitionService definitions, MaintenanceService maintenance,
                               MessageService messages) {
         this.islands = islands;
@@ -57,6 +60,7 @@ public final class FactoryGuiListener implements Listener {
         this.research = research;
         this.gui = gui;
         this.machines = machines;
+        this.recipes = recipes;
         this.storage = storage;
         this.items = items;
         this.itemFactory = itemFactory;
@@ -363,6 +367,11 @@ public final class FactoryGuiListener implements Listener {
     }
 
     private void selectRecipe(Player player, MachineInstance machine, String recipeId) {
+        if (recipeId != null && !recipeId.isBlank() && !canSelectRecipe(machine, recipeId)) {
+            messages.send(player, "recipe-unavailable");
+            gui.openMachine(player, machine);
+            return;
+        }
         machine.selectedRecipeId(recipeId == null || recipeId.isBlank() ? null : recipeId);
         machines.save(machine);
         if (machine.selectedRecipeId() == null) {
@@ -371,6 +380,28 @@ public final class FactoryGuiListener implements Listener {
             messages.send(player, "recipe-selected", Map.of("recipe", machine.selectedRecipeId()));
         }
         gui.openMachine(player, machine);
+    }
+
+    private boolean canSelectRecipe(MachineInstance machine, String recipeId) {
+        MachineDefinition definition = definitions.get(machine.typeId()).orElse(null);
+        FactoryIsland island = islands.find(machine.islandUuid()).orElse(null);
+        if (definition == null || island == null) {
+            return false;
+        }
+        return recipes.recipesFor(machine.typeId()).stream()
+                .filter(recipe -> recipe.id().equals(recipeId))
+                .anyMatch(recipe -> recipeAvailable(definition, island, recipe));
+    }
+
+    private boolean recipeAvailable(MachineDefinition definition, FactoryIsland island, RecipeDefinition recipe) {
+        if (!definition.allowedRecipes().isEmpty() && !definition.allowedRecipes().contains(recipe.id())) {
+            return false;
+        }
+        if (recipe.minTier() > island.tier()) {
+            return false;
+        }
+        return recipe.researchRequired().isEmpty()
+                || research.unlocked(island).containsAll(recipe.researchRequired());
     }
 
     private void reclaimMachine(Player player, FactoryIsland island, MachineInstance machine) {

@@ -96,7 +96,7 @@ public final class SatisSkyFactoryPlugin extends JavaPlugin {
         contracts = new ContractService(storage, economy, database, boosts);
         maintenance = new MaintenanceService(machines, economy, database);
         research = new ResearchService(database, economy);
-        gui = new FactoryGuiService(storage, itemRegistry, machineDefinitions, recipes, economy, messages);
+        gui = new FactoryGuiService(storage, itemRegistry, machineDefinitions, recipes, islands, research, economy, messages);
 
         loadDefinitions();
         islands.load();
@@ -272,6 +272,7 @@ public final class SatisSkyFactoryPlugin extends JavaPlugin {
                 research,
                 gui,
                 machines,
+                recipes,
                 storage,
                 itemRegistry,
                 itemFactory,

@@ -4,6 +4,7 @@ import kr.seungmin.satisskyfactory.contract.ContractService;
 import kr.seungmin.satisskyfactory.config.MessageService;
 import kr.seungmin.satisskyfactory.economy.EconomyService;
 import kr.seungmin.satisskyfactory.item.ItemRegistry;
+import kr.seungmin.satisskyfactory.machine.FactoryIslandService;
 import kr.seungmin.satisskyfactory.machine.IslandBoostService;
 import kr.seungmin.satisskyfactory.machine.MachineDefinitionService;
 import kr.seungmin.satisskyfactory.market.MarketService;
@@ -35,15 +36,20 @@ public final class FactoryGuiService {
     private final ItemRegistry items;
     private final MachineDefinitionService definitions;
     private final RecipeService recipes;
+    private final FactoryIslandService islands;
+    private final ResearchService research;
     private final EconomyService economy;
     private final MessageService messages;
 
     public FactoryGuiService(StorageService storage, ItemRegistry items, MachineDefinitionService definitions,
-                             RecipeService recipes, EconomyService economy, MessageService messages) {
+                             RecipeService recipes, FactoryIslandService islands, ResearchService research,
+                             EconomyService economy, MessageService messages) {
         this.storage = storage;
         this.items = items;
         this.definitions = definitions;
         this.recipes = recipes;
+        this.islands = islands;
+        this.research = research;
         this.economy = economy;
         this.messages = messages;
     }
@@ -194,8 +200,14 @@ public final class FactoryGuiService {
         if (definition == null) {
             return;
         }
+        FactoryIsland island = islands.find(machine.islandUuid()).orElse(null);
+        if (island == null) {
+            return;
+        }
         List<RecipeDefinition> availableRecipes = recipes.recipesFor(machine.typeId()).stream()
                 .filter(recipe -> definition.allowedRecipes().isEmpty() || definition.allowedRecipes().contains(recipe.id()))
+                .filter(recipe -> recipe.minTier() <= island.tier())
+                .filter(recipe -> recipe.researchRequired().isEmpty() || research.unlocked(island).containsAll(recipe.researchRequired()))
                 .toList();
         if (availableRecipes.isEmpty()) {
             return;

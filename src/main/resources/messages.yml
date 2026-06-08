@@ -40,6 +40,7 @@ messages:
   no-items-to-withdraw: "&c꺼낼 아이템이 없습니다."
   recipe-selection-cleared: "&a레시피 선택을 해제했습니다."
   recipe-selected: "&a레시피를 선택했습니다: {recipe}"
+  recipe-unavailable: "&c아직 사용할 수 없는 레시피입니다."
   machine-wrong-island: "&c다른 섬의 기계입니다."
   machine-definition-missing: "&c기계 정의를 찾을 수 없습니다."
   machine-reclaim-storage-full: "&c공장 저장고가 가득 차서 기계를 회수할 수 없습니다."
