@@ -9,8 +9,11 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.List;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -25,6 +28,8 @@ public final class MarketService {
     private final DatabaseService database;
     private final Map<String, Long> prices = new HashMap<>();
     private final Map<String, Long> targetDailyAmounts = new HashMap<>();
+    private final List<PersonalTier> personalTiers = new ArrayList<>();
+    private boolean personalSoftCapEnabled = true;
     private int personalSoftCap = 256;
     private double demandFloor = 0.35;
     private double demandCeiling = 1.25;
@@ -40,11 +45,14 @@ public final class MarketService {
     public void load(FileConfiguration config) {
         prices.clear();
         targetDailyAmounts.clear();
-        personalSoftCap = config.getInt("market.personal-soft-cap", 256);
-        demandFloor = config.getDouble("market.demand-floor", 0.35);
-        demandCeiling = config.getDouble("market.demand-ceiling", 1.25);
+        personalTiers.clear();
+        personalSoftCapEnabled = config.getBoolean("market.personal-soft-cap.enabled", true);
+        personalSoftCap = config.isInt("market.personal-soft-cap") ? config.getInt("market.personal-soft-cap", 256) : 256;
+        demandFloor = config.getDouble("market.factor-min", config.getDouble("market.demand-floor", 0.35));
+        demandCeiling = config.getDouble("market.factor-max", config.getDouble("market.demand-ceiling", 1.25));
         demandExponent = config.getDouble("market.demand-exponent", 0.35);
         debtRepayRate = config.getDouble("market.debt-repay-rate", 0.35);
+        loadPersonalTiers(config);
         ConfigurationSection items = config.getConfigurationSection("market.items");
         if (items == null) {
             return;
@@ -119,10 +127,62 @@ public final class MarketService {
         double target = Math.max(1.0, targetDailyAmounts.getOrDefault(itemId, Math.max(1, personalSoftCap * 4L)));
         double serverFactor = Math.pow(target / Math.max(1.0, serverSold + amount), demandExponent);
         serverFactor = clamp(serverFactor, demandFloor, demandCeiling);
-        double personalFactor = personalSold + amount > personalSoftCap
-                ? Math.max(demandFloor, (double) personalSoftCap / (personalSold + amount))
-                : 1.0;
+        double personalFactor = personalFactor(personalSold + amount);
         return new Factors(serverFactor, personalFactor);
+    }
+
+    private void loadPersonalTiers(FileConfiguration config) {
+        for (Map<?, ?> tier : config.getMapList("market.personal-soft-cap.tiers")) {
+            Object amountValue = tier.get("amount");
+            Object factorValue = tier.get("factor");
+            if (amountValue == null || factorValue == null) {
+                continue;
+            }
+            long amount = asLong(amountValue, 0);
+            double factor = asDouble(factorValue, 1.0);
+            if (amount > 0 && factor > 0) {
+                personalTiers.add(new PersonalTier(amount, factor));
+            }
+        }
+        personalTiers.sort(Comparator.comparingLong(PersonalTier::amount));
+    }
+
+    private double personalFactor(long totalSold) {
+        if (!personalSoftCapEnabled) {
+            return 1.0;
+        }
+        if (!personalTiers.isEmpty()) {
+            return personalTiers.stream()
+                    .filter(tier -> totalSold <= tier.amount())
+                    .findFirst()
+                    .map(PersonalTier::factor)
+                    .orElseGet(() -> personalTiers.get(personalTiers.size() - 1).factor());
+        }
+        return totalSold > personalSoftCap
+                ? Math.max(demandFloor, (double) personalSoftCap / totalSold)
+                : 1.0;
+    }
+
+    private long asLong(Object value, long fallback) {
+        if (value instanceof Number number) {
+            return number.longValue();
+        }
+        try {
+            return Long.parseLong(String.valueOf(value));
+        } catch (NumberFormatException exception) {
+            return fallback;
+        }
+    }
+
+    private double asDouble(Object value, double fallback) {
+        if (value instanceof Number number) {
+            return number.doubleValue();
+        }
+        try {
+            return Double.parseDouble(String.valueOf(value));
+        } catch (NumberFormatException exception) {
+            return fallback;
+        }
     }
 
     private String dateKey() {
@@ -134,5 +194,8 @@ public final class MarketService {
     }
 
     private record Factors(double serverDemandFactor, double personalFactor) {
+    }
+
+    private record PersonalTier(long amount, double factor) {
     }
 }
