@@ -12,6 +12,8 @@ maintenance:
   locked-threshold: 1500
   debt-cap-days: 5
   debt-cap: 5000
+  dormant:
+    stop-debt-growth-after-days-offline: 7
   break-wear: 100.0
   repair-cost:
     iron_ingot: 2

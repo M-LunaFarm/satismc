@@ -33,6 +33,7 @@ public final class FactoryLifecycleListener implements Listener {
     public void onJoin(PlayerJoinEvent event) {
         skyblock.getIslandOf(event.getPlayer()).ifPresent(islandRef -> {
             FactoryIsland island = islands.getOrCreate(islandRef);
+            island.lastTickAt(System.currentTimeMillis());
             Location origin = skyblock.getIslandCenter(islandRef).orElse(event.getPlayer().getLocation());
             nodes.generateIfMissing(island.islandUuid(), origin, location -> skyblock.getIslandAt(location)
                     .map(ref -> ref.islandUuid().equals(island.islandUuid()))
@@ -43,7 +44,10 @@ public final class FactoryLifecycleListener implements Listener {
 
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
-        islands.context(event.getPlayer()).ifPresent(context -> islands.save(context.factoryIsland()));
+        islands.context(event.getPlayer()).ifPresent(context -> {
+            context.factoryIsland().lastTickAt(System.currentTimeMillis());
+            islands.save(context.factoryIsland());
+        });
     }
 
     @EventHandler

@@ -23,6 +23,7 @@ public final class MaintenanceService {
     private double exponent;
     private boolean exponentialFormula;
     private long debtCapDays;
+    private long dormantAfterMillis;
     private long warningThreshold;
     private long limitedThreshold;
     private long lockedThreshold;
@@ -44,6 +45,8 @@ public final class MaintenanceService {
         exponent = Math.max(0.1, config.getDouble("maintenance.exponent", 1.0));
         exponentialFormula = config.getString("maintenance.formula", "LINEAR_SCORE").equalsIgnoreCase("EXPONENTIAL_SCORE");
         debtCapDays = Math.max(0, config.getLong("maintenance.debt-cap-days", 0));
+        dormantAfterMillis = Math.max(0, config.getLong("maintenance.dormant.stop-debt-growth-after-days-offline",
+                config.getLong("maintenance.dormant-days", 0))) * 24L * 60L * 60L * 1000L;
         warningThreshold = config.getLong("maintenance.warning-threshold", 1);
         limitedThreshold = config.getLong("maintenance.limited-threshold", 500);
         lockedThreshold = config.getLong("maintenance.locked-threshold", 1500);
@@ -60,6 +63,10 @@ public final class MaintenanceService {
             return 0;
         }
         island.factoryScore(machines.factoryScore(island.islandUuid()));
+        if (shouldDormant(island, now)) {
+            island.maintenanceStatus(MaintenanceStatus.DORMANT);
+            return 0;
+        }
         long due = maintenanceFee(island);
         double paid = economy.withdrawMaintenance(owner, rawIsland, due);
         long shortage = Math.max(0, due - Math.round(paid));
@@ -98,6 +105,10 @@ public final class MaintenanceService {
     }
 
     public void updateStatus(FactoryIsland island) {
+        if (shouldDormant(island, Instant.now().toEpochMilli())) {
+            island.maintenanceStatus(MaintenanceStatus.DORMANT);
+            return;
+        }
         if (island.maintenanceDebt() >= lockedThreshold) {
             island.maintenanceStatus(MaintenanceStatus.LOCKED);
         } else if (island.maintenanceDebt() >= limitedThreshold) {
@@ -125,5 +136,12 @@ public final class MaintenanceService {
             }
         }
         return result;
+    }
+
+    private boolean shouldDormant(FactoryIsland island, long now) {
+        return dormantAfterMillis > 0
+                && island.maintenanceDebt() > 0
+                && island.lastTickAt() > 0
+                && now - island.lastTickAt() >= dormantAfterMillis;
     }
 }
