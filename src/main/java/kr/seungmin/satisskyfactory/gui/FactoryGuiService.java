@@ -1,10 +1,14 @@
 package kr.seungmin.satisskyfactory.gui;
 
+import kr.seungmin.satisskyfactory.contract.ContractService;
 import kr.seungmin.satisskyfactory.item.ItemRegistry;
+import kr.seungmin.satisskyfactory.machine.IslandBoostService;
 import kr.seungmin.satisskyfactory.machine.MachineDefinitionService;
 import kr.seungmin.satisskyfactory.model.FactoryIsland;
 import kr.seungmin.satisskyfactory.model.MachineDefinition;
 import kr.seungmin.satisskyfactory.model.MachineInstance;
+import kr.seungmin.satisskyfactory.power.PowerNetworkService;
+import kr.seungmin.satisskyfactory.research.ResearchService;
 import kr.seungmin.satisskyfactory.storage.StorageService;
 import kr.seungmin.satisskyfactory.storage.VirtualInventory;
 import org.bukkit.Bukkit;
@@ -28,6 +32,32 @@ public final class FactoryGuiService {
         this.storage = storage;
         this.items = items;
         this.definitions = definitions;
+    }
+
+    public void openMain(Player player, FactoryIsland island, int machineCount, PowerNetworkService.NetworkState powerState,
+                         IslandBoostService.Boosts boosts) {
+        FactoryGuiHolder holder = new FactoryGuiHolder("main", island.islandUuid(), null);
+        Inventory inventory = Bukkit.createInventory(holder, 27, "SatisSkyFactory");
+        holder.inventory(inventory);
+        inventory.setItem(10, icon(Material.CRAFTING_TABLE, ChatColor.GOLD + "Factory",
+                List.of(ChatColor.GRAY + "Tier: " + island.tier(),
+                        ChatColor.GRAY + "Machines: " + machineCount,
+                        ChatColor.GRAY + "Storage used: " + storage.islandStorage(island.islandUuid()).used())));
+        inventory.setItem(12, icon(Material.REDSTONE, ChatColor.RED + "Power",
+                List.of(ChatColor.GRAY + "Ratio: " + String.format(java.util.Locale.US, "%.2f", powerState.ratio()),
+                        ChatColor.GRAY + "Generation: " + String.format(java.util.Locale.US, "%.1f", powerState.generation()),
+                        ChatColor.GRAY + "Consumption: " + String.format(java.util.Locale.US, "%.1f", powerState.consumption()),
+                        ChatColor.GRAY + "Battery: " + powerState.batteryStored() + "/" + String.format(java.util.Locale.US, "%.0f", powerState.batteryCapacity()))));
+        inventory.setItem(14, icon(Material.EMERALD, ChatColor.GREEN + "Economy",
+                List.of(ChatColor.GRAY + "Debt: " + island.maintenanceDebt(),
+                        ChatColor.GRAY + "Status: " + island.maintenanceStatus(),
+                        ChatColor.GRAY + "Reputation: " + island.reputation())));
+        inventory.setItem(16, icon(Material.EXPERIENCE_BOTTLE, ChatColor.AQUA + "Research",
+                List.of(ChatColor.GRAY + "Points: " + island.researchPoints(),
+                        ChatColor.GRAY + "Agriculture x" + String.format(java.util.Locale.US, "%.2f", boosts.agricultureBoost()),
+                        ChatColor.GRAY + "Machine slots +" + boosts.factorySlotBonus(),
+                        ChatColor.GRAY + "Contract slots +" + boosts.contractSlotBonus())));
+        player.openInventory(inventory);
     }
 
     public void openStorage(Player player, FactoryIsland island) {
@@ -71,5 +101,54 @@ public final class FactoryGuiService {
         info.setItemMeta(meta);
         inventory.setItem(13, info);
         player.openInventory(inventory);
+    }
+
+    public void openContracts(Player player, FactoryIsland island, ContractService contracts) {
+        FactoryGuiHolder holder = new FactoryGuiHolder("contracts", island.islandUuid(), null);
+        Inventory inventory = Bukkit.createInventory(holder, 27, "Factory Contracts");
+        holder.inventory(inventory);
+        int slot = 10;
+        for (ContractService.ContractTemplate template : contracts.templates().values()) {
+            if (slot >= 17) {
+                break;
+            }
+            inventory.setItem(slot++, icon(Material.WRITABLE_BOOK, ChatColor.GOLD + template.id(),
+                    List.of(ChatColor.GRAY + "Type: " + template.type(),
+                            ChatColor.GRAY + "Required: " + template.required(),
+                            ChatColor.GRAY + "Money: " + template.money(),
+                            ChatColor.GRAY + "Research: " + template.research(),
+                            ChatColor.GRAY + "Reputation: " + template.reputation())));
+        }
+        player.openInventory(inventory);
+    }
+
+    public void openResearch(Player player, FactoryIsland island, ResearchService research) {
+        FactoryGuiHolder holder = new FactoryGuiHolder("research", island.islandUuid(), null);
+        Inventory inventory = Bukkit.createInventory(holder, 27, "Factory Research");
+        holder.inventory(inventory);
+        int slot = 10;
+        for (ResearchService.ResearchUnlock unlock : research.all().values()) {
+            if (slot >= 17) {
+                break;
+            }
+            boolean unlocked = research.unlocked(island).contains(unlock.id());
+            inventory.setItem(slot++, icon(unlocked ? Material.LIME_DYE : Material.GRAY_DYE,
+                    (unlocked ? ChatColor.GREEN : ChatColor.YELLOW) + unlock.id(),
+                    List.of(ChatColor.GRAY + "Cost: " + unlock.cost(),
+                            ChatColor.GRAY + "Requires: " + unlock.requires(),
+                            ChatColor.GRAY + "Status: " + (unlocked ? "Unlocked" : "Locked"))));
+        }
+        inventory.setItem(22, icon(Material.EXPERIENCE_BOTTLE, ChatColor.AQUA + "Research Points",
+                List.of(ChatColor.GRAY + String.valueOf(island.researchPoints()))));
+        player.openInventory(inventory);
+    }
+
+    private ItemStack icon(Material material, String name, List<String> lore) {
+        ItemStack stack = new ItemStack(material);
+        ItemMeta meta = stack.getItemMeta();
+        meta.setDisplayName(name);
+        meta.setLore(lore);
+        stack.setItemMeta(meta);
+        return stack;
     }
 }

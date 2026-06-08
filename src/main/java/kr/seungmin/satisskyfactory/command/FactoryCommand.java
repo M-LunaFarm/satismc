@@ -89,12 +89,13 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
             messages.send(player, "no-island");
             return true;
         }
-        String sub = args.length == 0 ? "status" : args[0].toLowerCase(Locale.ROOT);
+        String sub = args.length == 0 ? "main" : args[0].toLowerCase(Locale.ROOT);
         FactoryIsland island = context.get().factoryIsland();
         maintenance.chargeIfDue(island, player, context.get().islandRef().raw());
         islands.save(island);
         switch (sub) {
             case "help" -> help(player);
+            case "main" -> gui.openMain(player, island, machines.byIsland(island.islandUuid()).size(), power.state(island.islandUuid()), boosts.boosts(island.islandUuid()));
             case "status" -> status(player, island);
             case "machines" -> player.sendMessage("Machines: " + machines.byIsland(island.islandUuid()).size());
             case "storage" -> gui.openStorage(player, island);
@@ -108,7 +109,7 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
                         player.sendMessage("Contract completed: " + template.id());
                     }, () -> player.sendMessage("No contract requirements are ready."));
                 } else {
-                    contracts.templates().values().forEach(template -> player.sendMessage(template.id() + " requires " + template.required()));
+                    gui.openContracts(player, island, contracts);
                 }
             }
             case "research" -> research(player, island, args);
@@ -270,9 +271,7 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
             player.sendMessage("Research unlock result: " + result.name());
             return;
         }
-        player.sendMessage("Research points: " + island.researchPoints());
-        player.sendMessage("Unlocked: " + research.unlocked(island));
-        research.all().values().forEach(unlock -> player.sendMessage(unlock.id() + " cost=" + unlock.cost() + " requires=" + unlock.requires()));
+        gui.openResearch(player, island, research);
     }
 
     private void help(Player player) {
@@ -378,7 +377,7 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (args.length == 1) {
-            return filter(List.of("help", "status", "machines", "storage", "deposit", "withdraw", "contracts", "market", "research", "emergency", "node", "sell", "admin"), args[0]);
+            return filter(List.of("help", "main", "status", "machines", "storage", "deposit", "withdraw", "contracts", "market", "research", "emergency", "node", "sell", "admin"), args[0]);
         }
         if (args.length == 2 && args[0].equalsIgnoreCase("admin")) {
             return filter(List.of("reload", "give", "giveitem", "addresearch", "setdebt", "charge", "gennodes", "debug", "removehere"), args[1]);
