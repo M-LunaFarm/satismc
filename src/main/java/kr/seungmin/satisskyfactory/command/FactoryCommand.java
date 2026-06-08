@@ -97,8 +97,10 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
             return true;
         }
         String sub = args.length == 0 ? "main" : args[0].toLowerCase(Locale.ROOT);
-        FactoryIsland island = context.get().factoryIsland();
-        maintenance.chargeIfDue(island, player, context.get().islandRef().raw());
+        FactoryContext factoryContext = context.get();
+        FactoryIsland island = factoryContext.factoryIsland();
+        ensureResourceNodes(player, factoryContext);
+        maintenance.chargeIfDue(island, player, factoryContext.islandRef().raw());
         islands.save(island);
         switch (sub) {
             case "help" -> help(player);
@@ -195,6 +197,12 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
         return skyblock.getIslandAt(location)
                 .map(ref -> ref.islandUuid().equals(island.islandUuid()))
                 .orElse(false);
+    }
+
+    private void ensureResourceNodes(Player player, FactoryContext context) {
+        FactoryIsland island = context.factoryIsland();
+        Location origin = skyblock.getIslandCenter(context.islandRef()).orElse(player.getLocation());
+        nodes.generateIfMissing(island.islandUuid(), origin, location -> isInsideIsland(location, island));
     }
 
     private void sell(Player player, FactoryIsland island, String[] args) {
