@@ -12,6 +12,7 @@ import kr.seungmin.satisskyfactory.task.DirtySaveService;
 import java.util.Comparator;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -49,6 +50,10 @@ public final class ResourceNodeService {
         List<ResourceNode> existing = nodes(islandUuid);
         if (!existing.isEmpty()) {
             return existing;
+        }
+        if (config.isList("resource-nodes.default-new-island-nodes")) {
+            generateFromGoalList(islandUuid, origin, insideIsland);
+            return nodes(islandUuid);
         }
         ConfigurationSection nodeSection = config.getConfigurationSection("nodes");
         if (nodeSection == null) {
@@ -91,12 +96,61 @@ public final class ResourceNodeService {
         return nodes(islandUuid);
     }
 
+    private void generateFromGoalList(UUID islandUuid, Location origin, Predicate<Location> insideIsland) {
+        List<Map<?, ?>> nodeConfigs = config.getMapList("resource-nodes.default-new-island-nodes");
+        int count = Math.min(config.getInt("resource-nodes.nodes-per-island", nodeConfigs.size()), nodeConfigs.size());
+        for (int i = 0; i < count; i++) {
+            Map<?, ?> nodeConfig = nodeConfigs.get(i);
+            Location location = origin.clone().add(
+                    intValue(nodeConfig, "offset-x", 6 + i * 4),
+                    intValue(nodeConfig, "offset-y", 0),
+                    intValue(nodeConfig, "offset-z", 4 + i * 3)
+            );
+            if (!insideIsland.test(location)) {
+                if (!insideIsland.test(origin)) {
+                    continue;
+                }
+                location = origin.clone();
+            }
+            double purity = purity(nodeConfig);
+            long maxRemaining = longValue(nodeConfig, "max-remaining", longValue(nodeConfig, "remaining", 100000L));
+            long now = System.currentTimeMillis();
+            save(new ResourceNode(
+                    UUID.randomUUID(),
+                    islandUuid,
+                    stringValue(nodeConfig, "node-type", stringValue(nodeConfig, "type", "MINERAL")),
+                    stringValue(nodeConfig, "resource-id", "iron_ore"),
+                    purity,
+                    maxRemaining,
+                    maxRemaining,
+                    longValue(nodeConfig, "regen-per-hour", 100L),
+                    intValue(nodeConfig, "required-machine-tier", 1),
+                    BlockKey.from(location),
+                    now
+            ));
+        }
+    }
+
     private double purity(String path) {
         if (config.contains(path + "purity")) {
             return config.getDouble(path + "purity", 1.0);
         }
         double min = config.getDouble(path + "purity-min", 1.0);
         double max = config.getDouble(path + "purity-max", min);
+        if (max < min) {
+            double swap = min;
+            min = max;
+            max = swap;
+        }
+        return min == max ? min : ThreadLocalRandom.current().nextDouble(min, max);
+    }
+
+    private double purity(Map<?, ?> nodeConfig) {
+        if (nodeConfig.containsKey("purity")) {
+            return doubleValue(nodeConfig, "purity", 1.0);
+        }
+        double min = doubleValue(nodeConfig, "purity-min", 1.0);
+        double max = doubleValue(nodeConfig, "purity-max", min);
         if (max < min) {
             double swap = min;
             min = max;
@@ -164,5 +218,44 @@ public final class ResourceNodeService {
         int dy = a.y() - b.y();
         int dz = a.z() - b.z();
         return dx * dx + dy * dy + dz * dz;
+    }
+
+    private String stringValue(Map<?, ?> values, String key, String fallback) {
+        Object value = values.get(key);
+        return value == null ? fallback : String.valueOf(value);
+    }
+
+    private int intValue(Map<?, ?> values, String key, int fallback) {
+        return (int) longValue(values, key, fallback);
+    }
+
+    private long longValue(Map<?, ?> values, String key, long fallback) {
+        Object value = values.get(key);
+        if (value instanceof Number number) {
+            return number.longValue();
+        }
+        if (value != null) {
+            try {
+                return Long.parseLong(String.valueOf(value));
+            } catch (NumberFormatException ignored) {
+                return fallback;
+            }
+        }
+        return fallback;
+    }
+
+    private double doubleValue(Map<?, ?> values, String key, double fallback) {
+        Object value = values.get(key);
+        if (value instanceof Number number) {
+            return number.doubleValue();
+        }
+        if (value != null) {
+            try {
+                return Double.parseDouble(String.valueOf(value));
+            } catch (NumberFormatException ignored) {
+                return fallback;
+            }
+        }
+        return fallback;
     }
 }
