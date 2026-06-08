@@ -12,6 +12,7 @@ import kr.seungmin.satisskyfactory.model.FactoryIsland;
 import kr.seungmin.satisskyfactory.model.MachineDefinition;
 import kr.seungmin.satisskyfactory.model.MachineInstance;
 import kr.seungmin.satisskyfactory.model.MaintenanceStatus;
+import kr.seungmin.satisskyfactory.research.ResearchService;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -32,13 +33,14 @@ public final class MachineListener implements Listener {
     private final FactoryIslandService islands;
     private final FactoryGuiService gui;
     private final MessageService messages;
+    private final ResearchService research;
     private final Set<String> recoveryTypes;
     private final IslandBoostService boosts;
     private final int baseMachineLimit;
 
     public MachineListener(CustomItemFactory itemFactory, MachineDefinitionService definitions, MachineService machines,
                            SuperiorSkyblockHook skyblock, FactoryIslandService islands, FactoryGuiService gui,
-                           MessageService messages, FileConfiguration config, IslandBoostService boosts) {
+                           MessageService messages, ResearchService research, FileConfiguration config, IslandBoostService boosts) {
         this.itemFactory = itemFactory;
         this.definitions = definitions;
         this.machines = machines;
@@ -46,6 +48,7 @@ public final class MachineListener implements Listener {
         this.islands = islands;
         this.gui = gui;
         this.messages = messages;
+        this.research = research;
         this.recoveryTypes = Set.copyOf(config.getStringList("limits.recovery-machine-types"));
         this.boosts = boosts;
         this.baseMachineLimit = config.getInt("limits.base-machines-per-island", 128);
@@ -71,6 +74,10 @@ public final class MachineListener implements Listener {
                 return;
             }
             FactoryIsland island = islands.getOrCreate(islandRef);
+            if (definition.tier() > island.tier() || !research.unlocked(island).containsAll(definition.requiredUnlocks())) {
+                messages.send(player, "place-denied");
+                return;
+            }
             if (island.maintenanceStatus() == MaintenanceStatus.LOCKED && !recoveryTypes.contains(typeId)) {
                 messages.send(player, "place-denied");
                 return;

@@ -187,6 +187,7 @@ public final class SatisSkyFactoryPlugin extends JavaPlugin {
                 islands,
                 gui,
                 messages,
+                research,
                 configs.main(),
                 boosts
         ), this);

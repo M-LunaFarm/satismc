@@ -11,7 +11,7 @@ import java.util.Map;
 import java.util.Set;
 
 public final class ResearchService {
-    public record ResearchUnlock(String id, long cost, List<String> requires) {
+    public record ResearchUnlock(String id, long cost, List<String> requires, int factoryTier) {
     }
 
     public enum UnlockResult {
@@ -36,7 +36,12 @@ public final class ResearchService {
             return;
         }
         for (String id : section.getKeys(false)) {
-            unlocks.put(id, new ResearchUnlock(id, section.getLong(id + ".cost", 0), section.getStringList(id + ".requires")));
+            unlocks.put(id, new ResearchUnlock(
+                    id,
+                    section.getLong(id + ".cost", 0),
+                    section.getStringList(id + ".requires"),
+                    section.getInt(id + ".factory-tier", 0)
+            ));
         }
     }
 
@@ -60,6 +65,9 @@ public final class ResearchService {
             return UnlockResult.NOT_ENOUGH_POINTS;
         }
         island.researchPoints(island.researchPoints() - unlock.cost());
+        if (unlock.factoryTier() > island.tier()) {
+            island.tier(unlock.factoryTier());
+        }
         database.saveUnlock(island.islandUuid(), unlockId);
         database.saveIsland(island);
         return UnlockResult.UNLOCKED;

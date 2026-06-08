@@ -2,6 +2,8 @@ package kr.seungmin.satisskyfactory.model;
 
 import org.bukkit.Material;
 
+import java.util.List;
+
 public record MachineDefinition(
         String typeId,
         String displayName,
@@ -16,6 +18,7 @@ public record MachineDefinition(
         int range,
         int amountPerCycle,
         int logisticsThroughput,
+        List<String> requiredUnlocks,
         ResourceNodeType nodeType
 ) {
     public boolean isGenerator() {

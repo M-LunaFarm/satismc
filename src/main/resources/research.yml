@@ -3,6 +3,8 @@ research:
     tier_2_logistics:
       cost: 100
       requires: []
+      factory-tier: 2
     advanced_processing:
       cost: 160
       requires: [tier_2_logistics]
+      factory-tier: 2

@@ -93,6 +93,9 @@ public final class FactoryGuiService {
         if (definition != null) {
             lore.add(ChatColor.GRAY + "Power: " + definition.powerConsumption());
             lore.add(ChatColor.GRAY + "Tier: " + definition.tier());
+            if (!definition.requiredUnlocks().isEmpty()) {
+                lore.add(ChatColor.GRAY + "Requires: " + definition.requiredUnlocks());
+            }
             if (definition.isLogistics()) {
                 lore.add(ChatColor.GRAY + "Throughput: " + definition.logisticsThroughput() + "/cycle");
             }
@@ -152,6 +155,7 @@ public final class FactoryGuiService {
                     (unlocked ? ChatColor.GREEN : ChatColor.YELLOW) + unlock.id(),
                     List.of(ChatColor.GRAY + "Cost: " + unlock.cost(),
                             ChatColor.GRAY + "Requires: " + unlock.requires(),
+                            ChatColor.GRAY + "Factory tier: " + (unlock.factoryTier() > 0 ? unlock.factoryTier() : "-"),
                             ChatColor.GRAY + "Status: " + (unlocked ? "Unlocked" : "Locked"))));
         }
         inventory.setItem(22, icon(Material.EXPERIENCE_BOTTLE, ChatColor.AQUA + "Research Points",
