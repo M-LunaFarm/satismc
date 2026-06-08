@@ -120,12 +120,16 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
             }
             case "research" -> research(player, island, args);
             case "emergency" -> {
-                if (contracts.completeEmergency(island, player)) {
-                    maintenance.updateStatus(island);
-                    islands.save(island);
-                    player.sendMessage("Emergency contract completed.");
+                if (args.length > 1 && args[1].equalsIgnoreCase("complete")) {
+                    if (contracts.completeEmergency(island, player)) {
+                        maintenance.updateStatus(island);
+                        islands.save(island);
+                        player.sendMessage("Emergency contract completed.");
+                    } else {
+                        player.sendMessage("Emergency contract requirements are missing or the daily limit was reached.");
+                    }
                 } else {
-                    player.sendMessage("Emergency contract requirements are missing.");
+                    showEmergency(player, island);
                 }
             }
             case "node" -> {
@@ -303,6 +307,21 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
             return;
         }
         gui.openResearch(player, island, research);
+    }
+
+    private void showEmergency(Player player, FactoryIsland island) {
+        contracts.emergencyTemplate().ifPresentOrElse(template -> {
+            player.sendMessage("Emergency contract: " + template.id());
+            player.sendMessage("Debt: " + island.maintenanceDebt() + " (" + island.maintenanceStatus() + ")");
+            player.sendMessage("Required: " + template.required());
+            player.sendMessage("Rewards: money=" + template.money()
+                    + ", research=" + template.research()
+                    + ", reputation=" + template.reputation()
+                    + ", debt-relief=" + template.debtRelief()
+                    + ", items=" + template.itemRewards());
+            player.sendMessage("Used today: " + contracts.emergencyUsedToday(island) + "/" + contracts.emergencyDailyLimit());
+            player.sendMessage("Run /factory emergency complete to deliver it.");
+        }, () -> player.sendMessage("No emergency contract is configured."));
     }
 
     private void help(Player player) {

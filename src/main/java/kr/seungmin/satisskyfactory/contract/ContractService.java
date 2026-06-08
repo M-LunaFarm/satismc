@@ -107,6 +107,18 @@ public final class ContractService {
         return completed;
     }
 
+    public Optional<ContractTemplate> emergencyTemplate() {
+        return Optional.ofNullable(emergency);
+    }
+
+    public int emergencyUsedToday(FactoryIsland island) {
+        return database.countContracts(island.islandUuid(), "EMERGENCY", "COMPLETED", startOfToday());
+    }
+
+    public int emergencyDailyLimit() {
+        return emergencyDailyLimit;
+    }
+
     public Map<String, ContractTemplate> templates() {
         return Map.copyOf(templates);
     }
