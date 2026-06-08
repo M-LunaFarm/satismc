@@ -71,6 +71,7 @@ public final class SatisSkyFactoryPlugin extends JavaPlugin {
             getServer().getPluginManager().disablePlugin(this);
             return;
         }
+        configureSkyblockHook();
 
         database = new DatabaseService(this);
         database.open();
@@ -151,7 +152,15 @@ public final class SatisSkyFactoryPlugin extends JavaPlugin {
 
     public void reloadPluginConfig() {
         configs.load();
+        configureSkyblockHook();
         loadDefinitions();
+    }
+
+    private void configureSkyblockHook() {
+        skyblock.configure(
+                configs.main().getBoolean("settings.allow-coop-build", false),
+                configs.main().getBoolean("settings.protect-spawn-island", true)
+        );
     }
 
     private void loadDefinitions() {

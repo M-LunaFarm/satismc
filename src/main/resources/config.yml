@@ -8,6 +8,7 @@ settings:
   max-backfill-cycles: 60
   resource-node-link-radius: 3
   allow-coop-build: false
+  protect-spawn-island: true
 economy:
   mode: VAULT_PLAYER
 storage:

@@ -17,6 +17,8 @@ public final class SuperiorSkyblockHook {
     private final JavaPlugin plugin;
     private boolean available;
     private Class<?> apiClass;
+    private boolean allowCoopBuild;
+    private boolean protectSpawnIsland = true;
 
     public SuperiorSkyblockHook(JavaPlugin plugin) {
         this.plugin = plugin;
@@ -36,6 +38,11 @@ public final class SuperiorSkyblockHook {
             plugin.getLogger().log(Level.SEVERE, "SuperiorSkyblockAPI class was not found.", exception);
             return false;
         }
+    }
+
+    public void configure(boolean allowCoopBuild, boolean protectSpawnIsland) {
+        this.allowCoopBuild = allowCoopBuild;
+        this.protectSpawnIsland = protectSpawnIsland;
     }
 
     public Optional<IslandRef> getIslandAt(Location location) {
@@ -68,9 +75,16 @@ public final class SuperiorSkyblockHook {
 
     public boolean canBuildFactory(Player player, Location location) {
         Optional<IslandRef> locationIsland = getIslandAt(location);
-        return locationIsland.isPresent()
-                && isLocationInsidePlayerIsland(player, location)
-                && isPlayerIslandMember(player, locationIsland.get());
+        if (locationIsland.isEmpty()) {
+            return false;
+        }
+        if (isProtectedSpawnIsland(locationIsland.get()) && !player.hasPermission("satisskyfactory.admin")) {
+            return false;
+        }
+        if (!isInsideIsland(locationIsland.get(), location)) {
+            return false;
+        }
+        return player.hasPermission("satisskyfactory.admin") || isPlayerIslandMember(player, locationIsland.get());
     }
 
     public boolean isLocationInsidePlayerIsland(Player player, Location location) {
@@ -90,9 +104,41 @@ public final class SuperiorSkyblockHook {
         if (player.hasPermission("satisskyfactory.admin")) {
             return true;
         }
+        if (player.getUniqueId().equals(island.ownerUuid())) {
+            return true;
+        }
         Object superiorPlayer = superiorPlayer(player);
         Boolean member = superiorPlayer == null ? null : invokeBoolean(island.raw(), "isMember", superiorPlayer);
-        return member != null ? member : player.getUniqueId().equals(island.ownerUuid());
+        if (Boolean.TRUE.equals(member)) {
+            return true;
+        }
+        return allowCoopBuild && superiorPlayer != null && isCoopPlayer(island, superiorPlayer);
+    }
+
+    private boolean isInsideIsland(IslandRef island, Location location) {
+        Boolean inside = invokeBoolean(island.raw(), "isInside", location);
+        return inside == null || inside;
+    }
+
+    private boolean isProtectedSpawnIsland(IslandRef island) {
+        if (!protectSpawnIsland) {
+            return false;
+        }
+        for (String methodName : new String[]{"isSpawn", "isSpawnIsland", "isSpawnIslandFlag"}) {
+            if (Boolean.TRUE.equals(invokeBoolean(island.raw(), methodName))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean isCoopPlayer(IslandRef island, Object superiorPlayer) {
+        for (String methodName : new String[]{"isCoop", "isCooped", "isCoopPlayer", "hasCoop"}) {
+            if (Boolean.TRUE.equals(invokeBoolean(island.raw(), methodName, superiorPlayer))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private Optional<IslandRef> islandRef(Object island) {
