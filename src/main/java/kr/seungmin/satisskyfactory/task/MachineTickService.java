@@ -23,6 +23,7 @@ import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.Ageable;
+import org.bukkit.block.data.BlockData;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 
@@ -218,26 +219,49 @@ public final class MachineTickService {
             return false;
         }
         int harvested = 0;
+        Map<Material, String> harvestDrops = definition.harvestDrops().isEmpty()
+                ? Map.of(Material.WHEAT, "wheat")
+                : definition.harvestDrops();
         long amountPerCrop = Math.max(1, Math.round(boosts.boosts(machine.islandUuid()).agricultureBoost()));
         int range = Math.max(1, definition.range());
         for (int x = -range; x <= range; x++) {
             for (int z = -range; z <= range; z++) {
                 Block block = location.clone().add(x, 0, z).getBlock();
-                if (block.getType() == Material.WHEAT && block.getBlockData() instanceof Ageable ageable && ageable.getAge() >= ageable.getMaximumAge()) {
-                    if (!output.add("wheat", amountPerCrop)) {
-                        setStatus(machine, MachineStatus.OUTPUT_FULL);
-                        storage.save(output);
-                        return false;
-                    }
-                    ageable.setAge(0);
-                    block.setBlockData(ageable);
-                    harvested++;
+                String itemId = harvestDrops.get(block.getType());
+                if (itemId == null || !isHarvestable(block)) {
+                    continue;
                 }
+                if (!output.add(itemId, amountPerCrop)) {
+                    setStatus(machine, MachineStatus.OUTPUT_FULL);
+                    storage.save(output);
+                    return false;
+                }
+                resetCrop(block);
+                harvested++;
             }
         }
         storage.save(output);
         setStatus(machine, harvested > 0 ? MachineStatus.RUNNING : MachineStatus.INPUT_MISSING);
         return harvested > 0;
+    }
+
+    private boolean isHarvestable(Block block) {
+        if (block.getType() == Material.SUGAR_CANE) {
+            return block.getRelative(0, -1, 0).getType() == Material.SUGAR_CANE;
+        }
+        return block.getBlockData() instanceof Ageable ageable && ageable.getAge() >= ageable.getMaximumAge();
+    }
+
+    private void resetCrop(Block block) {
+        if (block.getType() == Material.SUGAR_CANE) {
+            block.setType(Material.AIR);
+            return;
+        }
+        BlockData data = block.getBlockData();
+        if (data instanceof Ageable ageable) {
+            ageable.setAge(0);
+            block.setBlockData(ageable);
+        }
     }
 
     private boolean processNodeProducer(MachineInstance machine, MachineDefinition definition) {

@@ -9,6 +9,13 @@ machines:
     cycle-ticks: 80
     range: 4
     wear-per-cycle: 0.03
+    harvest-drops:
+      WHEAT: wheat
+      CARROTS: carrot
+      POTATOES: potato
+      BEETROOTS: beetroot
+      NETHER_WART: nether_wart
+      SUGAR_CANE: sugar_cane
   miner_drill_t1:
     display: "Miner Drill T1"
     material: IRON_PICKAXE

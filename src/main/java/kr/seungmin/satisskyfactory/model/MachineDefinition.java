@@ -3,6 +3,7 @@ package kr.seungmin.satisskyfactory.model;
 import org.bukkit.Material;
 
 import java.util.List;
+import java.util.Map;
 
 public record MachineDefinition(
         String typeId,
@@ -20,7 +21,8 @@ public record MachineDefinition(
         int logisticsThroughput,
         double wearPerCycle,
         List<String> requiredUnlocks,
-        ResourceNodeType nodeType
+        ResourceNodeType nodeType,
+        Map<Material, String> harvestDrops
 ) {
     public boolean isGenerator() {
         return powerGeneration > 0;

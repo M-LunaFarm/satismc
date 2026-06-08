@@ -42,7 +42,8 @@ public final class MachineDefinitionService {
                     config.getInt(path + "logistics-throughput", 0),
                     config.getDouble(path + "wear-per-cycle", 0.02),
                     config.getStringList(path + "required-unlocks"),
-                    nodeType(config.getString(path + "node-type", ""))
+                    nodeType(config.getString(path + "node-type", "")),
+                    harvestDrops(config.getConfigurationSection(path + "harvest-drops"))
             ));
         }
     }
@@ -64,5 +65,20 @@ public final class MachineDefinitionService {
         } catch (IllegalArgumentException exception) {
             return null;
         }
+    }
+
+    private Map<Material, String> harvestDrops(ConfigurationSection section) {
+        Map<Material, String> drops = new HashMap<>();
+        if (section == null) {
+            return drops;
+        }
+        for (String materialName : section.getKeys(false)) {
+            Material material = Material.matchMaterial(materialName);
+            String itemId = section.getString(materialName);
+            if (material != null && itemId != null && !itemId.isBlank()) {
+                drops.put(material, itemId);
+            }
+        }
+        return drops;
     }
 }

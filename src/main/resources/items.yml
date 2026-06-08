@@ -2,6 +2,21 @@ items:
   wheat:
     material: WHEAT
     display: "Wheat"
+  carrot:
+    material: CARROT
+    display: "Carrot"
+  potato:
+    material: POTATO
+    display: "Potato"
+  beetroot:
+    material: BEETROOT
+    display: "Beetroot"
+  nether_wart:
+    material: NETHER_WART
+    display: "Nether Wart"
+  sugar_cane:
+    material: SUGAR_CANE
+    display: "Sugar Cane"
   flour:
     material: SUGAR
     display: "Flour"
