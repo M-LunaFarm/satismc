@@ -27,15 +27,20 @@ import java.util.Set;
 import java.util.UUID;
 
 public final class DatabaseService {
-    private final JavaPlugin plugin;
+    private final File dataFolder;
     private HikariDataSource dataSource;
 
     public DatabaseService(JavaPlugin plugin) {
-        this.plugin = plugin;
+        this(plugin.getDataFolder());
+    }
+
+    DatabaseService(File dataFolder) {
+        this.dataFolder = dataFolder;
     }
 
     public void open() {
-        File database = new File(plugin.getDataFolder(), "data.db");
+        dataFolder.mkdirs();
+        File database = new File(dataFolder, "data.db");
         HikariConfig config = new HikariConfig();
         config.setJdbcUrl("jdbc:sqlite:" + database.getAbsolutePath());
         config.setMaximumPoolSize(4);
