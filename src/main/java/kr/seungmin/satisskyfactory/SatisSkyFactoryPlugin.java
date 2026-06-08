@@ -92,7 +92,7 @@ public final class SatisSkyFactoryPlugin extends JavaPlugin {
         machines.dirtySaves(dirtySaves);
         nodes.dirtySaves(dirtySaves);
         power = new PowerNetworkService(machines, machineDefinitions, recipes, storage);
-        market = new MarketService(storage, economy, database);
+        market = new MarketService(storage, economy, database, itemRegistry);
         contracts = new ContractService(storage, economy, database, boosts);
         maintenance = new MaintenanceService(machines, economy, database);
         research = new ResearchService(database, economy);

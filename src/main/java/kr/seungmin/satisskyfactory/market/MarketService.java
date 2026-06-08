@@ -2,6 +2,7 @@ package kr.seungmin.satisskyfactory.market;
 
 import kr.seungmin.satisskyfactory.database.DatabaseService;
 import kr.seungmin.satisskyfactory.economy.EconomyService;
+import kr.seungmin.satisskyfactory.item.ItemRegistry;
 import kr.seungmin.satisskyfactory.model.FactoryIsland;
 import kr.seungmin.satisskyfactory.model.MaintenanceStatus;
 import kr.seungmin.satisskyfactory.storage.StorageService;
@@ -21,14 +22,18 @@ import java.util.Optional;
 import java.util.UUID;
 
 public final class MarketService {
-    public record SellResult(long gross, long paidToPlayer, long debtRepaid, double serverDemandFactor, double personalFactor) {
+    public record SellResult(long gross, long paidToPlayer, long debtRepaid, double serverDemandFactor,
+                             double personalFactor, double qualityFactor) {
     }
 
     private final StorageService storage;
     private final EconomyService economy;
     private final DatabaseService database;
+    private final ItemRegistry items;
     private final Map<String, Long> prices = new HashMap<>();
     private final Map<String, Long> targetDailyAmounts = new HashMap<>();
+    private final Map<String, Double> itemQualityFactors = new HashMap<>();
+    private final Map<String, Double> tagQualityFactors = new HashMap<>();
     private final List<PersonalTier> personalTiers = new ArrayList<>();
     private boolean personalSoftCapEnabled = true;
     private int personalSoftCap = 256;
@@ -38,15 +43,18 @@ public final class MarketService {
     private double debtRepayRate = 0.35;
     private double lockedDebtRepayRate = 0.70;
 
-    public MarketService(StorageService storage, EconomyService economy, DatabaseService database) {
+    public MarketService(StorageService storage, EconomyService economy, DatabaseService database, ItemRegistry items) {
         this.storage = storage;
         this.economy = economy;
         this.database = database;
+        this.items = items;
     }
 
     public void load(FileConfiguration config) {
         prices.clear();
         targetDailyAmounts.clear();
+        itemQualityFactors.clear();
+        tagQualityFactors.clear();
         personalTiers.clear();
         personalSoftCapEnabled = config.getBoolean("market.personal-soft-cap.enabled", true);
         personalSoftCap = config.isInt("market.personal-soft-cap") ? config.getInt("market.personal-soft-cap", 256) : 256;
@@ -56,6 +64,7 @@ public final class MarketService {
         debtRepayRate = config.getDouble("market.debt-repay-rate", 0.35);
         lockedDebtRepayRate = config.getDouble("market.locked-debt-repay-rate", 0.70);
         loadPersonalTiers(config);
+        loadQualityFactors(config);
         ConfigurationSection items = config.getConfigurationSection("market.items");
         if (items == null) {
             return;
@@ -63,6 +72,9 @@ public final class MarketService {
         for (String itemId : items.getKeys(false)) {
             prices.put(itemId, items.getLong(itemId + ".base-price", 1));
             targetDailyAmounts.put(itemId, items.getLong(itemId + ".target-daily-amount", Math.max(1, personalSoftCap * 4L)));
+            if (items.contains(itemId + ".quality-factor")) {
+                itemQualityFactors.put(itemId, Math.max(0.0, items.getDouble(itemId + ".quality-factor", 1.0)));
+            }
         }
     }
 
@@ -72,7 +84,8 @@ public final class MarketService {
 
     public long price(UUID islandUuid, String itemId, long amount) {
         Factors factors = factors(islandUuid, itemId, amount);
-        return Math.max(0, Math.round(prices.getOrDefault(itemId, 0L) * amount * factors.serverDemandFactor() * factors.personalFactor()));
+        return Math.max(0, Math.round(prices.getOrDefault(itemId, 0L) * amount
+                * factors.serverDemandFactor() * factors.personalFactor() * factors.qualityFactor()));
     }
 
     public Optional<SellResult> sell(FactoryIsland island, OfflinePlayer owner, String itemId, long amount) {
@@ -104,7 +117,8 @@ public final class MarketService {
 
     private SellResult payout(FactoryIsland island, OfflinePlayer owner, String itemId, long amount) {
         Factors factors = factors(island.islandUuid(), itemId, amount);
-        long gross = Math.max(0, Math.round(prices.getOrDefault(itemId, 0L) * amount * factors.serverDemandFactor() * factors.personalFactor()));
+        long gross = Math.max(0, Math.round(prices.getOrDefault(itemId, 0L) * amount
+                * factors.serverDemandFactor() * factors.personalFactor() * factors.qualityFactor()));
         long debtRepaid = 0;
         if (island.maintenanceDebt() > 0) {
             double repayRate = island.maintenanceStatus() == MaintenanceStatus.LOCKED ? lockedDebtRepayRate : debtRepayRate;
@@ -121,7 +135,7 @@ public final class MarketService {
         if (debtRepaid > 0) {
             database.addLedger(island.islandUuid(), "MARKET_DEBT_REPAY", debtRepaid, itemId + " x" + amount);
         }
-        return new SellResult(gross, paid, debtRepaid, factors.serverDemandFactor(), factors.personalFactor());
+        return new SellResult(gross, paid, debtRepaid, factors.serverDemandFactor(), factors.personalFactor(), factors.qualityFactor());
     }
 
     private Factors factors(UUID islandUuid, String itemId, long amount) {
@@ -132,7 +146,7 @@ public final class MarketService {
         double serverFactor = Math.pow(target / Math.max(1.0, serverSold + amount), demandExponent);
         serverFactor = clamp(serverFactor, demandFloor, demandCeiling);
         double personalFactor = personalFactor(personalSold + amount);
-        return new Factors(serverFactor, personalFactor);
+        return new Factors(serverFactor, personalFactor, qualityFactor(itemId));
     }
 
     private void loadPersonalTiers(FileConfiguration config) {
@@ -149,6 +163,30 @@ public final class MarketService {
             }
         }
         personalTiers.sort(Comparator.comparingLong(PersonalTier::amount));
+    }
+
+    private void loadQualityFactors(FileConfiguration config) {
+        ConfigurationSection section = config.getConfigurationSection("market.quality-factor.tags");
+        if (section == null) {
+            tagQualityFactors.put("quality", 1.15);
+            return;
+        }
+        for (String tag : section.getKeys(false)) {
+            tagQualityFactors.put(tag.toLowerCase(), Math.max(0.0, section.getDouble(tag, 1.0)));
+        }
+    }
+
+    private double qualityFactor(String itemId) {
+        Double itemFactor = itemQualityFactors.get(itemId);
+        if (itemFactor != null) {
+            return itemFactor;
+        }
+        return items.get(itemId)
+                .map(item -> item.tags().stream()
+                        .map(tag -> tagQualityFactors.getOrDefault(tag.toLowerCase(), 1.0))
+                        .max(Double::compareTo)
+                        .orElse(1.0))
+                .orElse(1.0);
     }
 
     private double personalFactor(long totalSold) {
@@ -197,7 +235,7 @@ public final class MarketService {
         return Math.max(min, Math.min(max, value));
     }
 
-    private record Factors(double serverDemandFactor, double personalFactor) {
+    private record Factors(double serverDemandFactor, double personalFactor, double qualityFactor) {
     }
 
     private record PersonalTier(long amount, double factor) {

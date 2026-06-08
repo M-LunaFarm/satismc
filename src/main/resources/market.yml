@@ -2,6 +2,9 @@ market:
   factor-min: 0.35
   factor-max: 1.25
   demand-exponent: 0.35
+  quality-factor:
+    tags:
+      quality: 1.15
   personal-soft-cap:
     enabled: true
     tiers:
