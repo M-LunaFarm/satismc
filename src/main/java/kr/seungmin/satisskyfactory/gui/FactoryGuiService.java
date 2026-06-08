@@ -108,16 +108,18 @@ public final class FactoryGuiService {
         Inventory inventory = Bukkit.createInventory(holder, 27, "Factory Contracts");
         holder.inventory(inventory);
         int slot = 10;
-        for (ContractService.ContractTemplate template : contracts.templates().values()) {
+        for (ContractService.ActiveContract active : contracts.activeContracts(island)) {
             if (slot >= 17) {
                 break;
             }
+            ContractService.ContractTemplate template = active.template();
             inventory.setItem(slot++, icon(Material.WRITABLE_BOOK, ChatColor.GOLD + template.id(),
                     List.of(ChatColor.GRAY + "Type: " + template.type(),
                             ChatColor.GRAY + "Required: " + template.required(),
                             ChatColor.GRAY + "Money: " + template.money(),
                             ChatColor.GRAY + "Research: " + template.research(),
-                            ChatColor.GRAY + "Reputation: " + template.reputation())));
+                            ChatColor.GRAY + "Reputation: " + template.reputation(),
+                            ChatColor.GRAY + "Expires: " + Math.max(0, (active.expiresAt() - System.currentTimeMillis()) / 60000) + "m")));
         }
         player.openInventory(inventory);
     }

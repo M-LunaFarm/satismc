@@ -104,9 +104,9 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
             case "market" -> market.prices().forEach((item, price) -> player.sendMessage(item + ": " + price));
             case "contracts" -> {
                 if (args.length > 1 && args[1].equalsIgnoreCase("complete")) {
-                    contracts.completeAny(island, player).ifPresentOrElse(template -> {
+                    contracts.completeAny(island, player).ifPresentOrElse(active -> {
                         islands.save(island);
-                        player.sendMessage("Contract completed: " + template.id());
+                        player.sendMessage("Contract completed: " + active.template().id());
                     }, () -> player.sendMessage("No contract requirements are ready."));
                 } else {
                     gui.openContracts(player, island, contracts);

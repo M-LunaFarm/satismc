@@ -580,6 +580,95 @@ public final class DatabaseService {
         }
     }
 
+    public List<StoredContract> loadContracts(UUID islandUuid, String status) {
+        List<StoredContract> contracts = new ArrayList<>();
+        try (Connection connection = connection();
+             PreparedStatement statement = connection.prepareStatement("""
+                     SELECT * FROM contracts WHERE island_uuid = ? AND status = ? ORDER BY created_at ASC
+                     """)) {
+            statement.setString(1, islandUuid.toString());
+            statement.setString(2, status);
+            try (ResultSet rs = statement.executeQuery()) {
+                while (rs.next()) {
+                    contracts.add(new StoredContract(
+                            UUID.fromString(rs.getString("contract_id")),
+                            islandUuid,
+                            rs.getString("template_id"),
+                            rs.getString("contract_type"),
+                            rs.getInt("tier"),
+                            rs.getString("required_json"),
+                            rs.getString("progress_json"),
+                            rs.getString("rewards_json"),
+                            rs.getString("status"),
+                            rs.getLong("expires_at")
+                    ));
+                }
+            }
+            return contracts;
+        } catch (SQLException exception) {
+            throw new IllegalStateException("Failed to load contracts", exception);
+        }
+    }
+
+    public boolean hasContractForTemplate(UUID islandUuid, String templateId, String status) {
+        try (Connection connection = connection();
+             PreparedStatement statement = connection.prepareStatement("""
+                     SELECT 1 FROM contracts WHERE island_uuid = ? AND template_id = ? AND status = ? LIMIT 1
+                     """)) {
+            statement.setString(1, islandUuid.toString());
+            statement.setString(2, templateId);
+            statement.setString(3, status);
+            try (ResultSet rs = statement.executeQuery()) {
+                return rs.next();
+            }
+        } catch (SQLException exception) {
+            throw new IllegalStateException("Failed to check contract", exception);
+        }
+    }
+
+    public void saveContract(StoredContract contract) {
+        long now = Instant.now().toEpochMilli();
+        try (Connection connection = connection();
+             PreparedStatement statement = connection.prepareStatement("""
+                     INSERT INTO contracts(contract_id, island_uuid, template_id, contract_type, tier, required_json,
+                       progress_json, rewards_json, status, expires_at, created_at, updated_at)
+                     VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                     ON CONFLICT(contract_id) DO UPDATE SET progress_json=excluded.progress_json,
+                       status=excluded.status, updated_at=excluded.updated_at
+                     """)) {
+            statement.setString(1, contract.contractId().toString());
+            statement.setString(2, contract.islandUuid().toString());
+            statement.setString(3, contract.templateId());
+            statement.setString(4, contract.contractType());
+            statement.setInt(5, contract.tier());
+            statement.setString(6, contract.requiredJson());
+            statement.setString(7, contract.progressJson());
+            statement.setString(8, contract.rewardsJson());
+            statement.setString(9, contract.status());
+            statement.setLong(10, contract.expiresAt());
+            statement.setLong(11, now);
+            statement.setLong(12, now);
+            statement.executeUpdate();
+        } catch (SQLException exception) {
+            throw new IllegalStateException("Failed to save contract", exception);
+        }
+    }
+
+    public void updateContractStatus(UUID contractId, String status, String progressJson) {
+        try (Connection connection = connection();
+             PreparedStatement statement = connection.prepareStatement("""
+                     UPDATE contracts SET status = ?, progress_json = ?, updated_at = ? WHERE contract_id = ?
+                     """)) {
+            statement.setString(1, status);
+            statement.setString(2, progressJson);
+            statement.setLong(3, Instant.now().toEpochMilli());
+            statement.setString(4, contractId.toString());
+            statement.executeUpdate();
+        } catch (SQLException exception) {
+            throw new IllegalStateException("Failed to update contract", exception);
+        }
+    }
+
     public Set<String> loadUnlocks(UUID islandUuid) {
         Set<String> unlocks = new HashSet<>();
         try (Connection connection = connection();
@@ -628,5 +717,19 @@ public final class DatabaseService {
 
     private String stringOrNull(UUID value) {
         return value == null ? null : value.toString();
+    }
+
+    public record StoredContract(
+            UUID contractId,
+            UUID islandUuid,
+            String templateId,
+            String contractType,
+            int tier,
+            String requiredJson,
+            String progressJson,
+            String rewardsJson,
+            String status,
+            long expiresAt
+    ) {
     }
 }
