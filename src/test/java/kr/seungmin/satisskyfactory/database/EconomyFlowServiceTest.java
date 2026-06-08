@@ -199,6 +199,39 @@ class EconomyFlowServiceTest {
     }
 
     @Test
+    void maintenanceStatusesUseConfiguredDebtDays() {
+        try (DatabaseHandle handle = openDatabase("maintenance-days")) {
+            DatabaseService database = handle.database();
+            MachineDefinitionService definitions = new MachineDefinitionService();
+            MachineService machines = new MachineService(database, definitions, new StorageService(database, 1000));
+            MaintenanceService maintenance = new MaintenanceService(machines, new TrackingEconomy(), database);
+            maintenance.load(load("maintenance.yml"));
+
+            FactoryIsland island = new FactoryIsland(
+                    UUID.fromString("00000000-0000-0000-0000-000000001701"),
+                    UUID.fromString("00000000-0000-0000-0000-000000001702")
+            );
+            island.createdAt(Instant.now().minus(java.time.Duration.ofDays(4)).toEpochMilli());
+
+            island.maintenanceDebt(119);
+            maintenance.updateStatus(island);
+            assertEquals(MaintenanceStatus.NORMAL, island.maintenanceStatus());
+
+            island.maintenanceDebt(120);
+            maintenance.updateStatus(island);
+            assertEquals(MaintenanceStatus.WARNING, island.maintenanceStatus());
+
+            island.maintenanceDebt(360);
+            maintenance.updateStatus(island);
+            assertEquals(MaintenanceStatus.LIMITED, island.maintenanceStatus());
+
+            island.maintenanceDebt(600);
+            maintenance.updateStatus(island);
+            assertEquals(MaintenanceStatus.LOCKED, island.maintenanceStatus());
+        }
+    }
+
+    @Test
     void newIslandGracePeriodSkipsInitialMaintenanceDebt() {
         try (DatabaseHandle handle = openDatabase("maintenance-grace")) {
             DatabaseService database = handle.database();
@@ -244,7 +277,7 @@ class EconomyFlowServiceTest {
             island.lastTickAt(Instant.now().toEpochMilli());
             maintenance.updateStatus(island);
 
-            assertEquals(MaintenanceStatus.LIMITED, island.maintenanceStatus());
+            assertEquals(MaintenanceStatus.LOCKED, island.maintenanceStatus());
         }
     }
 

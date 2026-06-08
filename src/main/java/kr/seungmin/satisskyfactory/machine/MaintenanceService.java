@@ -28,6 +28,9 @@ public final class MaintenanceService {
     private long warningThreshold;
     private long limitedThreshold;
     private long lockedThreshold;
+    private double warningThresholdDays;
+    private double limitedThresholdDays;
+    private double lockedThresholdDays;
     private long debtCap;
     private Map<String, Long> repairCost;
     private Map<String, Long> brokenRepairCost;
@@ -39,7 +42,8 @@ public final class MaintenanceService {
     }
 
     public void load(FileConfiguration config) {
-        intervalMillis = config.getLong("maintenance.interval-hours", 24) * 60L * 60L * 1000L;
+        intervalMillis = config.getLong("maintenance.charge-interval-hours",
+                config.getLong("maintenance.interval-hours", 24)) * 60L * 60L * 1000L;
         baseCost = config.getLong("maintenance.base-fee", config.getLong("maintenance.base-cost", 100));
         perMachineCost = config.getLong("maintenance.per-machine-cost", 8);
         minFee = config.getLong("maintenance.min-fee", 0);
@@ -53,6 +57,9 @@ public final class MaintenanceService {
         warningThreshold = config.getLong("maintenance.warning-threshold", 1);
         limitedThreshold = config.getLong("maintenance.limited-threshold", 500);
         lockedThreshold = config.getLong("maintenance.locked-threshold", 1500);
+        warningThresholdDays = config.getDouble("maintenance.status-thresholds.warning-days", -1.0);
+        limitedThresholdDays = config.getDouble("maintenance.status-thresholds.limited-days", -1.0);
+        lockedThresholdDays = config.getDouble("maintenance.status-thresholds.locked-days", -1.0);
         debtCap = config.getLong("maintenance.debt-cap", 5000);
         repairCost = readCost(config.getConfigurationSection("maintenance.repair-cost"));
         brokenRepairCost = readCost(config.getConfigurationSection("maintenance.broken-repair-cost"));
@@ -116,15 +123,31 @@ public final class MaintenanceService {
             island.maintenanceStatus(MaintenanceStatus.DORMANT);
             return;
         }
-        if (island.maintenanceDebt() >= lockedThreshold) {
+        Thresholds thresholds = thresholds(island);
+        if (island.maintenanceDebt() >= thresholds.locked()) {
             island.maintenanceStatus(MaintenanceStatus.LOCKED);
-        } else if (island.maintenanceDebt() >= limitedThreshold) {
+        } else if (island.maintenanceDebt() >= thresholds.limited()) {
             island.maintenanceStatus(MaintenanceStatus.LIMITED);
-        } else if (island.maintenanceDebt() >= warningThreshold) {
+        } else if (island.maintenanceDebt() >= thresholds.warning()) {
             island.maintenanceStatus(MaintenanceStatus.WARNING);
         } else {
             island.maintenanceStatus(MaintenanceStatus.NORMAL);
         }
+    }
+
+    private Thresholds thresholds(FactoryIsland island) {
+        long fee = maintenanceFee(island);
+        long warning = thresholdAmount(fee, warningThresholdDays, warningThreshold);
+        long limited = Math.max(warning, thresholdAmount(fee, limitedThresholdDays, limitedThreshold));
+        long locked = Math.max(limited, thresholdAmount(fee, lockedThresholdDays, lockedThreshold));
+        return new Thresholds(warning, limited, locked);
+    }
+
+    private long thresholdAmount(long fee, double days, long fallback) {
+        if (days > 0.0 && fee > 0) {
+            return Math.max(1L, Math.round(fee * days));
+        }
+        return Math.max(1L, fallback);
     }
 
     public Map<String, Long> repairCost(boolean broken) {
@@ -157,5 +180,8 @@ public final class MaintenanceService {
                 && island.maintenanceDebt() <= 0
                 && island.createdAt() > 0
                 && now - island.createdAt() < newIslandFreeMillis;
+    }
+
+    private record Thresholds(long warning, long limited, long locked) {
     }
 }

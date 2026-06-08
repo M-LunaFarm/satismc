@@ -1,4 +1,5 @@
 maintenance:
+  charge-interval-hours: 24
   interval-hours: 24
   formula: EXPONENTIAL_SCORE
   base-fee: 120
@@ -9,6 +10,10 @@ maintenance:
   new-island-free-days: 3
   warning-threshold: 1
   limited-threshold: 500
+  status-thresholds:
+    warning-days: 1
+    limited-days: 3
+    locked-days: 5
   limited-efficiency: 0.45
   limited:
     efficiency: 0.45

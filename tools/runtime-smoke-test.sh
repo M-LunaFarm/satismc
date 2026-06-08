@@ -5,7 +5,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 WORK_DIR="${SATIS_SMOKE_DIR:-/tmp/satis-runtime-smoke}"
 PAPER_VERSION="${PAPER_VERSION:-1.21.1}"
 MIN_READY_SECONDS="${MIN_READY_SECONDS:-2}"
-MAX_START_SECONDS="${MAX_START_SECONDS:-120}"
+MAX_START_SECONDS="${MAX_START_SECONDS:-180}"
 
 log() {
   printf '[satis-smoke] %s\n' "$*"

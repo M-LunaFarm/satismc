@@ -18,6 +18,7 @@ class DefaultConfigIntegrityTest {
     void pluginMetadataUsesSeungminPackageAndExpectedCommands() {
         YamlConfiguration plugin = load("plugin.yml");
         YamlConfiguration messages = load("messages.yml");
+        YamlConfiguration maintenance = load("maintenance.yml");
 
         assertEquals("SatisSkyFactory", plugin.getString("name"));
         assertEquals("kr.seungmin.satisskyfactory.SatisSkyFactoryPlugin", plugin.getString("main"));
@@ -25,6 +26,10 @@ class DefaultConfigIntegrityTest {
         assertTrue(plugin.isConfigurationSection("commands.factory"));
         assertTrue(plugin.isConfigurationSection("commands.sfactory"));
         assertTrue(messages.getString("messages.machine-status", "").contains("{status}"));
+        assertEquals(24, maintenance.getInt("maintenance.charge-interval-hours"));
+        assertEquals(1, maintenance.getInt("maintenance.status-thresholds.warning-days"));
+        assertEquals(3, maintenance.getInt("maintenance.status-thresholds.limited-days"));
+        assertEquals(5, maintenance.getInt("maintenance.status-thresholds.locked-days"));
     }
 
     @Test
