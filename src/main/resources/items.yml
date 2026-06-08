@@ -2,6 +2,9 @@ items:
   wheat:
     material: WHEAT
     display: "Wheat"
+  wheat_seeds:
+    material: WHEAT_SEEDS
+    display: "Wheat Seeds"
   carrot:
     material: CARROT
     display: "Carrot"
@@ -11,6 +14,9 @@ items:
   beetroot:
     material: BEETROOT
     display: "Beetroot"
+  beetroot_seeds:
+    material: BEETROOT_SEEDS
+    display: "Beetroot Seeds"
   nether_wart:
     material: NETHER_WART
     display: "Nether Wart"

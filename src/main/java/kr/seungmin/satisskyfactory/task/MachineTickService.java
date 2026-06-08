@@ -161,6 +161,9 @@ public final class MachineTickService {
         if (machine.typeId().equals("harvester_t1")) {
             return processHarvester(machine, definition);
         }
+        if (machine.typeId().equals("planter_t1")) {
+            return processPlanter(machine, definition);
+        }
         if (definition.nodeType() != null || machine.typeId().equals("miner_drill_t1")) {
             return processNodeProducer(machine, definition);
         }
@@ -243,6 +246,46 @@ public final class MachineTickService {
         storage.save(output);
         setStatus(machine, harvested > 0 ? MachineStatus.RUNNING : MachineStatus.INPUT_MISSING);
         return harvested > 0;
+    }
+
+    private boolean processPlanter(MachineInstance machine, MachineDefinition definition) {
+        if (definition.plantRules().isEmpty()) {
+            setStatus(machine, MachineStatus.INPUT_MISSING);
+            return false;
+        }
+        VirtualInventory input = inputInventory(machine);
+        Optional<Map.Entry<String, MachineDefinition.PlantRule>> seed = definition.plantRules().entrySet().stream()
+                .filter(entry -> input.amount(entry.getKey()) > 0)
+                .findFirst();
+        if (seed.isEmpty()) {
+            setStatus(machine, MachineStatus.INPUT_MISSING);
+            return false;
+        }
+        Location location = location(machine.location());
+        if (location == null) {
+            return false;
+        }
+        int range = Math.max(1, definition.range());
+        for (int x = -range; x <= range; x++) {
+            for (int z = -range; z <= range; z++) {
+                Block soil = location.clone().add(x, -1, z).getBlock();
+                Block crop = soil.getRelative(0, 1, 0);
+                MachineDefinition.PlantRule rule = seed.get().getValue();
+                if (soil.getType() != rule.soil() || crop.getType() != Material.AIR) {
+                    continue;
+                }
+                if (!input.remove(seed.get().getKey(), 1)) {
+                    setStatus(machine, MachineStatus.INPUT_MISSING);
+                    return false;
+                }
+                crop.setType(rule.crop());
+                storage.save(input);
+                setStatus(machine, MachineStatus.RUNNING);
+                return true;
+            }
+        }
+        setStatus(machine, MachineStatus.INPUT_MISSING);
+        return false;
     }
 
     private boolean isHarvestable(Block block) {

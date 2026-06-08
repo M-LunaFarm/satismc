@@ -15,6 +15,7 @@ limits:
   base-machines-per-island: 128
   recovery-machine-types:
     - harvester_t1
+    - planter_t1
     - miner_drill_t1
     - bio_generator_t1
     - conveyor_t1

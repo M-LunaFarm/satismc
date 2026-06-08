@@ -43,7 +43,8 @@ public final class MachineDefinitionService {
                     config.getDouble(path + "wear-per-cycle", 0.02),
                     config.getStringList(path + "required-unlocks"),
                     nodeType(config.getString(path + "node-type", "")),
-                    harvestDrops(config.getConfigurationSection(path + "harvest-drops"))
+                    harvestDrops(config.getConfigurationSection(path + "harvest-drops")),
+                    plantRules(config.getConfigurationSection(path + "planting"))
             ));
         }
     }
@@ -80,5 +81,20 @@ public final class MachineDefinitionService {
             }
         }
         return drops;
+    }
+
+    private Map<String, MachineDefinition.PlantRule> plantRules(ConfigurationSection section) {
+        Map<String, MachineDefinition.PlantRule> rules = new HashMap<>();
+        if (section == null) {
+            return rules;
+        }
+        for (String seedId : section.getKeys(false)) {
+            Material crop = Material.matchMaterial(section.getString(seedId + ".crop", ""));
+            Material soil = Material.matchMaterial(section.getString(seedId + ".soil", "FARMLAND"));
+            if (crop != null && soil != null) {
+                rules.put(seedId, new MachineDefinition.PlantRule(crop, soil));
+            }
+        }
+        return rules;
     }
 }

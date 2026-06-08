@@ -22,8 +22,12 @@ public record MachineDefinition(
         double wearPerCycle,
         List<String> requiredUnlocks,
         ResourceNodeType nodeType,
-        Map<Material, String> harvestDrops
+        Map<Material, String> harvestDrops,
+        Map<String, PlantRule> plantRules
 ) {
+    public record PlantRule(Material crop, Material soil) {
+    }
+
     public boolean isGenerator() {
         return powerGeneration > 0;
     }

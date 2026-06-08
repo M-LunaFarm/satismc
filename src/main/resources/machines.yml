@@ -16,6 +16,32 @@ machines:
       BEETROOTS: beetroot
       NETHER_WART: nether_wart
       SUGAR_CANE: sugar_cane
+  planter_t1:
+    display: "Planter T1"
+    material: IRON_HOE
+    tier: 1
+    input-capacity: 128
+    output-capacity: 64
+    power-consumption: 3.0
+    cycle-ticks: 80
+    range: 4
+    wear-per-cycle: 0.025
+    planting:
+      wheat_seeds:
+        crop: WHEAT
+        soil: FARMLAND
+      carrot:
+        crop: CARROTS
+        soil: FARMLAND
+      potato:
+        crop: POTATOES
+        soil: FARMLAND
+      beetroot_seeds:
+        crop: BEETROOTS
+        soil: FARMLAND
+      nether_wart:
+        crop: NETHER_WART
+        soil: SOUL_SAND
   miner_drill_t1:
     display: "Miner Drill T1"
     material: IRON_PICKAXE
