@@ -104,7 +104,8 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
             case "help" -> help(player);
             case "main" -> gui.openMain(player, island, machines.byIsland(island.islandUuid()).size(), power.state(island.islandUuid()), boosts.boosts(island.islandUuid()));
             case "status" -> status(player, island);
-            case "machines" -> player.sendMessage("Machines: " + machines.byIsland(island.islandUuid()).size());
+            case "machines" -> messages.send(player, "machines-count",
+                    Map.of("count", String.valueOf(machines.byIsland(island.islandUuid()).size())));
             case "storage" -> gui.openStorage(player, island);
             case "deposit" -> depositHand(player, island);
             case "withdraw" -> withdraw(player, island, args);
@@ -113,8 +114,8 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
                 if (args.length > 1 && args[1].equalsIgnoreCase("complete")) {
                     contracts.completeAny(island, player).ifPresentOrElse(active -> {
                         islands.save(island);
-                        player.sendMessage("Contract completed: " + active.template().id());
-                    }, () -> player.sendMessage("No contract requirements are ready."));
+                        messages.send(player, "contract-completed", Map.of("contract", active.template().id()));
+                    }, () -> messages.send(player, "contract-requirements-missing"));
                 } else {
                     gui.openContracts(player, island, contracts);
                 }
@@ -125,9 +126,9 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
                     if (contracts.completeEmergency(island, player)) {
                         maintenance.updateStatus(island);
                         islands.save(island);
-                        player.sendMessage("Emergency contract completed.");
+                        messages.send(player, "emergency-contract-completed");
                     } else {
-                        player.sendMessage("Emergency contract requirements are missing or the daily limit was reached.");
+                        messages.send(player, "emergency-contract-unavailable");
                     }
                 } else {
                     showEmergency(player, island);
@@ -136,7 +137,8 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
             case "node" -> {
                 if (args.length > 1 && args[1].equalsIgnoreCase("scan")) {
                     nodes.generateIfMissing(island.islandUuid(), player.getLocation(), location -> isInsideIsland(location, island))
-                            .forEach(node -> player.sendMessage(node.resourceId() + " node at " + node.location().databaseKey()));
+                            .forEach(node -> messages.send(player, "node-scan-result",
+                                    Map.of("item", node.resourceId(), "location", node.location().databaseKey())));
                 }
             }
             case "sell" -> sell(player, island, args);
@@ -152,7 +154,7 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
             return true;
         }
         if (args.length < 2) {
-            sender.sendMessage("/factory admin reload|give|giveitem|addresearch|setdebt|charge|gennodes|debug|removehere|repairhere");
+            messages.send(sender, "admin-usage");
             return true;
         }
         switch (args[1].toLowerCase(Locale.ROOT)) {
@@ -165,26 +167,26 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
             case "addresearch" -> withPlayerContext(sender, args, 2, (target, island) -> {
                 research.addResearch(island, parseLong(args, 3, 0));
                 islands.save(island);
-                sender.sendMessage("Research updated.");
+                messages.send(sender, "admin-research-updated");
             });
             case "setdebt" -> withPlayerContext(sender, args, 2, (target, island) -> {
                 maintenance.setDebt(island, parseLong(args, 3, 0));
                 islands.save(island);
-                sender.sendMessage("Debt updated.");
+                messages.send(sender, "admin-debt-updated");
             });
             case "charge" -> withPlayerContext(sender, args, 2, (target, island) -> {
                 islands.context(target).ifPresent(context -> maintenance.chargeIfDue(island, target, context.islandRef().raw()));
                 islands.save(island);
-                sender.sendMessage("Maintenance charged if due.");
+                messages.send(sender, "admin-maintenance-charged");
             });
             case "gennodes" -> withPlayerContext(sender, args, 2, (target, island) -> {
                 nodes.generateIfMissing(island.islandUuid(), target.getLocation(), location -> isInsideIsland(location, island));
-                sender.sendMessage("Resource nodes generated.");
+                messages.send(sender, "admin-nodes-generated");
             });
             case "debug" -> debug(sender, args);
             case "removehere" -> removeHere(sender);
             case "repairhere" -> repairHere(sender);
-            default -> sender.sendMessage("Unknown admin command.");
+            default -> messages.send(sender, "unknown-admin-command");
         }
         return true;
     }
@@ -201,7 +203,7 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
             return;
         }
         if (args.length < 3) {
-            player.sendMessage("/factory sell <itemId> <amount>");
+            messages.send(player, "sell-usage");
             return;
         }
         String itemId = args[1];
@@ -262,7 +264,7 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
 
     private void withdraw(Player player, FactoryIsland island, String[] args) {
         if (args.length < 3) {
-            player.sendMessage("/factory withdraw <itemId> <amount>");
+            messages.send(player, "withdraw-usage");
             return;
         }
         String itemId = args[1];
@@ -324,22 +326,23 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
     }
 
     private void status(Player player, FactoryIsland island) {
-        player.sendMessage("Tier: " + island.tier());
-        player.sendMessage("Research: " + island.researchPoints());
-        player.sendMessage("Debt: " + island.maintenanceDebt() + " (" + island.maintenanceStatus() + ")");
-        player.sendMessage("Machines: " + machines.byIsland(island.islandUuid()).size());
-        player.sendMessage("Storage used: " + storage.islandStorage(island.islandUuid()).used());
+        messages.send(player, "status-tier", Map.of("tier", String.valueOf(island.tier())));
+        messages.send(player, "status-research", Map.of("research", String.valueOf(island.researchPoints())));
+        messages.send(player, "status-debt", Map.of("debt", String.valueOf(island.maintenanceDebt()), "status", island.maintenanceStatus().name()));
+        messages.send(player, "status-machines", Map.of("count", String.valueOf(machines.byIsland(island.islandUuid()).size())));
+        messages.send(player, "status-storage", Map.of("used", String.valueOf(storage.islandStorage(island.islandUuid()).used())));
         var boost = boosts.boosts(island.islandUuid());
-        player.sendMessage("Boosts: agriculture x" + String.format(Locale.US, "%.2f", boost.agricultureBoost())
-                + ", machine slots +" + boost.factorySlotBonus()
-                + ", contract slots +" + boost.contractSlotBonus());
+        messages.send(player, "status-boosts", Map.of(
+                "agriculture", String.format(Locale.US, "%.2f", boost.agricultureBoost()),
+                "machine", String.valueOf(boost.factorySlotBonus()),
+                "contract", String.valueOf(boost.contractSlotBonus())));
     }
 
     private void research(Player player, FactoryIsland island, String[] args) {
         if (args.length >= 3 && args[1].equalsIgnoreCase("unlock")) {
             ResearchService.UnlockResult result = research.unlock(island, player, args[2]);
             islands.save(island);
-            player.sendMessage("Research unlock result: " + result.name());
+            messages.send(player, "research-unlock-result", Map.of("result", result.name()));
             return;
         }
         gui.openResearch(player, island, research);
@@ -347,42 +350,44 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
 
     private void showEmergency(Player player, FactoryIsland island) {
         contracts.emergencyTemplate().ifPresentOrElse(template -> {
-            player.sendMessage("Emergency contract: " + template.id());
-            player.sendMessage("Debt: " + island.maintenanceDebt() + " (" + island.maintenanceStatus() + ")");
-            player.sendMessage("Required: " + template.required());
-            player.sendMessage("Rewards: money=" + template.money()
-                    + ", research=" + template.research()
-                    + ", reputation=" + template.reputation()
-                    + ", debt-relief=" + template.debtRelief()
-                    + ", items=" + template.itemRewards());
-            player.sendMessage("Used today: " + contracts.emergencyUsedToday(island) + "/" + contracts.emergencyDailyLimit());
-            player.sendMessage("Run /factory emergency complete to deliver it.");
-        }, () -> player.sendMessage("No emergency contract is configured."));
+            messages.send(player, "emergency-contract", Map.of("contract", template.id()));
+            messages.send(player, "status-debt", Map.of("debt", String.valueOf(island.maintenanceDebt()), "status", island.maintenanceStatus().name()));
+            messages.send(player, "emergency-required", Map.of("required", template.required().toString()));
+            messages.send(player, "emergency-rewards", Map.of(
+                    "money", String.valueOf(template.money()),
+                    "research", String.valueOf(template.research()),
+                    "reputation", String.valueOf(template.reputation()),
+                    "debt", String.valueOf(template.debtRelief()),
+                    "items", template.itemRewards().toString()));
+            messages.send(player, "emergency-used", Map.of("used", String.valueOf(contracts.emergencyUsedToday(island)),
+                    "limit", String.valueOf(contracts.emergencyDailyLimit())));
+            messages.send(player, "emergency-complete-help");
+        }, () -> messages.send(player, "no-emergency-contract"));
     }
 
     private void help(Player player) {
-        player.sendMessage("/factory status, storage, machines, market, contracts, research, repair");
-        player.sendMessage("/factory node scan, sell <itemId> <amount>, emergency");
+        messages.send(player, "help-main");
+        messages.send(player, "help-actions");
     }
 
     private void repairTarget(Player player, FactoryIsland island) {
         Block block = player.getTargetBlockExact(8);
         if (block == null || block.getType() == Material.AIR) {
-            player.sendMessage("No target machine.");
+            messages.send(player, "no-target-machine");
             return;
         }
         machines.at(block.getLocation()).ifPresentOrElse(machine -> {
             if (!machine.islandUuid().equals(island.islandUuid())) {
-                player.sendMessage("That machine belongs to another island.");
+                messages.send(player, "machine-wrong-island");
                 return;
             }
             if (!consumeRepairParts(island, machine)) {
-                player.sendMessage("Repair requires " + repairCostText(machine) + ".");
+                messages.send(player, "repair-requires", Map.of("cost", repairCostText(machine)));
                 return;
             }
             repair(machine);
-            player.sendMessage("Machine repaired.");
-        }, () -> player.sendMessage("No machine here."));
+            messages.send(player, "machine-repaired");
+        }, () -> messages.send(player, "no-machine-here"));
     }
 
     private boolean consumeRepairParts(FactoryIsland island, MachineInstance machine) {
@@ -399,18 +404,18 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
     private String repairCostText(MachineInstance machine) {
         Map<String, Long> cost = maintenance.repairCost(machine.status() == MachineStatus.BROKEN);
         if (cost.isEmpty()) {
-            return "no materials";
+            return messages.raw("no-materials");
         }
         return cost.entrySet().stream()
                 .map(entry -> entry.getKey() + " x" + entry.getValue())
                 .sorted()
                 .reduce((left, right) -> left + ", " + right)
-                .orElse("no materials");
+                .orElse(messages.raw("no-materials"));
     }
 
     private void giveMachine(CommandSender sender, String[] args) {
         if (args.length < 4) {
-            sender.sendMessage("/factory admin give <player> <machineType> [amount]");
+            messages.send(sender, "admin-give-usage");
             return;
         }
         Player target = Bukkit.getPlayerExact(args[2]);
@@ -434,7 +439,7 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
 
     private void giveItem(CommandSender sender, String[] args) {
         if (args.length < 5) {
-            sender.sendMessage("/factory admin giveitem <player> <itemId> <amount>");
+            messages.send(sender, "admin-giveitem-usage");
             return;
         }
         Player target = Bukkit.getPlayerExact(args[2]);
@@ -498,14 +503,15 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
         }
         islands.context(player).ifPresent(context -> {
             if (args[2].equalsIgnoreCase("island")) {
-                sender.sendMessage(context.factoryIsland().islandUuid().toString());
+                messages.send(sender, "debug-island", Map.of("island", context.factoryIsland().islandUuid().toString()));
             } else if (args[2].equalsIgnoreCase("networks")) {
                 var state = power.state(context.factoryIsland().islandUuid());
-                sender.sendMessage("Power and adjacency logistics, machines=" + machines.byIsland(context.factoryIsland().islandUuid()).size()
-                        + ", ratio=" + String.format(Locale.US, "%.2f", state.ratio())
-                        + ", generation=" + String.format(Locale.US, "%.1f", state.generation())
-                        + ", consumption=" + String.format(Locale.US, "%.1f", state.consumption())
-                        + ", battery=" + state.batteryStored() + "/" + String.format(Locale.US, "%.0f", state.batteryCapacity()));
+                messages.send(sender, "debug-networks", Map.of(
+                        "machines", String.valueOf(machines.byIsland(context.factoryIsland().islandUuid()).size()),
+                        "ratio", String.format(Locale.US, "%.2f", state.ratio()),
+                        "generation", String.format(Locale.US, "%.1f", state.generation()),
+                        "consumption", String.format(Locale.US, "%.1f", state.consumption()),
+                        "battery", state.batteryStored() + "/" + String.format(Locale.US, "%.0f", state.batteryCapacity())));
             }
         });
     }
@@ -517,17 +523,17 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
         }
         Block block = player.getTargetBlockExact(8);
         if (block == null || block.getType() == Material.AIR) {
-            sender.sendMessage("No target block.");
+            messages.send(sender, "no-target-block");
             return;
         }
         machines.at(block.getLocation()).ifPresentOrElse(machine -> {
             if (machines.remove(machine)) {
                 block.setType(Material.AIR, false);
-                sender.sendMessage("Machine removed.");
+                messages.send(sender, "machine-removed-admin");
             } else {
-                sender.sendMessage("Factory storage is full. Empty some space before removing this machine.");
+                messages.send(sender, "machine-remove-storage-full");
             }
-        }, () -> sender.sendMessage("No machine here."));
+        }, () -> messages.send(sender, "no-machine-here"));
     }
 
     private void repairHere(CommandSender sender) {
@@ -537,13 +543,13 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
         }
         Block block = player.getTargetBlockExact(8);
         if (block == null || block.getType() == Material.AIR) {
-            sender.sendMessage("No target block.");
+            messages.send(sender, "no-target-block");
             return;
         }
         machines.at(block.getLocation()).ifPresentOrElse(machine -> {
             repair(machine);
-            sender.sendMessage("Machine repaired.");
-        }, () -> sender.sendMessage("No machine here."));
+            messages.send(sender, "machine-repaired");
+        }, () -> messages.send(sender, "no-machine-here"));
     }
 
     private void repair(MachineInstance machine) {
@@ -554,12 +560,12 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
 
     private void withPlayerContext(CommandSender sender, String[] args, int playerIndex, AdminContextConsumer consumer) {
         if (args.length <= playerIndex) {
-            sender.sendMessage("Player is required.");
+            messages.send(sender, "player-required");
             return;
         }
         Player target = Bukkit.getPlayerExact(args[playerIndex]);
         if (target == null) {
-            sender.sendMessage("Player not found.");
+            messages.send(sender, "player-not-found");
             return;
         }
         islands.context(target).ifPresentOrElse(context -> consumer.accept(target, context.factoryIsland()), () -> messages.send(sender, "no-island"));

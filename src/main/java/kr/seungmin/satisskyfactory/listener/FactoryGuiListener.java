@@ -1,5 +1,6 @@
 package kr.seungmin.satisskyfactory.listener;
 
+import kr.seungmin.satisskyfactory.config.MessageService;
 import kr.seungmin.satisskyfactory.contract.ContractService;
 import kr.seungmin.satisskyfactory.gui.FactoryGuiHolder;
 import kr.seungmin.satisskyfactory.gui.FactoryGuiService;
@@ -45,10 +46,12 @@ public final class FactoryGuiListener implements Listener {
     private final MarketService market;
     private final MachineDefinitionService definitions;
     private final MaintenanceService maintenance;
+    private final MessageService messages;
 
     public FactoryGuiListener(FactoryIslandService islands, ContractService contracts, ResearchService research, FactoryGuiService gui,
                               MachineService machines, StorageService storage, ItemRegistry items, CustomItemFactory itemFactory,
-                              MarketService market, MachineDefinitionService definitions, MaintenanceService maintenance) {
+                              MarketService market, MachineDefinitionService definitions, MaintenanceService maintenance,
+                              MessageService messages) {
         this.islands = islands;
         this.contracts = contracts;
         this.research = research;
@@ -60,6 +63,7 @@ public final class FactoryGuiListener implements Listener {
         this.market = market;
         this.definitions = definitions;
         this.maintenance = maintenance;
+        this.messages = messages;
     }
 
     @EventHandler
@@ -85,7 +89,7 @@ public final class FactoryGuiListener implements Listener {
     private void handle(Player player, FactoryGuiHolder holder, FactoryGuiHolder.GuiAction action, InventoryClickEvent event) {
         FactoryIsland island = islands.find(holder.islandUuid()).orElse(null);
         if (island == null) {
-            player.sendMessage("Factory island is not loaded.");
+            messages.send(player, "island-not-loaded");
             return;
         }
         if (action.type().equals("storage_page")) {
@@ -120,7 +124,7 @@ public final class FactoryGuiListener implements Listener {
             try {
                 gui.openContractDetail(player, island, contracts, UUID.fromString(action.value()));
             } catch (IllegalArgumentException exception) {
-                player.sendMessage("Invalid contract.");
+                messages.send(player, "invalid-contract");
                 gui.openContracts(player, island, contracts);
             }
             return;
@@ -128,7 +132,7 @@ public final class FactoryGuiListener implements Listener {
         if (action.type().equals("unlock_research")) {
             ResearchService.UnlockResult result = research.unlock(island, player, action.value());
             islands.save(island);
-            player.sendMessage("Research unlock result: " + result.name());
+            messages.send(player, "research-unlock-result", Map.of("result", result.name()));
             gui.openResearch(player, island, research);
             return;
         }
@@ -137,11 +141,11 @@ public final class FactoryGuiListener implements Listener {
                 UUID contractId = UUID.fromString(action.value());
                 contracts.completeContract(island, player, contractId).ifPresentOrElse(active -> {
                     islands.save(island);
-                    player.sendMessage("Contract completed: " + active.template().id());
-                }, () -> player.sendMessage("Contract requirements are missing."));
+                    messages.send(player, "contract-completed", Map.of("contract", active.template().id()));
+                }, () -> messages.send(player, "contract-requirements-missing"));
                 gui.openContracts(player, island, contracts);
             } catch (IllegalArgumentException exception) {
-                player.sendMessage("Invalid contract.");
+                messages.send(player, "invalid-contract");
             }
             return;
         }
@@ -149,9 +153,9 @@ public final class FactoryGuiListener implements Listener {
             if (contracts.completeEmergency(island, player)) {
                 maintenance.updateStatus(island);
                 islands.save(island);
-                player.sendMessage("Emergency contract completed.");
+                messages.send(player, "emergency-contract-completed");
             } else {
-                player.sendMessage("Emergency contract requirements are missing or the daily limit was reached.");
+                messages.send(player, "emergency-contract-unavailable");
             }
             gui.openContracts(player, island, contracts);
             return;
@@ -170,27 +174,27 @@ public final class FactoryGuiListener implements Listener {
         }
         if (action.type().equals("deposit_machine_input")) {
             machine(holder).ifPresentOrElse(machine -> depositMachineInput(player, machine),
-                    () -> player.sendMessage("Machine is no longer available."));
+                    () -> messages.send(player, "machine-unavailable"));
             return;
         }
         if (action.type().equals("withdraw_machine_input")) {
             machine(holder).ifPresentOrElse(machine -> withdrawMachineInventory(player, machine, true),
-                    () -> player.sendMessage("Machine is no longer available."));
+                    () -> messages.send(player, "machine-unavailable"));
             return;
         }
         if (action.type().equals("withdraw_machine_output")) {
             machine(holder).ifPresentOrElse(machine -> withdrawMachineInventory(player, machine, false),
-                    () -> player.sendMessage("Machine is no longer available."));
+                    () -> messages.send(player, "machine-unavailable"));
             return;
         }
         if (action.type().equals("select_recipe")) {
             machine(holder).ifPresentOrElse(machine -> selectRecipe(player, machine, action.value()),
-                    () -> player.sendMessage("Machine is no longer available."));
+                    () -> messages.send(player, "machine-unavailable"));
             return;
         }
         if (action.type().equals("reclaim_machine")) {
             machine(holder).ifPresentOrElse(machine -> reclaimMachine(player, island, machine),
-                    () -> player.sendMessage("Machine is no longer available."));
+                    () -> messages.send(player, "machine-unavailable"));
         }
     }
 
@@ -203,36 +207,36 @@ public final class FactoryGuiListener implements Listener {
         var inventory = storage.islandStorage(island.islandUuid());
         long amount = Math.min(requested, inventory.amount(itemId));
         if (amount <= 0 || !inventory.remove(itemId, amount)) {
-            player.sendMessage("That item is no longer available.");
+            messages.send(player, "item-unavailable");
             gui.openStorage(player, island, page);
             return;
         }
         long returned = giveVirtualItem(player, itemId, amount);
         if (returned > 0) {
             inventory.add(itemId, returned);
-            player.sendMessage("Your inventory is full.");
+            messages.send(player, "inventory-full");
         }
         storage.save(inventory);
-        player.sendMessage("Withdrew " + (amount - returned) + " " + itemId + ".");
+        messages.send(player, "withdrew", Map.of("item", itemId, "amount", String.valueOf(amount - returned)));
         gui.openStorage(player, island, page);
     }
 
     private void depositHand(Player player, FactoryIsland island) {
         ItemStack hand = player.getInventory().getItemInMainHand();
         if (hand.getType() == Material.AIR || hand.getAmount() <= 0) {
-            player.sendMessage("Hold an item first.");
+            messages.send(player, "hold-item-first");
             return;
         }
         String itemId = itemIdForHand(hand);
         long amount = hand.getAmount();
         var inventory = storage.islandStorage(island.islandUuid());
         if (!inventory.add(itemId, amount)) {
-            player.sendMessage("Factory storage is full.");
+            messages.send(player, "storage-full");
             return;
         }
         hand.setAmount(0);
         storage.save(inventory);
-        player.sendMessage("Deposited " + amount + " " + itemId + ".");
+        messages.send(player, "deposited", Map.of("item", itemId, "amount", String.valueOf(amount)));
         gui.openStorage(player, island);
     }
 
@@ -240,16 +244,16 @@ public final class FactoryGuiListener implements Listener {
         long stored = storage.islandStorage(island.islandUuid()).amount(itemId);
         long amount = Math.min(requested, stored);
         if (amount <= 0) {
-            player.sendMessage("There is nothing to sell.");
+            messages.send(player, "nothing-to-sell");
             gui.openMarket(player, island, market, page);
             return;
         }
         market.sell(island, player, itemId, amount).ifPresentOrElse(result -> {
-            player.sendMessage("Sold " + amount + " " + itemId + " for " + result.paidToPlayer() + ".");
+            messages.send(player, "sold", Map.of("item", itemId, "amount", String.valueOf(amount), "money", String.valueOf(result.paidToPlayer())));
             if (result.debtRepaid() > 0) {
-                player.sendMessage("Debt repaid from sale: " + result.debtRepaid());
+                messages.send(player, "debt-repaid", Map.of("amount", String.valueOf(result.debtRepaid())));
             }
-        }, () -> player.sendMessage("Cannot sell that item or amount."));
+        }, () -> messages.send(player, "cannot-sell"));
         islands.save(island);
         gui.openMarket(player, island, market, page);
     }
@@ -257,23 +261,23 @@ public final class FactoryGuiListener implements Listener {
     private void depositMachineInput(Player player, MachineInstance machine) {
         ItemStack hand = player.getInventory().getItemInMainHand();
         if (hand.getType() == Material.AIR || hand.getAmount() <= 0) {
-            player.sendMessage("Hold an item first.");
+            messages.send(player, "hold-item-first");
             return;
         }
         VirtualInventory inventory = storage.get(machine.inputInventoryId()).orElse(null);
         if (inventory == null) {
-            player.sendMessage("Machine input is missing.");
+            messages.send(player, "machine-input-missing");
             return;
         }
         String itemId = itemIdForHand(hand);
         long amount = hand.getAmount();
         if (!inventory.add(itemId, amount)) {
-            player.sendMessage("Machine input is full.");
+            messages.send(player, "machine-input-full");
             return;
         }
         hand.setAmount(0);
         storage.save(inventory);
-        player.sendMessage("Deposited " + amount + " " + itemId + ".");
+        messages.send(player, "deposited", Map.of("item", itemId, "amount", String.valueOf(amount)));
         gui.openMachine(player, machine);
     }
 
@@ -281,7 +285,7 @@ public final class FactoryGuiListener implements Listener {
         UUID inventoryId = input ? machine.inputInventoryId() : machine.outputInventoryId();
         VirtualInventory inventory = storage.get(inventoryId).orElse(null);
         if (inventory == null || inventory.items().isEmpty()) {
-            player.sendMessage("No items to withdraw.");
+            messages.send(player, "no-items-to-withdraw");
             gui.openMachine(player, machine);
             return;
         }
@@ -289,7 +293,7 @@ public final class FactoryGuiListener implements Listener {
         String itemId = entry.getKey();
         long amount = Math.min(64, entry.getValue());
         if (amount <= 0 || !inventory.remove(itemId, amount)) {
-            player.sendMessage("No items to withdraw.");
+            messages.send(player, "no-items-to-withdraw");
             gui.openMachine(player, machine);
             return;
         }
@@ -300,10 +304,10 @@ public final class FactoryGuiListener implements Listener {
         long returned = overflow.values().stream().mapToLong(ItemStack::getAmount).sum();
         if (returned > 0) {
             inventory.add(itemId, returned);
-            player.sendMessage("Your inventory is full.");
+            messages.send(player, "inventory-full");
         }
         storage.save(inventory);
-        player.sendMessage("Withdrew " + (amount - returned) + " " + itemId + ".");
+        messages.send(player, "withdrew", Map.of("item", itemId, "amount", String.valueOf(amount - returned)));
         gui.openMachine(player, machine);
     }
 
@@ -350,22 +354,26 @@ public final class FactoryGuiListener implements Listener {
     private void selectRecipe(Player player, MachineInstance machine, String recipeId) {
         machine.selectedRecipeId(recipeId == null || recipeId.isBlank() ? null : recipeId);
         machines.save(machine);
-        player.sendMessage(machine.selectedRecipeId() == null ? "Recipe selection cleared." : "Selected recipe: " + machine.selectedRecipeId());
+        if (machine.selectedRecipeId() == null) {
+            messages.send(player, "recipe-selection-cleared");
+        } else {
+            messages.send(player, "recipe-selected", Map.of("recipe", machine.selectedRecipeId()));
+        }
         gui.openMachine(player, machine);
     }
 
     private void reclaimMachine(Player player, FactoryIsland island, MachineInstance machine) {
         if (!machine.islandUuid().equals(island.islandUuid())) {
-            player.sendMessage("That machine belongs to another island.");
+            messages.send(player, "machine-wrong-island");
             return;
         }
         MachineDefinition definition = definitions.get(machine.typeId()).orElse(null);
         if (definition == null) {
-            player.sendMessage("Machine definition is missing.");
+            messages.send(player, "machine-definition-missing");
             return;
         }
         if (!machines.remove(machine)) {
-            player.sendMessage("Factory storage is full. Empty some space before reclaiming this machine.");
+            messages.send(player, "machine-reclaim-storage-full");
             gui.openMachine(player, machine);
             return;
         }
@@ -373,7 +381,7 @@ public final class FactoryGuiListener implements Listener {
         Map<Integer, ItemStack> overflow = player.getInventory().addItem(itemFactory.machineItem(definition, 1));
         overflow.values().forEach(item -> player.getWorld().dropItemNaturally(player.getLocation(), item));
         player.closeInventory();
-        player.sendMessage("Machine reclaimed: " + definition.displayName());
+        messages.send(player, "machine-reclaimed", Map.of("machine", definition.displayName()));
     }
 
     private Optional<Location> location(BlockKey key) {
