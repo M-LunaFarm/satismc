@@ -12,6 +12,7 @@ import org.bukkit.scheduler.BukkitTask;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
 
 public final class DirtySaveService {
     private final JavaPlugin plugin;
@@ -67,11 +68,22 @@ public final class DirtySaveService {
 
     private void flush() {
         synchronized (flushLock) {
-            drain(inventories).values().forEach(database::saveInventory);
-            drain(machines).values().forEach(database::saveMachine);
-            drain(nodes).values().forEach(database::saveNode);
-            drain(islands).values().forEach(database::saveIsland);
+            saveBatch("inventory", drain(inventories), inventories, database::saveInventory);
+            saveBatch("machine", drain(machines), machines, database::saveMachine);
+            saveBatch("node", drain(nodes), nodes, database::saveNode);
+            saveBatch("island", drain(islands), islands, database::saveIsland);
         }
+    }
+
+    private <T> void saveBatch(String label, Map<UUID, T> snapshot, Map<UUID, T> retryQueue, Consumer<T> saver) {
+        snapshot.forEach((id, value) -> {
+            try {
+                saver.accept(value);
+            } catch (RuntimeException exception) {
+                retryQueue.put(id, value);
+                plugin.getLogger().warning("Dirty save failed for " + label + " " + id + ": " + exception.getMessage());
+            }
+        });
     }
 
     private <T> Map<UUID, T> drain(Map<UUID, T> source) {
