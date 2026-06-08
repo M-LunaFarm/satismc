@@ -28,7 +28,9 @@ import org.bukkit.scheduler.BukkitTask;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -49,6 +51,7 @@ public final class MachineTickService {
     private final double limitedEfficiency;
     private final double breakWear;
     private BukkitTask task;
+    private int tickCursor;
 
     public MachineTickService(JavaPlugin plugin, MachineService machines, MachineDefinitionService definitions, StorageService storage,
                               RecipeService recipes, ResourceNodeService nodes, PowerNetworkService power,
@@ -63,7 +66,7 @@ public final class MachineTickService {
         this.power = power;
         this.boosts = boosts;
         this.islands = islands;
-        this.maxPerCycle = maxPerCycle;
+        this.maxPerCycle = Math.max(1, maxPerCycle);
         this.recoveryTypes = Set.copyOf(recoveryTypes);
         this.limitedEfficiency = Math.max(0.05, Math.min(1.0, limitedEfficiency));
         this.breakWear = Math.max(1.0, breakWear);
@@ -83,13 +86,20 @@ public final class MachineTickService {
 
     public void tick() {
         power.beginCycle();
-        int processed = 0;
-        for (MachineInstance machine : machines.all()) {
-            if (processed++ >= maxPerCycle) {
-                break;
-            }
+        List<MachineInstance> snapshot = machines.all().stream()
+                .sorted(Comparator.comparing(machine -> machine.machineId().toString()))
+                .toList();
+        if (snapshot.isEmpty()) {
+            tickCursor = 0;
+            return;
+        }
+        int limit = Math.min(maxPerCycle, snapshot.size());
+        int start = Math.floorMod(tickCursor, snapshot.size());
+        for (int offset = 0; offset < limit; offset++) {
+            MachineInstance machine = snapshot.get((start + offset) % snapshot.size());
             definitions.get(machine.typeId()).ifPresent(definition -> process(machine, definition));
         }
+        tickCursor = (start + limit) % snapshot.size();
     }
 
     private void process(MachineInstance machine, MachineDefinition definition) {
