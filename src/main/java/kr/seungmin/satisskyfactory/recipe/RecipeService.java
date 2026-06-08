@@ -25,6 +25,7 @@ public final class RecipeService {
                     readMap(section(config, base, "input", "inputs")),
                     readMap(section(config, base, "output", "outputs")),
                     readMap(config.getConfigurationSection(base + "byproducts")),
+                    cycleMillis(config, base),
                     config.getDouble(base + "power-cost", config.getDouble(base + "power", 0.0)),
                     config.getInt(base + "min-tier", config.getInt(base + "minTier", 1)),
                     stringList(config, base + "research-required", base + "researchRequired"),
@@ -44,6 +45,16 @@ public final class RecipeService {
             machines.add(single);
         }
         return machines;
+    }
+
+    private long cycleMillis(FileConfiguration config, String base) {
+        if (config.contains(base + "cycle-ms")) {
+            return Math.max(1L, config.getLong(base + "cycle-ms"));
+        }
+        if (config.contains(base + "cycle-ticks")) {
+            return Math.max(1L, config.getLong(base + "cycle-ticks") * 50L);
+        }
+        return 0L;
     }
 
     private ConfigurationSection section(FileConfiguration config, String base, String first, String second) {

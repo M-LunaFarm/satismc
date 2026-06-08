@@ -9,6 +9,7 @@ public record RecipeDefinition(
         Map<String, Long> input,
         Map<String, Long> output,
         Map<String, Long> byproducts,
+        long cycleMillis,
         double power,
         int minTier,
         List<String> researchRequired,

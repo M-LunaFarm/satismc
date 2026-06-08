@@ -2,6 +2,7 @@ recipes:
   grind_wheat:
     machines: [grinder_t1]
     min-tier: 1
+    cycle-ms: 3000
     inputs:
       wheat: 2
     outputs:
@@ -12,6 +13,7 @@ recipes:
   grind_iron:
     machines: [grinder_t1]
     min-tier: 1
+    cycle-ms: 4000
     inputs:
       iron_ore: 2
     outputs:
@@ -19,6 +21,7 @@ recipes:
     power-cost: 5.0
   make_feed:
     machine: grinder_t1
+    cycle-ms: 3000
     input:
       wheat: 2
     output:
@@ -26,6 +29,7 @@ recipes:
     power: 5.0
   smelt_crushed_iron:
     machines: [furnace_t1]
+    cycle-ms: 6000
     input:
       crushed_iron: 1
     output:
@@ -33,6 +37,7 @@ recipes:
     power: 7.0
   assemble_plate:
     machine: assembler_t1
+    cycle-ms: 5000
     input:
       iron_ingot: 2
     output:
@@ -42,6 +47,7 @@ recipes:
     machines: [assembler_t1]
     min-tier: 2
     research-required: [advanced_processing]
+    cycle-ms: 8000
     inputs:
       iron_plate: 2
     outputs:
@@ -52,6 +58,7 @@ recipes:
     machines: [packager_t1]
     min-tier: 2
     research-required: [advanced_processing]
+    cycle-ms: 5000
     inputs:
       flour: 3
     outputs:
@@ -60,6 +67,7 @@ recipes:
     power-cost: 4.0
   saw_logs:
     machine: sawmill_t1
+    cycle-ms: 4000
     input:
       wood_log: 1
     output:
@@ -68,6 +76,7 @@ recipes:
     power: 5.0
   burn_charcoal:
     machine: charcoal_kiln_t1
+    cycle-ms: 5000
     input:
       wood_log: 2
     output:
@@ -75,6 +84,7 @@ recipes:
     power: 4.0
   scrap_to_biofuel:
     machine: grinder_t1
+    cycle-ms: 3000
     input:
       wood_scrap: 4
     output:
@@ -82,6 +92,7 @@ recipes:
     power: 5.0
   process_fish:
     machine: fish_processor_t1
+    cycle-ms: 4000
     input:
       raw_fish: 2
     output:
@@ -90,6 +101,7 @@ recipes:
     power: 4.0
   press_fish_oil:
     machine: fish_processor_t1
+    cycle-ms: 5000
     input:
       raw_fish: 3
     output:
@@ -98,6 +110,7 @@ recipes:
     power: 4.0
   fish_waste_fertilizer:
     machine: grinder_t1
+    cycle-ms: 3000
     input:
       fish_waste: 3
     output:
@@ -105,12 +118,14 @@ recipes:
     power: 5.0
   auto_fish:
     machine: auto_fisher_t1
+    cycle-ms: 5000
     output:
       raw_fish: 2
       fish_waste: 1
     power: 5.0
   feed_pasture:
     machine: feeder_t1
+    cycle-ms: 6000
     input:
       feed: 2
     output:
@@ -119,6 +134,7 @@ recipes:
     power: 3.0
   collect_milk:
     machine: milker_t1
+    cycle-ms: 7000
     input:
       feed: 1
     output:
@@ -127,6 +143,7 @@ recipes:
     power: 4.0
   collect_eggs_wool:
     machine: milker_t1
+    cycle-ms: 7000
     input:
       feed: 1
     output:
@@ -135,6 +152,7 @@ recipes:
     power: 4.0
   animal_waste_fertilizer:
     machine: grinder_t1
+    cycle-ms: 3000
     input:
       animal_waste: 3
     output:

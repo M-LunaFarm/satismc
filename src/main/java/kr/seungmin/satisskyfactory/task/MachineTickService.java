@@ -122,7 +122,7 @@ public final class MachineTickService {
         if (last <= 0) {
             return 1;
         }
-        long cycleMillis = cycleMillis(definition);
+        long cycleMillis = cycleMillis(machine, definition);
         long elapsed = Instant.now().toEpochMilli() - last;
         if (elapsed < cycleMillis) {
             return 0;
@@ -187,11 +187,40 @@ public final class MachineTickService {
         if (last <= 0) {
             return false;
         }
-        return Instant.now().toEpochMilli() - last < cycleMillis(definition);
+        return Instant.now().toEpochMilli() - last < cycleMillis(machine, definition);
     }
 
-    private long cycleMillis(MachineDefinition definition) {
-        return Math.max(1L, definition.cycleTicks()) * 50L;
+    private long cycleMillis(MachineInstance machine, MachineDefinition definition) {
+        long definitionCycleMillis = Math.max(1L, definition.cycleTicks()) * 50L;
+        if (definition.nodeType() != null || machine.typeId().equals("miner_drill_t1")
+                || machine.typeId().equals("harvester_t1") || machine.typeId().equals("planter_t1")
+                || machine.typeId().equals("fertilizer_sprayer_t1") || definition.isGenerator()
+                || definition.isStorage() || definition.isLogistics()) {
+            return definitionCycleMillis;
+        }
+        return selectedRecipeCycleMillis(machine, definition, definitionCycleMillis);
+    }
+
+    private long selectedRecipeCycleMillis(MachineInstance machine, MachineDefinition definition, long fallbackMillis) {
+        List<RecipeDefinition> supportedRecipes = recipes.recipesFor(machine.typeId()).stream()
+                .filter(recipe -> supportsRecipe(machine, definition, recipe))
+                .filter(recipe -> recipe.cycleMillis() > 0)
+                .toList();
+        if (supportedRecipes.isEmpty()) {
+            return fallbackMillis;
+        }
+        String selectedRecipeId = machine.selectedRecipeId();
+        if (selectedRecipeId != null && !selectedRecipeId.isBlank()) {
+            return supportedRecipes.stream()
+                    .filter(recipe -> recipe.id().equals(selectedRecipeId))
+                    .findFirst()
+                    .map(RecipeDefinition::cycleMillis)
+                    .orElse(fallbackMillis);
+        }
+        return supportedRecipes.stream()
+                .mapToLong(RecipeDefinition::cycleMillis)
+                .min()
+                .orElse(fallbackMillis);
     }
 
     private boolean passesMaintenanceGate(MachineInstance machine) {
