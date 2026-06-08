@@ -61,6 +61,7 @@ public final class MachineTickService {
     }
 
     public void tick() {
+        power.beginCycle();
         int processed = 0;
         for (MachineInstance machine : machines.all()) {
             if (processed++ >= maxPerCycle) {

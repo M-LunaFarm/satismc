@@ -5,8 +5,8 @@ import kr.seungmin.satisskyfactory.config.ConfigService;
 import kr.seungmin.satisskyfactory.config.MessageService;
 import kr.seungmin.satisskyfactory.contract.ContractService;
 import kr.seungmin.satisskyfactory.database.DatabaseService;
+import kr.seungmin.satisskyfactory.economy.EconomyModeFactory;
 import kr.seungmin.satisskyfactory.economy.EconomyService;
-import kr.seungmin.satisskyfactory.economy.VaultEconomyService;
 import kr.seungmin.satisskyfactory.gui.FactoryGuiService;
 import kr.seungmin.satisskyfactory.hook.SuperiorSkyblockHook;
 import kr.seungmin.satisskyfactory.item.CustomItemFactory;
@@ -64,7 +64,7 @@ public final class SatisSkyFactoryPlugin extends JavaPlugin {
         database = new DatabaseService(this);
         database.open();
 
-        economy = VaultEconomyService.createOrFallback(this);
+        economy = EconomyModeFactory.create(this, configs.main());
         itemRegistry = new ItemRegistry();
         itemFactory = new CustomItemFactory(this);
         machineDefinitions = new MachineDefinitionService();

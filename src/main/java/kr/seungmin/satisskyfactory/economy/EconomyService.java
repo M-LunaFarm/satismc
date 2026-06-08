@@ -9,5 +9,9 @@ public interface EconomyService {
 
     double balance(OfflinePlayer player);
 
+    default double withdrawMaintenance(OfflinePlayer owner, Object island, double amount) {
+        return withdraw(owner, amount) ? amount : 0.0;
+    }
+
     String name();
 }

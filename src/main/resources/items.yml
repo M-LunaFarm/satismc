@@ -23,3 +23,6 @@ items:
   biofuel:
     material: DRIED_KELP
     display: "Biofuel"
+  power_charge:
+    material: REDSTONE
+    display: "Stored Power"

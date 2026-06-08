@@ -35,17 +35,22 @@ public final class MaintenanceService {
         debtCap = config.getLong("maintenance.debt-cap", 5000);
     }
 
-    public long chargeIfDue(FactoryIsland island, OfflinePlayer owner) {
+    public long chargeIfDue(FactoryIsland island, OfflinePlayer owner, Object rawIsland) {
         long now = Instant.now().toEpochMilli();
         if (island.lastMaintenanceAt() > 0 && now - island.lastMaintenanceAt() < intervalMillis) {
             updateStatus(island);
             return 0;
         }
         long due = baseCost + perMachineCost * machines.byIsland(island.islandUuid()).size();
-        if (!economy.withdraw(owner, due)) {
-            island.maintenanceDebt(Math.min(debtCap, island.maintenanceDebt() + due));
+        double paid = economy.withdrawMaintenance(owner, rawIsland, due);
+        long shortage = Math.max(0, due - Math.round(paid));
+        if (shortage > 0) {
+            island.maintenanceDebt(Math.min(debtCap, island.maintenanceDebt() + shortage));
         } else {
-            database.addLedger(island.islandUuid(), "MAINTENANCE", -due, "daily maintenance");
+            island.maintenanceDebt(Math.max(0, island.maintenanceDebt() - Math.round(paid - due)));
+        }
+        if (paid > 0) {
+            database.addLedger(island.islandUuid(), "MAINTENANCE", -Math.round(paid), "daily maintenance via " + economy.name());
         }
         island.lastMaintenanceAt(now);
         updateStatus(island);

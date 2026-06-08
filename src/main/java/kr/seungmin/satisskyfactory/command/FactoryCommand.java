@@ -81,6 +81,8 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
         }
         String sub = args.length == 0 ? "status" : args[0].toLowerCase(Locale.ROOT);
         FactoryIsland island = context.get().factoryIsland();
+        maintenance.chargeIfDue(island, player, context.get().islandRef().raw());
+        islands.save(island);
         switch (sub) {
             case "help" -> help(player);
             case "status" -> status(player, island);
@@ -148,7 +150,7 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
                 sender.sendMessage("Debt updated.");
             });
             case "charge" -> withPlayerContext(sender, args, 2, (target, island) -> {
-                maintenance.chargeIfDue(island, target);
+                islands.context(target).ifPresent(context -> maintenance.chargeIfDue(island, target, context.islandRef().raw()));
                 islands.save(island);
                 sender.sendMessage("Maintenance charged if due.");
             });
