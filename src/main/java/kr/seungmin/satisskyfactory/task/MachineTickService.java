@@ -288,7 +288,7 @@ public final class MachineTickService {
         VirtualInventory buffer = inputInventory(machine);
         long remaining = definition.logisticsThroughput();
         long moved = 0;
-        List<MachineInstance> network = machines.connectedTo(machine).stream()
+        List<MachineInstance> network = machines.connectedTo(machine, this::canExtendLogisticsNetwork).stream()
                 .sorted(Comparator.comparing(candidate -> candidate.machineId().toString()))
                 .toList();
         List<MachineInstance> storageNodes = network.stream()
@@ -377,6 +377,12 @@ public final class MachineTickService {
         }
         setStatus(machine, moved > 0 ? MachineStatus.RUNNING : MachineStatus.IDLE);
         return moved > 0;
+    }
+
+    private boolean canExtendLogisticsNetwork(MachineInstance machine) {
+        return definitions.get(machine.typeId())
+                .map(definition -> definition.isLogistics() || definition.isStorage())
+                .orElse(false);
     }
 
     private long fillInput(VirtualInventory source, VirtualInventory target, MachineDefinition definition, long limit) {

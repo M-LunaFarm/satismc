@@ -22,6 +22,7 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Predicate;
 
 public final class MachineService {
     private final DatabaseService database;
@@ -133,6 +134,10 @@ public final class MachineService {
     }
 
     public Collection<MachineInstance> connectedTo(MachineInstance start) {
+        return connectedTo(start, machine -> true);
+    }
+
+    public Collection<MachineInstance> connectedTo(MachineInstance start, Predicate<MachineInstance> traversable) {
         Set<UUID> visitedMachines = new HashSet<>();
         Set<BlockKey> visitedLocations = new HashSet<>();
         Queue<BlockKey> queue = new ArrayDeque<>();
@@ -147,6 +152,9 @@ public final class MachineService {
             }
             MachineInstance machine = machines.get(machineId);
             if (machine == null || !machine.islandUuid().equals(start.islandUuid())) {
+                continue;
+            }
+            if (!machine.machineId().equals(start.machineId()) && !traversable.test(machine)) {
                 continue;
             }
             for (BlockKey neighbor : neighbors(location)) {
