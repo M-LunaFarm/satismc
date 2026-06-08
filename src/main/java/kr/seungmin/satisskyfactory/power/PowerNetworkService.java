@@ -36,14 +36,15 @@ public final class PowerNetworkService {
     }
 
     public double powerRatio(UUID islandUuid) {
-        return cache.computeIfAbsent(islandUuid, this::calculate).ratio();
+        return cache.computeIfAbsent(islandUuid, uuid -> calculate(uuid, true)).ratio();
     }
 
     public NetworkState state(UUID islandUuid) {
-        return cache.computeIfAbsent(islandUuid, this::calculate);
+        NetworkState cached = cache.get(islandUuid);
+        return cached == null ? calculate(islandUuid, false) : cached;
     }
 
-    private NetworkState calculate(UUID islandUuid) {
+    private NetworkState calculate(UUID islandUuid, boolean mutateBattery) {
         double generation = 0;
         double consumption = 0;
         double batteryCapacity = 0;
@@ -69,25 +70,38 @@ public final class PowerNetworkService {
         long stored = islandStorage.amount(POWER_CHARGE_ITEM);
         long maxStored = Math.max(0, Math.round(batteryCapacity));
         if (stored > maxStored) {
-            long excess = stored - maxStored;
-            if (islandStorage.remove(POWER_CHARGE_ITEM, excess)) {
+            if (mutateBattery) {
+                long excess = stored - maxStored;
+                if (islandStorage.remove(POWER_CHARGE_ITEM, excess)) {
+                    stored = maxStored;
+                    storage.save(islandStorage);
+                }
+            } else {
                 stored = maxStored;
-                storage.save(islandStorage);
             }
         }
         double available = generation;
         if (generation >= consumption) {
             long charge = Math.max(0, Math.round(Math.min(generation - consumption, maxStored - stored)));
-            if (charge > 0 && islandStorage.add(POWER_CHARGE_ITEM, charge)) {
-                stored += charge;
-                storage.save(islandStorage);
+            if (charge > 0) {
+                if (mutateBattery && islandStorage.add(POWER_CHARGE_ITEM, charge)) {
+                    stored += charge;
+                    storage.save(islandStorage);
+                } else if (!mutateBattery) {
+                    stored += charge;
+                }
             }
         } else {
             long discharge = maxStored <= 0 ? 0 : Math.max(0, Math.round(Math.min(stored, consumption - generation)));
-            if (discharge > 0 && islandStorage.remove(POWER_CHARGE_ITEM, discharge)) {
-                stored -= discharge;
-                available += discharge;
-                storage.save(islandStorage);
+            if (discharge > 0) {
+                if (mutateBattery && islandStorage.remove(POWER_CHARGE_ITEM, discharge)) {
+                    stored -= discharge;
+                    available += discharge;
+                    storage.save(islandStorage);
+                } else if (!mutateBattery) {
+                    stored -= discharge;
+                    available += discharge;
+                }
             }
         }
         if (consumption <= 0) {
