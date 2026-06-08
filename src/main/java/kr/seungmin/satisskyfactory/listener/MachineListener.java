@@ -128,6 +128,8 @@ public final class MachineListener implements Listener {
                 player.sendMessage("Factory storage is full. Empty some space before removing this machine.");
                 return;
             }
+            event.setDropItems(false);
+            event.setExpToDrop(0);
             if (definition != null) {
                 event.getBlock().getWorld().dropItemNaturally(event.getBlock().getLocation(), itemFactory.machineItem(definition, 1));
                 messages.send(player, "removed", Map.of("machine", definition.displayName()));
