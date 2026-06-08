@@ -21,6 +21,9 @@ public final class IslandBoostService {
     }
 
     public Boosts boosts(UUID islandUuid) {
+        if (skyblock == null) {
+            return new Boosts(1.0, 0, 0);
+        }
         return skyblock.getIslandByUuid(islandUuid).map(ref -> boosts(ref.raw())).orElse(new Boosts(1.0, 0, 0));
     }
 
