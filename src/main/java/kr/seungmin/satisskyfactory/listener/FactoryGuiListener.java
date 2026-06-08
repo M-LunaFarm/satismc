@@ -3,15 +3,22 @@ package kr.seungmin.satisskyfactory.listener;
 import kr.seungmin.satisskyfactory.contract.ContractService;
 import kr.seungmin.satisskyfactory.gui.FactoryGuiHolder;
 import kr.seungmin.satisskyfactory.gui.FactoryGuiService;
+import kr.seungmin.satisskyfactory.item.CustomItemFactory;
+import kr.seungmin.satisskyfactory.item.ItemRegistry;
 import kr.seungmin.satisskyfactory.machine.FactoryIslandService;
 import kr.seungmin.satisskyfactory.model.FactoryIsland;
 import kr.seungmin.satisskyfactory.research.ResearchService;
+import kr.seungmin.satisskyfactory.storage.StorageService;
+import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
+import org.bukkit.inventory.ItemStack;
 
+import java.util.Locale;
+import java.util.Map;
 import java.util.UUID;
 
 public final class FactoryGuiListener implements Listener {
@@ -19,12 +26,19 @@ public final class FactoryGuiListener implements Listener {
     private final ContractService contracts;
     private final ResearchService research;
     private final FactoryGuiService gui;
+    private final StorageService storage;
+    private final ItemRegistry items;
+    private final CustomItemFactory itemFactory;
 
-    public FactoryGuiListener(FactoryIslandService islands, ContractService contracts, ResearchService research, FactoryGuiService gui) {
+    public FactoryGuiListener(FactoryIslandService islands, ContractService contracts, ResearchService research, FactoryGuiService gui,
+                              StorageService storage, ItemRegistry items, CustomItemFactory itemFactory) {
         this.islands = islands;
         this.contracts = contracts;
         this.research = research;
         this.gui = gui;
+        this.storage = storage;
+        this.items = items;
+        this.itemFactory = itemFactory;
     }
 
     @EventHandler
@@ -71,6 +85,37 @@ public final class FactoryGuiListener implements Listener {
             } catch (IllegalArgumentException exception) {
                 player.sendMessage("Invalid contract.");
             }
+            return;
         }
+        if (action.type().equals("withdraw_storage")) {
+            withdrawStorageItem(player, island, action.value());
+        }
+    }
+
+    private void withdrawStorageItem(Player player, FactoryIsland island, String itemId) {
+        var inventory = storage.islandStorage(island.islandUuid());
+        long amount = Math.min(64, inventory.amount(itemId));
+        if (amount <= 0 || !inventory.remove(itemId, amount)) {
+            player.sendMessage("That item is no longer available.");
+            gui.openStorage(player, island);
+            return;
+        }
+        ItemStack stack = items.get(itemId)
+                .map(item -> itemFactory.factoryItem(item, (int) amount))
+                .orElseGet(() -> new ItemStack(material(itemId), (int) amount));
+        Map<Integer, ItemStack> overflow = player.getInventory().addItem(stack);
+        long returned = overflow.values().stream().mapToLong(ItemStack::getAmount).sum();
+        if (returned > 0) {
+            inventory.add(itemId, returned);
+            player.sendMessage("Your inventory is full.");
+        }
+        storage.save(inventory);
+        player.sendMessage("Withdrew " + (amount - returned) + " " + itemId + ".");
+        gui.openStorage(player, island);
+    }
+
+    private Material material(String itemId) {
+        Material material = Material.matchMaterial(itemId.toUpperCase(Locale.ROOT));
+        return material == null ? Material.PAPER : material;
     }
 }

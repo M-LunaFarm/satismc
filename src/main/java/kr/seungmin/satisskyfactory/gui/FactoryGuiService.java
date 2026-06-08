@@ -76,6 +76,7 @@ public final class FactoryGuiService {
             meta.setDisplayName(ChatColor.WHITE + item.displayName());
             meta.setLore(List.of(ChatColor.GRAY + "Amount: " + entry.getValue()));
             stack.setItemMeta(meta);
+            holder.action(slot, "withdraw_storage", entry.getKey());
             inventory.setItem(slot++, stack);
         }
         player.openInventory(inventory);

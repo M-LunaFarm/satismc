@@ -192,7 +192,15 @@ public final class SatisSkyFactoryPlugin extends JavaPlugin {
                 configs.main(),
                 boosts
         ), this);
-        getServer().getPluginManager().registerEvents(new FactoryGuiListener(islands, contracts, research, gui), this);
+        getServer().getPluginManager().registerEvents(new FactoryGuiListener(
+                islands,
+                contracts,
+                research,
+                gui,
+                storage,
+                itemRegistry,
+                itemFactory
+        ), this);
     }
 
     private void registerPlaceholders() {
