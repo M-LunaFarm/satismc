@@ -371,10 +371,11 @@ public final class FactoryGuiService {
             boolean ready = !unlocked && hasRequiredUnlocks && hasPoints && hasReputation && hasMoney;
             holder.action(slot, "unlock_research", unlock.id());
             inventory.setItem(slot++, icon(unlocked ? Material.LIME_DYE : (ready ? Material.YELLOW_DYE : Material.GRAY_DYE),
-                    (unlocked ? ChatColor.GREEN : ChatColor.YELLOW) + unlock.id(),
+                    (unlocked ? ChatColor.GREEN : ChatColor.YELLOW) + unlock.displayName(),
                     List.of(ChatColor.GRAY + "Research: " + island.researchPoints() + "/" + unlock.cost(),
                             ChatColor.GRAY + "Money: " + String.format(java.util.Locale.US, "%.0f", balance) + "/" + unlock.moneyCost(),
                             ChatColor.GRAY + "Reputation: " + island.reputation() + "/" + unlock.requiredReputation(),
+                            ChatColor.GRAY + "Id: " + unlock.id(),
                             ChatColor.GRAY + "Requires: " + unlock.requires(),
                             ChatColor.GRAY + "Unlocks: " + unlock.grants(),
                             ChatColor.GRAY + "Factory tier: " + (unlock.factoryTier() > 0 ? unlock.factoryTier() : "-"),

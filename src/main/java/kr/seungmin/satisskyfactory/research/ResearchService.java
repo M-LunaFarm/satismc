@@ -14,7 +14,7 @@ import java.util.Map;
 import java.util.Set;
 
 public final class ResearchService {
-    public record ResearchUnlock(String id, long cost, long moneyCost, long requiredReputation,
+    public record ResearchUnlock(String id, String displayName, long cost, long moneyCost, long requiredReputation,
                                  List<String> requires, List<String> grants, int factoryTier) {
     }
 
@@ -46,6 +46,7 @@ public final class ResearchService {
         for (String id : section.getKeys(false)) {
             unlocks.put(id, new ResearchUnlock(
                     id,
+                    section.getString(id + ".display-name", section.getString(id + ".display", id)),
                     section.getLong(id + ".cost-research-points", section.getLong(id + ".cost", 0)),
                     section.getLong(id + ".cost-money", 0),
                     section.getLong(id + ".required-reputation", 0),

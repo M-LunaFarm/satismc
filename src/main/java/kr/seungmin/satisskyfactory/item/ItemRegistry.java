@@ -31,7 +31,7 @@ public final class ItemRegistry {
             items.put(id, new FactoryItem(
                     id,
                     material,
-                    section.getString(id + ".display", id),
+                    section.getString(id + ".display", section.getString(id + ".display-name", id)),
                     section.getInt(id + ".custom-model-data", 0),
                     section.getBoolean(id + ".virtual-only", false),
                     section.getLong(id + ".base-price", 0),

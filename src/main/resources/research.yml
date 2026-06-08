@@ -1,6 +1,7 @@
 research:
   unlocks:
     tier_2_logistics:
+      display-name: "Tier 2 Logistics"
       cost-research-points: 100
       cost-money: 100000
       required-reputation: 0
@@ -11,6 +12,7 @@ research:
         - conveyor_t1
         - filter_distributor_t1
     advanced_processing:
+      display-name: "Advanced Processing"
       cost-research-points: 160
       cost-money: 50000
       required-reputation: 5
