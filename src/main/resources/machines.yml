@@ -66,6 +66,15 @@ machines:
     output-capacity: 64
     battery-capacity: 2000.0
     cycle-ticks: 100
+  conveyor_t1:
+    display: "Conveyor T1"
+    material: CHAIN
+    tier: 1
+    input-capacity: 64
+    output-capacity: 64
+    power-consumption: 2.0
+    cycle-ticks: 40
+    logistics-throughput: 32
   tree_farm_t1:
     display: "Tree Farm T1"
     material: OAK_SAPLING

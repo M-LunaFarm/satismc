@@ -39,6 +39,7 @@ public final class MachineDefinitionService {
                     config.getInt(path + "cycle-ticks", 80),
                     config.getInt(path + "range", 0),
                     config.getInt(path + "amount-per-cycle", 1),
+                    config.getInt(path + "logistics-throughput", 0),
                     nodeType(config.getString(path + "node-type", ""))
             ));
         }

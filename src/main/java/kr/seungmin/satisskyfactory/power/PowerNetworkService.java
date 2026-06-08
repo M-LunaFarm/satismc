@@ -48,7 +48,10 @@ public final class PowerNetworkService {
                 continue;
             }
             if (definition.isGenerator()) {
-                boolean hasFuel = storage.islandStorage(islandUuid).amount("biofuel") > 0;
+                boolean hasFuel = storage.get(machine.inputInventoryId())
+                        .map(inventory -> inventory.amount("biofuel") > 0)
+                        .orElse(false)
+                        || storage.islandStorage(islandUuid).amount("biofuel") > 0;
                 if (hasFuel) {
                     generation += definition.powerGeneration();
                 }

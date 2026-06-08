@@ -15,6 +15,7 @@ public record MachineDefinition(
         int cycleTicks,
         int range,
         int amountPerCycle,
+        int logisticsThroughput,
         ResourceNodeType nodeType
 ) {
     public boolean isGenerator() {
@@ -23,5 +24,9 @@ public record MachineDefinition(
 
     public boolean isBattery() {
         return batteryCapacity > 0;
+    }
+
+    public boolean isLogistics() {
+        return logisticsThroughput > 0;
     }
 }

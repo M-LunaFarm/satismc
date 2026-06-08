@@ -93,6 +93,20 @@ public final class FactoryGuiService {
         if (definition != null) {
             lore.add(ChatColor.GRAY + "Power: " + definition.powerConsumption());
             lore.add(ChatColor.GRAY + "Tier: " + definition.tier());
+            if (definition.isLogistics()) {
+                lore.add(ChatColor.GRAY + "Throughput: " + definition.logisticsThroughput() + "/cycle");
+            }
+        }
+        storage.get(machine.inputInventoryId()).ifPresent(input ->
+                lore.add(ChatColor.GRAY + "Input: " + input.used() + "/" + input.capacity()));
+        storage.get(machine.outputInventoryId()).ifPresent(output -> {
+            lore.add(ChatColor.GRAY + "Output: " + output.used() + "/" + output.capacity());
+            if (!output.items().isEmpty()) {
+                lore.add(ChatColor.DARK_GRAY + "Out: " + output.items());
+            }
+        });
+        if (machine.linkedResourceNodeId() != null) {
+            lore.add(ChatColor.GRAY + "Node: " + machine.linkedResourceNodeId());
         }
         ItemStack info = new ItemStack(definition == null ? Material.STONE : definition.material());
         ItemMeta meta = info.getItemMeta();

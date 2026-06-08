@@ -24,6 +24,9 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -87,7 +90,9 @@ public final class MachineTickService {
             setStatus(machine, MachineStatus.IDLE);
             return;
         }
-        if (definition.isGenerator()) {
+        if (definition.isLogistics()) {
+            processLogistics(machine, definition);
+        } else if (definition.isGenerator()) {
             processGenerator(machine);
         } else if (machine.typeId().equals("harvester_t1")) {
             processHarvester(machine, definition);
@@ -99,17 +104,21 @@ public final class MachineTickService {
     }
 
     private void processGenerator(MachineInstance machine) {
-        VirtualInventory input = storage.islandStorage(machine.islandUuid());
+        VirtualInventory input = inputInventory(machine);
         if (!input.remove("biofuel", 1)) {
-            setStatus(machine, MachineStatus.INPUT_MISSING);
-            return;
+            VirtualInventory islandStorage = storage.islandStorage(machine.islandUuid());
+            if (!islandStorage.remove("biofuel", 1)) {
+                setStatus(machine, MachineStatus.INPUT_MISSING);
+                return;
+            }
+            storage.save(islandStorage);
         }
         storage.save(input);
         setStatus(machine, MachineStatus.RUNNING);
     }
 
     private void processHarvester(MachineInstance machine, MachineDefinition definition) {
-        VirtualInventory output = storage.islandStorage(machine.islandUuid());
+        VirtualInventory output = outputInventory(machine);
         Location location = location(machine.location());
         if (location == null) {
             return;
@@ -137,7 +146,7 @@ public final class MachineTickService {
     }
 
     private void processNodeProducer(MachineInstance machine, MachineDefinition definition) {
-        VirtualInventory output = storage.islandStorage(machine.islandUuid());
+        VirtualInventory output = outputInventory(machine);
         Optional<ResourceNode> node = machine.linkedResourceNodeId() == null
                 ? nodes.nearest(machine.islandUuid(), machine.location(), 12, definition.nodeType())
                 : nodes.nodes(machine.islandUuid()).stream()
@@ -162,18 +171,112 @@ public final class MachineTickService {
     }
 
     private void processRecipe(MachineInstance machine) {
-        VirtualInventory inventory = storage.islandStorage(machine.islandUuid());
+        VirtualInventory input = inputInventory(machine);
+        VirtualInventory output = outputInventory(machine);
         for (RecipeDefinition recipe : recipes.recipesFor(machine.typeId())) {
-            if (recipe.input().entrySet().stream().allMatch(entry -> inventory.amount(entry.getKey()) >= entry.getValue())
-                    && recipe.output().entrySet().stream().allMatch(entry -> inventory.canAdd(entry.getKey(), entry.getValue()))) {
-                recipe.input().forEach(inventory::remove);
-                recipe.output().forEach(inventory::add);
-                storage.save(inventory);
+            if (recipe.input().entrySet().stream().allMatch(entry -> input.amount(entry.getKey()) >= entry.getValue())
+                    && recipe.output().entrySet().stream().allMatch(entry -> output.canAdd(entry.getKey(), entry.getValue()))) {
+                recipe.input().forEach(input::remove);
+                recipe.output().forEach(output::add);
+                storage.save(input);
+                storage.save(output);
                 setStatus(machine, MachineStatus.RUNNING);
                 return;
             }
         }
         setStatus(machine, MachineStatus.INPUT_MISSING);
+    }
+
+    private void processLogistics(MachineInstance machine, MachineDefinition definition) {
+        VirtualInventory islandStorage = storage.islandStorage(machine.islandUuid());
+        long remaining = definition.logisticsThroughput();
+        long moved = 0;
+        for (MachineInstance target : machines.byIsland(machine.islandUuid())) {
+            if (target.machineId().equals(machine.machineId()) || remaining <= 0) {
+                continue;
+            }
+            VirtualInventory output = outputInventory(target);
+            long transfer = moveAny(output, islandStorage, remaining);
+            if (transfer > 0) {
+                storage.save(output);
+                moved += transfer;
+                remaining -= transfer;
+            }
+        }
+        if (remaining > 0) {
+            for (MachineInstance target : machines.byIsland(machine.islandUuid())) {
+                if (target.machineId().equals(machine.machineId()) || remaining <= 0) {
+                    continue;
+                }
+                MachineDefinition targetDefinition = definitions.get(target.typeId()).orElse(null);
+                if (targetDefinition == null || targetDefinition.isLogistics()) {
+                    continue;
+                }
+                VirtualInventory input = inputInventory(target);
+                long transfer = fillInput(islandStorage, input, targetDefinition, remaining);
+                if (transfer > 0) {
+                    storage.save(input);
+                    moved += transfer;
+                    remaining -= transfer;
+                }
+            }
+        }
+        if (moved > 0) {
+            storage.save(islandStorage);
+        }
+        setStatus(machine, moved > 0 ? MachineStatus.RUNNING : MachineStatus.IDLE);
+    }
+
+    private long fillInput(VirtualInventory source, VirtualInventory target, MachineDefinition definition, long limit) {
+        Map<String, Long> desired = desiredInputs(definition);
+        long moved = 0;
+        for (Map.Entry<String, Long> entry : desired.entrySet()) {
+            if (moved >= limit) {
+                break;
+            }
+            long need = Math.max(0, entry.getValue() - target.amount(entry.getKey()));
+            long amount = Math.min(need, Math.min(source.amount(entry.getKey()), limit - moved));
+            amount = Math.min(amount, Math.max(0, target.capacity() - target.used()));
+            if (amount > 0 && source.remove(entry.getKey(), amount) && target.add(entry.getKey(), amount)) {
+                moved += amount;
+            }
+        }
+        return moved;
+    }
+
+    private Map<String, Long> desiredInputs(MachineDefinition definition) {
+        Map<String, Long> desired = new HashMap<>();
+        if (definition.isGenerator()) {
+            desired.put("biofuel", 16L);
+            return desired;
+        }
+        for (RecipeDefinition recipe : recipes.recipesFor(definition.typeId())) {
+            recipe.input().forEach((item, amount) -> desired.merge(item, Math.max(amount * 4, amount), Math::max));
+        }
+        return desired;
+    }
+
+    private long moveAny(VirtualInventory source, VirtualInventory target, long limit) {
+        long moved = 0;
+        for (Map.Entry<String, Long> entry : new ArrayList<>(source.items().entrySet())) {
+            if (moved >= limit) {
+                break;
+            }
+            long amount = Math.min(entry.getValue(), limit - moved);
+            amount = Math.min(amount, Math.max(0, target.capacity() - target.used()));
+            if (amount > 0 && source.remove(entry.getKey(), amount) && target.add(entry.getKey(), amount)) {
+                moved += amount;
+            }
+        }
+        return moved;
+    }
+
+    private VirtualInventory inputInventory(MachineInstance machine) {
+        return storage.get(machine.inputInventoryId()).orElseGet(() -> storage.islandStorage(machine.islandUuid()));
+    }
+
+    private VirtualInventory outputInventory(MachineInstance machine) {
+        return storage.get(machine.outputInventoryId()).orElseGet(() -> storage.islandStorage(machine.islandUuid()));
     }
 
     private void setStatus(MachineInstance machine, MachineStatus status) {
