@@ -15,6 +15,8 @@ public final class MachineInstance {
     private MachineStatus status;
     private UUID inputInventoryId;
     private UUID outputInventoryId;
+    private UUID powerNetworkId;
+    private UUID itemNetworkId;
     private UUID linkedResourceNodeId;
     private String selectedRecipeId;
     private long lastProcessAt;
@@ -45,6 +47,10 @@ public final class MachineInstance {
     public void inputInventoryId(UUID inputInventoryId) { this.inputInventoryId = inputInventoryId; }
     public UUID outputInventoryId() { return outputInventoryId; }
     public void outputInventoryId(UUID outputInventoryId) { this.outputInventoryId = outputInventoryId; }
+    public UUID powerNetworkId() { return powerNetworkId; }
+    public void powerNetworkId(UUID powerNetworkId) { this.powerNetworkId = powerNetworkId; }
+    public UUID itemNetworkId() { return itemNetworkId; }
+    public void itemNetworkId(UUID itemNetworkId) { this.itemNetworkId = itemNetworkId; }
     public UUID linkedResourceNodeId() { return linkedResourceNodeId; }
     public void linkedResourceNodeId(UUID linkedResourceNodeId) { this.linkedResourceNodeId = linkedResourceNodeId; }
     public String selectedRecipeId() { return selectedRecipeId; }

@@ -325,6 +325,8 @@ public final class DatabaseService {
                 machine.status(MachineStatus.valueOf(rs.getString("status")));
                 machine.inputInventoryId(uuidOrNull(rs.getString("input_inventory_id")));
                 machine.outputInventoryId(uuidOrNull(rs.getString("output_inventory_id")));
+                machine.powerNetworkId(uuidOrNull(rs.getString("power_network_id")));
+                machine.itemNetworkId(uuidOrNull(rs.getString("item_network_id")));
                 machine.linkedResourceNodeId(uuidOrNull(rs.getString("linked_resource_node_id")));
                 machine.selectedRecipeId(selectedRecipeId(rs.getString("config_json")));
                 machine.lastProcessAt(rs.getLong("last_process_at"));
@@ -342,10 +344,12 @@ public final class DatabaseService {
         try (Connection connection = connection();
              PreparedStatement statement = connection.prepareStatement("""
                      INSERT INTO machines(machine_id, island_uuid, owner_uuid, type_id, tier, world, x, y, z, direction, status,
-                       input_inventory_id, output_inventory_id, linked_resource_node_id, last_process_at, wear, config_json, created_at, updated_at)
-                     VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                       input_inventory_id, output_inventory_id, power_network_id, item_network_id, linked_resource_node_id,
+                       last_process_at, wear, config_json, created_at, updated_at)
+                     VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                      ON CONFLICT(machine_id) DO UPDATE SET status=excluded.status, input_inventory_id=excluded.input_inventory_id,
-                       output_inventory_id=excluded.output_inventory_id, linked_resource_node_id=excluded.linked_resource_node_id,
+                       output_inventory_id=excluded.output_inventory_id, power_network_id=excluded.power_network_id,
+                       item_network_id=excluded.item_network_id, linked_resource_node_id=excluded.linked_resource_node_id,
                        last_process_at=excluded.last_process_at, wear=excluded.wear, config_json=excluded.config_json, updated_at=excluded.updated_at
                      """)) {
             statement.setString(1, machine.machineId().toString());
@@ -361,12 +365,14 @@ public final class DatabaseService {
             statement.setString(11, machine.status().name());
             statement.setString(12, stringOrNull(machine.inputInventoryId()));
             statement.setString(13, stringOrNull(machine.outputInventoryId()));
-            statement.setString(14, stringOrNull(machine.linkedResourceNodeId()));
-            statement.setLong(15, machine.lastProcessAt());
-            statement.setDouble(16, machine.wear());
-            statement.setString(17, machineConfigJson(machine));
-            statement.setLong(18, now);
-            statement.setLong(19, now);
+            statement.setString(14, stringOrNull(machine.powerNetworkId()));
+            statement.setString(15, stringOrNull(machine.itemNetworkId()));
+            statement.setString(16, stringOrNull(machine.linkedResourceNodeId()));
+            statement.setLong(17, machine.lastProcessAt());
+            statement.setDouble(18, machine.wear());
+            statement.setString(19, machineConfigJson(machine));
+            statement.setLong(20, now);
+            statement.setLong(21, now);
             statement.executeUpdate();
         } catch (SQLException exception) {
             throw new IllegalStateException("Failed to save machine", exception);
