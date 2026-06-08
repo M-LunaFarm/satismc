@@ -7,3 +7,8 @@ maintenance:
   locked-threshold: 1500
   debt-cap: 5000
   break-wear: 100.0
+  repair-cost:
+    iron_ingot: 2
+  broken-repair-cost:
+    iron_ingot: 4
+    iron_ore: 8

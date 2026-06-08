@@ -5,9 +5,12 @@ import kr.seungmin.satisskyfactory.economy.EconomyService;
 import kr.seungmin.satisskyfactory.model.FactoryIsland;
 import kr.seungmin.satisskyfactory.model.MaintenanceStatus;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 
 import java.time.Instant;
+import java.util.HashMap;
+import java.util.Map;
 
 public final class MaintenanceService {
     private final MachineService machines;
@@ -19,6 +22,8 @@ public final class MaintenanceService {
     private long limitedThreshold;
     private long lockedThreshold;
     private long debtCap;
+    private Map<String, Long> repairCost;
+    private Map<String, Long> brokenRepairCost;
 
     public MaintenanceService(MachineService machines, EconomyService economy, DatabaseService database) {
         this.machines = machines;
@@ -33,6 +38,8 @@ public final class MaintenanceService {
         limitedThreshold = config.getLong("maintenance.limited-threshold", 500);
         lockedThreshold = config.getLong("maintenance.locked-threshold", 1500);
         debtCap = config.getLong("maintenance.debt-cap", 5000);
+        repairCost = readCost(config.getConfigurationSection("maintenance.repair-cost"));
+        brokenRepairCost = readCost(config.getConfigurationSection("maintenance.broken-repair-cost"));
     }
 
     public long chargeIfDue(FactoryIsland island, OfflinePlayer owner, Object rawIsland) {
@@ -70,5 +77,23 @@ public final class MaintenanceService {
         } else {
             island.maintenanceStatus(MaintenanceStatus.NORMAL);
         }
+    }
+
+    public Map<String, Long> repairCost(boolean broken) {
+        return Map.copyOf(broken ? brokenRepairCost : repairCost);
+    }
+
+    private Map<String, Long> readCost(ConfigurationSection section) {
+        Map<String, Long> result = new HashMap<>();
+        if (section == null) {
+            return result;
+        }
+        for (String itemId : section.getKeys(false)) {
+            long amount = section.getLong(itemId, 0);
+            if (amount > 0) {
+                result.put(itemId, amount);
+            }
+        }
+        return result;
     }
 }

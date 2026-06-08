@@ -303,7 +303,7 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
                 return;
             }
             if (!consumeRepairParts(island, machine)) {
-                player.sendMessage("Repair requires iron_plate x2 and machine_parts x1.");
+                player.sendMessage("Repair requires " + repairCostText(machine) + ".");
                 return;
             }
             repair(machine);
@@ -313,17 +313,25 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
 
     private boolean consumeRepairParts(FactoryIsland island, MachineInstance machine) {
         var inventory = storage.islandStorage(island.islandUuid());
-        long plateCost = machine.status() == MachineStatus.BROKEN ? 2 : 1;
-        long partsCost = machine.status() == MachineStatus.BROKEN ? 1 : 0;
-        if (inventory.amount("iron_plate") < plateCost || inventory.amount("machine_parts") < partsCost) {
+        Map<String, Long> cost = maintenance.repairCost(machine.status() == MachineStatus.BROKEN);
+        if (cost.entrySet().stream().anyMatch(entry -> inventory.amount(entry.getKey()) < entry.getValue())) {
             return false;
         }
-        inventory.remove("iron_plate", plateCost);
-        if (partsCost > 0) {
-            inventory.remove("machine_parts", partsCost);
-        }
+        cost.forEach(inventory::remove);
         storage.save(inventory);
         return true;
+    }
+
+    private String repairCostText(MachineInstance machine) {
+        Map<String, Long> cost = maintenance.repairCost(machine.status() == MachineStatus.BROKEN);
+        if (cost.isEmpty()) {
+            return "no materials";
+        }
+        return cost.entrySet().stream()
+                .map(entry -> entry.getKey() + " x" + entry.getValue())
+                .sorted()
+                .reduce((left, right) -> left + ", " + right)
+                .orElse("no materials");
     }
 
     private void giveMachine(CommandSender sender, String[] args) {
