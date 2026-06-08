@@ -63,15 +63,23 @@ public final class PowerNetworkService {
         }
         VirtualInventory islandStorage = storage.islandStorage(islandUuid);
         long stored = islandStorage.amount(POWER_CHARGE_ITEM);
+        long maxStored = Math.max(0, Math.round(batteryCapacity));
+        if (stored > maxStored) {
+            long excess = stored - maxStored;
+            if (islandStorage.remove(POWER_CHARGE_ITEM, excess)) {
+                stored = maxStored;
+                storage.save(islandStorage);
+            }
+        }
         double available = generation;
         if (generation >= consumption) {
-            long charge = Math.max(0, Math.round(Math.min(generation - consumption, batteryCapacity - stored)));
+            long charge = Math.max(0, Math.round(Math.min(generation - consumption, maxStored - stored)));
             if (charge > 0 && islandStorage.add(POWER_CHARGE_ITEM, charge)) {
                 stored += charge;
                 storage.save(islandStorage);
             }
         } else {
-            long discharge = Math.max(0, Math.round(Math.min(stored, consumption - generation)));
+            long discharge = maxStored <= 0 ? 0 : Math.max(0, Math.round(Math.min(stored, consumption - generation)));
             if (discharge > 0 && islandStorage.remove(POWER_CHARGE_ITEM, discharge)) {
                 stored -= discharge;
                 available += discharge;
