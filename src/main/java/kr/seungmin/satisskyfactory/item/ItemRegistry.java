@@ -6,11 +6,13 @@ import org.bukkit.configuration.file.FileConfiguration;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 public final class ItemRegistry {
-    public record FactoryItem(String id, Material material, String displayName) {
+    public record FactoryItem(String id, Material material, String displayName, int customModelData,
+                              boolean virtualOnly, long basePrice, List<String> tags) {
     }
 
     private final Map<String, FactoryItem> items = new HashMap<>();
@@ -26,7 +28,15 @@ public final class ItemRegistry {
             if (material == null) {
                 material = Material.STONE;
             }
-            items.put(id, new FactoryItem(id, material, section.getString(id + ".display", id)));
+            items.put(id, new FactoryItem(
+                    id,
+                    material,
+                    section.getString(id + ".display", id),
+                    section.getInt(id + ".custom-model-data", 0),
+                    section.getBoolean(id + ".virtual-only", false),
+                    section.getLong(id + ".base-price", 0),
+                    section.getStringList(id + ".tags")
+            ));
         }
     }
 

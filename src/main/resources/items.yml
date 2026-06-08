@@ -2,6 +2,8 @@ items:
   wheat:
     material: WHEAT
     display: "Wheat"
+    base-price: 1
+    tags: [crop, agriculture]
   wheat_seeds:
     material: WHEAT_SEEDS
     display: "Wheat Seeds"
@@ -26,9 +28,14 @@ items:
   flour:
     material: SUGAR
     display: "Flour"
+    base-price: 4
+    tags: [processed, food]
   bread_box:
     material: CHEST
     display: "Bread Box"
+    custom-model-data: 1001
+    base-price: 18
+    tags: [packaged, food]
   iron_ore:
     material: RAW_IRON
     display: "Iron Ore"
@@ -50,6 +57,8 @@ items:
   power_charge:
     material: REDSTONE
     display: "Stored Power"
+    virtual-only: true
+    tags: [power, internal]
   wood_log:
     material: OAK_LOG
     display: "Wood Log"
@@ -95,3 +104,5 @@ items:
   quality_crop:
     material: GOLDEN_CARROT
     display: "Quality Crop"
+    custom-model-data: 1002
+    tags: [quality, crop]

@@ -2,6 +2,7 @@ machines:
   harvester_t1:
     display: "Harvester T1"
     material: IRON_HOE
+    custom-model-data: 2001
     tier: 1
     input-capacity: 128
     output-capacity: 512
@@ -61,6 +62,7 @@ machines:
   miner_drill_t1:
     display: "Miner Drill T1"
     material: IRON_PICKAXE
+    custom-model-data: 2101
     tier: 1
     input-capacity: 64
     output-capacity: 512
@@ -110,6 +112,7 @@ machines:
   bio_generator_t1:
     display: "Bio Generator T1"
     material: COMPOSTER
+    custom-model-data: 2201
     tier: 1
     input-capacity: 256
     output-capacity: 64
@@ -129,6 +132,7 @@ machines:
   conveyor_t1:
     display: "Conveyor T1"
     material: CHAIN
+    custom-model-data: 2301
     tier: 2
     input-capacity: 64
     output-capacity: 64
@@ -140,6 +144,7 @@ machines:
   storage_t1:
     display: "Storage T1"
     material: CHEST
+    custom-model-data: 2401
     tier: 1
     input-capacity: 5000
     output-capacity: 0

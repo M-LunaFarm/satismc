@@ -33,6 +33,9 @@ public final class CustomItemFactory {
         ItemMeta meta = stack.getItemMeta();
         meta.setDisplayName(ChatColor.GOLD + definition.displayName());
         meta.setLore(List.of(ChatColor.GRAY + "SatisSkyFactory machine", ChatColor.DARK_GRAY + definition.typeId()));
+        if (definition.customModelData() > 0) {
+            meta.setCustomModelData(definition.customModelData());
+        }
         meta.getPersistentDataContainer().set(machineTypeKey, PersistentDataType.STRING, definition.typeId());
         meta.getPersistentDataContainer().set(machineTierKey, PersistentDataType.INTEGER, definition.tier());
         meta.getPersistentDataContainer().set(internalUuidKey, PersistentDataType.STRING, UUID.randomUUID().toString());
@@ -44,6 +47,12 @@ public final class CustomItemFactory {
         ItemStack stack = new ItemStack(item.material(), Math.max(1, amount));
         ItemMeta meta = stack.getItemMeta();
         meta.setDisplayName(ChatColor.WHITE + item.displayName());
+        if (item.customModelData() > 0) {
+            meta.setCustomModelData(item.customModelData());
+        }
+        if (item.virtualOnly() || item.basePrice() > 0 || !item.tags().isEmpty()) {
+            meta.setLore(itemLore(item));
+        }
         meta.getPersistentDataContainer().set(itemIdKey, PersistentDataType.STRING, item.id());
         meta.getPersistentDataContainer().set(legacyFactoryItemKey, PersistentDataType.STRING, item.id());
         meta.getPersistentDataContainer().set(internalUuidKey, PersistentDataType.STRING, UUID.randomUUID().toString());
@@ -69,5 +78,19 @@ public final class CustomItemFactory {
             return Optional.of(itemId);
         }
         return Optional.ofNullable(pdc.get(legacyFactoryItemKey, PersistentDataType.STRING));
+    }
+
+    private List<String> itemLore(ItemRegistry.FactoryItem item) {
+        java.util.ArrayList<String> lore = new java.util.ArrayList<>();
+        if (item.virtualOnly()) {
+            lore.add(ChatColor.DARK_GRAY + "Virtual factory item");
+        }
+        if (item.basePrice() > 0) {
+            lore.add(ChatColor.GRAY + "Base price: " + item.basePrice());
+        }
+        if (!item.tags().isEmpty()) {
+            lore.add(ChatColor.DARK_GRAY + "Tags: " + String.join(", ", item.tags()));
+        }
+        return lore;
     }
 }

@@ -30,6 +30,7 @@ public final class MachineDefinitionService {
                     typeId,
                     config.getString(path + "display", typeId),
                     material,
+                    config.getInt(path + "custom-model-data", 0),
                     config.getInt(path + "tier", 1),
                     config.getInt(path + "input-capacity", 128),
                     config.getInt(path + "output-capacity", 512),

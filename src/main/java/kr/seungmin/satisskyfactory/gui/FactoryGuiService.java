@@ -73,7 +73,8 @@ public final class FactoryGuiService {
             if (slot >= inventory.getSize() - 1) {
                 break;
             }
-            ItemRegistry.FactoryItem item = items.get(entry.getKey()).orElse(new ItemRegistry.FactoryItem(entry.getKey(), Material.PAPER, entry.getKey()));
+            ItemRegistry.FactoryItem item = items.get(entry.getKey()).orElse(new ItemRegistry.FactoryItem(
+                    entry.getKey(), Material.PAPER, entry.getKey(), 0, false, 0, List.of()));
             ItemStack stack = new ItemStack(item.material(), (int) Math.max(1, Math.min(64, entry.getValue())));
             ItemMeta meta = stack.getItemMeta();
             meta.setDisplayName(ChatColor.WHITE + item.displayName());
