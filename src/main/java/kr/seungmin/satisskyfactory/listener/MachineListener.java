@@ -213,11 +213,6 @@ public final class MachineListener implements Listener {
                 return;
             }
             MachineDefinition definition = definitions.get(machine.typeId()).orElse(null);
-            if (machines.hasBufferedItems(machine)) {
-                event.setCancelled(true);
-                messages.send(player, "machine-not-empty");
-                return;
-            }
             if (!machines.remove(machine)) {
                 event.setCancelled(true);
                 messages.send(player, "machine-remove-storage-full");

@@ -104,10 +104,6 @@ public final class MachineService {
         return true;
     }
 
-    public boolean hasBufferedItems(MachineInstance machine) {
-        return machineInventories(machine).stream().anyMatch(inventory -> inventory.used() > 0);
-    }
-
     private boolean flushInventories(MachineInstance machine) {
         VirtualInventory islandStorage = storage.islandStorage(machine.islandUuid());
         List<VirtualInventory> buffers = machineInventories(machine);

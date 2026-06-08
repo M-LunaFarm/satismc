@@ -45,7 +45,6 @@ messages:
   machine-definition-missing: "&c기계 정의를 찾을 수 없습니다."
   machine-reclaim-storage-full: "&c공장 저장고가 가득 차서 기계를 회수할 수 없습니다."
   machine-remove-storage-full: "&c공장 저장고가 가득 차서 기계를 제거할 수 없습니다."
-  machine-not-empty: "&c기계 GUI에서 입력/출력 저장소를 비운 뒤 제거하세요."
   machine-reclaimed: "&a기계를 회수했습니다: {machine}"
   machines-count: "&e설치된 기계: {count}"
   node-scan-result: "&a{item} 노드 위치: {location}"
