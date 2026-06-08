@@ -24,6 +24,8 @@ public final class ResourceNodeService {
     private final ConcurrentHashMap<UUID, List<ResourceNode>> nodesByIsland = new ConcurrentHashMap<>();
     private FileConfiguration config;
     private DirtySaveService dirtySaves;
+    private boolean regenerationEnabled = true;
+    private long minimumRegenerationIntervalMillis = 1000L;
 
     public ResourceNodeService(DatabaseService database) {
         this.database = database;
@@ -31,6 +33,10 @@ public final class ResourceNodeService {
 
     public void load(FileConfiguration config) {
         this.config = config;
+        regenerationEnabled = config.getBoolean("resource-nodes.regeneration.enabled",
+                config.getBoolean("regeneration.enabled", true));
+        minimumRegenerationIntervalMillis = Math.max(0L, config.getLong("resource-nodes.regeneration.minimum-interval-ms",
+                config.getLong("regeneration.minimum-interval-ms", 1000L)));
     }
 
     public List<ResourceNode> nodes(UUID islandUuid) {
@@ -197,7 +203,8 @@ public final class ResourceNodeService {
     private ResourceNode regenerate(ResourceNode node) {
         long now = System.currentTimeMillis();
         long elapsed = Math.max(0, now - node.updatedAt());
-        if (node.remaining() >= node.maxRemaining() || node.regenPerHour() <= 0 || elapsed < 1000L) {
+        if (!regenerationEnabled || node.remaining() >= node.maxRemaining() || node.regenPerHour() <= 0
+                || elapsed < minimumRegenerationIntervalMillis) {
             return node;
         }
         long restored = Math.floorDiv(node.regenPerHour() * elapsed, 60L * 60L * 1000L);

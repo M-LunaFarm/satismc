@@ -1,5 +1,9 @@
 defaults:
   nodes-per-island: 4
+resource-nodes:
+  regeneration:
+    enabled: true
+    minimum-interval-ms: 1000
 nodes:
   iron_basic:
     type: MINERAL
