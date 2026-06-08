@@ -38,6 +38,8 @@ public final class ContractService {
     private ContractTemplate emergency;
     private int dailySlots;
     private int weeklySlots;
+    private int storySlots;
+    private int marketSlots;
     private int emergencyDailyLimit;
 
     public ContractService(StorageService storage, EconomyService economy, DatabaseService database, IslandBoostService boosts) {
@@ -53,6 +55,10 @@ public final class ContractService {
                 config.getInt("contracts.daily-slots-base", 3)));
         weeklySlots = Math.max(0, config.getInt("contracts.weekly_slots",
                 config.getInt("contracts.weekly-slots-base", 1)));
+        storySlots = Math.max(0, config.getInt("contracts.story_slots",
+                config.getInt("contracts.story-slots-base", 0)));
+        marketSlots = Math.max(0, config.getInt("contracts.market_slots",
+                config.getInt("contracts.market-slots-base", 0)));
         emergencyDailyLimit = Math.max(1, config.getInt("contracts.emergency-daily-limit",
                 config.getInt("contracts.emergency_daily_limit", 5)));
         ConfigurationSection section = config.getConfigurationSection("contracts.templates");
@@ -127,6 +133,8 @@ public final class ContractService {
         int slots = Math.max(1, dailySlots + boosts.boosts(island.islandUuid()).contractSlotBonus());
         ensureContracts(island, "DAILY", slots, 24);
         ensureContracts(island, "WEEKLY", weeklySlots, 168);
+        ensureContracts(island, "STORY", storySlots, 168);
+        ensureContracts(island, "MARKET", marketSlots, 24);
     }
 
     private void ensureContracts(FactoryIsland island, String type, int slots, long defaultExpiresHours) {
@@ -246,6 +254,12 @@ public final class ContractService {
         }
         if (type.equalsIgnoreCase("EMERGENCY")) {
             return 6;
+        }
+        if (type.equalsIgnoreCase("STORY")) {
+            return 168;
+        }
+        if (type.equalsIgnoreCase("MARKET")) {
+            return 24;
         }
         return 24;
     }
