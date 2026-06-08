@@ -22,6 +22,8 @@ dependencies {
     compileOnly("me.clip:placeholderapi:${placeholderApiVersion.get()}")
     implementation("org.xerial:sqlite-jdbc:3.46.1.0")
     implementation("com.zaxxer:HikariCP:5.1.0")
+    testImplementation(platform("org.junit:junit-bom:5.10.3"))
+    testImplementation("org.junit.jupiter:junit-jupiter")
 }
 
 tasks.processResources {
@@ -42,4 +44,8 @@ tasks.jar {
 tasks.withType<JavaCompile>().configureEach {
     options.encoding = "UTF-8"
     options.release.set(21)
+}
+
+tasks.test {
+    useJUnitPlatform()
 }
