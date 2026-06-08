@@ -32,10 +32,12 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
 public final class MachineTickService {
@@ -109,6 +111,8 @@ public final class MachineTickService {
 
     public void tick() {
         power.beginCycle();
+        long now = Instant.now().toEpochMilli();
+        Set<UUID> touchedIslands = new HashSet<>();
         List<MachineInstance> snapshot = machines.all().stream()
                 .sorted(Comparator.comparing(machine -> machine.machineId().toString()))
                 .toList();
@@ -122,6 +126,9 @@ public final class MachineTickService {
             MachineInstance machine = snapshot.get((start + offset) % snapshot.size());
             definitions.get(machine.typeId()).ifPresent(definition -> {
                 int cycles = cyclesDue(machine, definition);
+                if (cycles > 0) {
+                    touchedIslands.add(machine.islandUuid());
+                }
                 for (int cycle = 0; cycle < cycles; cycle++) {
                     if (!process(machine, definition, cycle > 0)) {
                         break;
@@ -130,6 +137,18 @@ public final class MachineTickService {
             });
         }
         tickCursor = (start + limit) % snapshot.size();
+        refreshTouchedIslands(touchedIslands, now);
+    }
+
+    private void refreshTouchedIslands(Set<UUID> touchedIslands, long now) {
+        for (UUID islandUuid : touchedIslands) {
+            islands.find(islandUuid).ifPresent(island -> {
+                if (island.lastTickAt() < now) {
+                    island.lastTickAt(now);
+                    islands.save(island);
+                }
+            });
+        }
     }
 
     private int cyclesDue(MachineInstance machine, MachineDefinition definition) {
