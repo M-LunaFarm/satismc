@@ -1,6 +1,7 @@
 package kr.seungmin.satisskyfactory.gui;
 
 import kr.seungmin.satisskyfactory.contract.ContractService;
+import kr.seungmin.satisskyfactory.config.MessageService;
 import kr.seungmin.satisskyfactory.economy.EconomyService;
 import kr.seungmin.satisskyfactory.item.ItemRegistry;
 import kr.seungmin.satisskyfactory.machine.IslandBoostService;
@@ -35,20 +36,22 @@ public final class FactoryGuiService {
     private final MachineDefinitionService definitions;
     private final RecipeService recipes;
     private final EconomyService economy;
+    private final MessageService messages;
 
     public FactoryGuiService(StorageService storage, ItemRegistry items, MachineDefinitionService definitions,
-                             RecipeService recipes, EconomyService economy) {
+                             RecipeService recipes, EconomyService economy, MessageService messages) {
         this.storage = storage;
         this.items = items;
         this.definitions = definitions;
         this.recipes = recipes;
         this.economy = economy;
+        this.messages = messages;
     }
 
     public void openMain(Player player, FactoryIsland island, int machineCount, PowerNetworkService.NetworkState powerState,
                          IslandBoostService.Boosts boosts) {
         FactoryGuiHolder holder = new FactoryGuiHolder("main", island.islandUuid(), null);
-        Inventory inventory = Bukkit.createInventory(holder, 27, "SatisSkyFactory");
+        Inventory inventory = Bukkit.createInventory(holder, 27, title("main-title", "SatisSkyFactory"));
         holder.inventory(inventory);
         inventory.setItem(10, icon(Material.CRAFTING_TABLE, ChatColor.GOLD + "Factory",
                 List.of(ChatColor.GRAY + "Tier: " + island.tier(),
@@ -88,7 +91,7 @@ public final class FactoryGuiService {
     public void openStorage(Player player, FactoryIsland island, int page) {
         int safePage = Math.max(0, page);
         FactoryGuiHolder holder = new FactoryGuiHolder("storage", island.islandUuid(), null, safePage);
-        Inventory inventory = Bukkit.createInventory(holder, 54, "Factory Storage");
+        Inventory inventory = Bukkit.createInventory(holder, 54, title("storage-title", "Factory Storage"));
         holder.inventory(inventory);
         VirtualInventory virtual = storage.islandStorage(island.islandUuid());
         List<Map.Entry<String, Long>> entries = virtual.items().entrySet().stream()
@@ -132,7 +135,7 @@ public final class FactoryGuiService {
 
     public void openMachine(Player player, MachineInstance machine) {
         FactoryGuiHolder holder = new FactoryGuiHolder("machine", machine.islandUuid(), machine.machineId());
-        Inventory inventory = Bukkit.createInventory(holder, 27, "Machine");
+        Inventory inventory = Bukkit.createInventory(holder, 27, title("machine-title", "Machine"));
         holder.inventory(inventory);
         MachineDefinition definition = definitions.get(machine.typeId()).orElse(null);
         List<String> lore = new ArrayList<>();
@@ -219,7 +222,7 @@ public final class FactoryGuiService {
 
     public void openContracts(Player player, FactoryIsland island, ContractService contracts) {
         FactoryGuiHolder holder = new FactoryGuiHolder("contracts", island.islandUuid(), null);
-        Inventory inventory = Bukkit.createInventory(holder, 27, "Factory Contracts");
+        Inventory inventory = Bukkit.createInventory(holder, 27, title("contracts-title", "Factory Contracts"));
         holder.inventory(inventory);
         int slot = 10;
         List<ContractService.ActiveContract> activeContracts = contracts.activeContracts(island);
@@ -269,7 +272,7 @@ public final class FactoryGuiService {
         }
         ContractService.ContractTemplate template = active.template();
         FactoryGuiHolder holder = new FactoryGuiHolder("contract-detail", island.islandUuid(), null);
-        Inventory inventory = Bukkit.createInventory(holder, 27, "Contract Detail");
+        Inventory inventory = Bukkit.createInventory(holder, 27, title("contract-detail-title", "Contract Detail"));
         holder.inventory(inventory);
         inventory.setItem(4, icon(Material.WRITABLE_BOOK, ChatColor.GOLD + template.id(),
                 List.of(ChatColor.GRAY + "Type: " + template.type(),
@@ -326,7 +329,7 @@ public final class FactoryGuiService {
     public void openMarket(Player player, FactoryIsland island, MarketService market, int page) {
         int safePage = Math.max(0, page);
         FactoryGuiHolder holder = new FactoryGuiHolder("market", island.islandUuid(), null, safePage);
-        Inventory inventory = Bukkit.createInventory(holder, 54, "Factory Market");
+        Inventory inventory = Bukkit.createInventory(holder, 54, title("market-title", "Factory Market"));
         holder.inventory(inventory);
         List<String> itemIds = market.prices().keySet().stream().sorted().toList();
         int pageSize = 45;
@@ -368,7 +371,7 @@ public final class FactoryGuiService {
 
     public void openResearch(Player player, FactoryIsland island, ResearchService research) {
         FactoryGuiHolder holder = new FactoryGuiHolder("research", island.islandUuid(), null);
-        Inventory inventory = Bukkit.createInventory(holder, 27, "Factory Research");
+        Inventory inventory = Bukkit.createInventory(holder, 27, title("research-title", "Factory Research"));
         holder.inventory(inventory);
         int slot = 10;
         Set<String> unlockedIds = research.unlocked(island);
@@ -408,5 +411,10 @@ public final class FactoryGuiService {
         meta.setLore(lore);
         stack.setItemMeta(meta);
         return stack;
+    }
+
+    private String title(String key, String fallback) {
+        String value = messages.raw(key);
+        return value.equals(key) ? fallback : value;
     }
 }
