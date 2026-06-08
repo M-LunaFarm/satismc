@@ -17,6 +17,7 @@ machines:
     power-consumption: 6.0
     cycle-ticks: 80
     amount-per-cycle: 2
+    node-type: MINERAL
   grinder_t1:
     display: "Grinder T1"
     material: STONECUTTER
@@ -65,3 +66,57 @@ machines:
     output-capacity: 64
     battery-capacity: 2000.0
     cycle-ticks: 100
+  tree_farm_t1:
+    display: "Tree Farm T1"
+    material: OAK_SAPLING
+    tier: 1
+    input-capacity: 64
+    output-capacity: 512
+    power-consumption: 4.0
+    cycle-ticks: 100
+    amount-per-cycle: 2
+    node-type: FOREST
+  fish_trap_t1:
+    display: "Fish Trap T1"
+    material: FISHING_ROD
+    tier: 1
+    input-capacity: 64
+    output-capacity: 512
+    power-consumption: 3.0
+    cycle-ticks: 120
+    amount-per-cycle: 2
+    node-type: FISHING
+  collector_t1:
+    display: "Pasture Collector T1"
+    material: HAY_BLOCK
+    tier: 1
+    input-capacity: 128
+    output-capacity: 512
+    power-consumption: 3.0
+    cycle-ticks: 120
+    amount-per-cycle: 1
+    node-type: PASTURE
+  sawmill_t1:
+    display: "Sawmill T1"
+    material: STONECUTTER
+    tier: 1
+    input-capacity: 256
+    output-capacity: 512
+    power-consumption: 5.0
+    cycle-ticks: 80
+  charcoal_kiln_t1:
+    display: "Charcoal Kiln T1"
+    material: SMOKER
+    tier: 1
+    input-capacity: 256
+    output-capacity: 512
+    power-consumption: 4.0
+    cycle-ticks: 100
+  fish_processor_t1:
+    display: "Fish Processor T1"
+    material: BARREL
+    tier: 1
+    input-capacity: 256
+    output-capacity: 512
+    power-consumption: 4.0
+    cycle-ticks: 80

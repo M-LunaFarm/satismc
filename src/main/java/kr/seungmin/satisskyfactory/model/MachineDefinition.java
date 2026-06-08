@@ -14,7 +14,8 @@ public record MachineDefinition(
         double batteryCapacity,
         int cycleTicks,
         int range,
-        int amountPerCycle
+        int amountPerCycle,
+        ResourceNodeType nodeType
 ) {
     public boolean isGenerator() {
         return powerGeneration > 0;

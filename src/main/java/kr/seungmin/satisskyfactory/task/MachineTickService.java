@@ -91,8 +91,8 @@ public final class MachineTickService {
             processGenerator(machine);
         } else if (machine.typeId().equals("harvester_t1")) {
             processHarvester(machine, definition);
-        } else if (machine.typeId().equals("miner_drill_t1")) {
-            processDrill(machine, definition);
+        } else if (definition.nodeType() != null || machine.typeId().equals("miner_drill_t1")) {
+            processNodeProducer(machine, definition);
         } else {
             processRecipe(machine);
         }
@@ -136,11 +136,14 @@ public final class MachineTickService {
         setStatus(machine, harvested > 0 ? MachineStatus.RUNNING : MachineStatus.INPUT_MISSING);
     }
 
-    private void processDrill(MachineInstance machine, MachineDefinition definition) {
+    private void processNodeProducer(MachineInstance machine, MachineDefinition definition) {
         VirtualInventory output = storage.islandStorage(machine.islandUuid());
         Optional<ResourceNode> node = machine.linkedResourceNodeId() == null
-                ? nodes.nearest(machine.islandUuid(), machine.location(), 12)
-                : nodes.nodes(machine.islandUuid()).stream().filter(candidate -> candidate.nodeId().equals(machine.linkedResourceNodeId())).findFirst();
+                ? nodes.nearest(machine.islandUuid(), machine.location(), 12, definition.nodeType())
+                : nodes.nodes(machine.islandUuid()).stream()
+                .filter(candidate -> candidate.nodeId().equals(machine.linkedResourceNodeId()))
+                .filter(candidate -> definition.nodeType() == null || candidate.nodeType().equalsIgnoreCase(definition.nodeType().name()))
+                .findFirst();
         if (node.isEmpty() || node.get().remaining() <= 0 || node.get().requiredMachineTier() > definition.tier()) {
             setStatus(machine, MachineStatus.INPUT_MISSING);
             return;

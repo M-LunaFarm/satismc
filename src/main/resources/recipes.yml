@@ -34,3 +34,55 @@ recipes:
     output:
       bread_box: 1
     power: 4.0
+  saw_logs:
+    machine: sawmill_t1
+    input:
+      wood_log: 1
+    output:
+      wood_plank: 4
+      wood_scrap: 1
+    power: 5.0
+  burn_charcoal:
+    machine: charcoal_kiln_t1
+    input:
+      wood_log: 2
+    output:
+      charcoal: 1
+    power: 4.0
+  scrap_to_biofuel:
+    machine: grinder_t1
+    input:
+      wood_scrap: 4
+    output:
+      biofuel: 1
+    power: 5.0
+  process_fish:
+    machine: fish_processor_t1
+    input:
+      raw_fish: 2
+    output:
+      processed_fish: 1
+      fish_waste: 1
+    power: 4.0
+  press_fish_oil:
+    machine: fish_processor_t1
+    input:
+      raw_fish: 3
+    output:
+      fish_oil: 1
+      fish_waste: 1
+    power: 4.0
+  fish_waste_fertilizer:
+    machine: grinder_t1
+    input:
+      fish_waste: 3
+    output:
+      fertilizer: 1
+    power: 5.0
+  animal_waste_fertilizer:
+    machine: grinder_t1
+    input:
+      animal_waste: 3
+    output:
+      fertilizer: 1
+    power: 5.0

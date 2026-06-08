@@ -1,6 +1,7 @@
 package kr.seungmin.satisskyfactory.machine;
 
 import kr.seungmin.satisskyfactory.model.MachineDefinition;
+import kr.seungmin.satisskyfactory.model.ResourceNodeType;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -37,7 +38,8 @@ public final class MachineDefinitionService {
                     config.getDouble(path + "battery-capacity", 0.0),
                     config.getInt(path + "cycle-ticks", 80),
                     config.getInt(path + "range", 0),
-                    config.getInt(path + "amount-per-cycle", 1)
+                    config.getInt(path + "amount-per-cycle", 1),
+                    nodeType(config.getString(path + "node-type", ""))
             ));
         }
     }
@@ -48,5 +50,16 @@ public final class MachineDefinitionService {
 
     public Collection<MachineDefinition> all() {
         return definitions.values();
+    }
+
+    private ResourceNodeType nodeType(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        try {
+            return ResourceNodeType.valueOf(value.toUpperCase());
+        } catch (IllegalArgumentException exception) {
+            return null;
+        }
     }
 }

@@ -26,3 +26,45 @@ items:
   power_charge:
     material: REDSTONE
     display: "Stored Power"
+  wood_log:
+    material: OAK_LOG
+    display: "Wood Log"
+  wood_plank:
+    material: OAK_PLANKS
+    display: "Wood Plank"
+  wood_scrap:
+    material: STICK
+    display: "Wood Scrap"
+  charcoal:
+    material: CHARCOAL
+    display: "Charcoal"
+  raw_fish:
+    material: COD
+    display: "Raw Fish"
+  processed_fish:
+    material: COOKED_COD
+    display: "Processed Fish"
+  fish_oil:
+    material: HONEY_BOTTLE
+    display: "Fish Oil"
+  fish_waste:
+    material: BONE_MEAL
+    display: "Fish Waste"
+  feed:
+    material: WHEAT
+    display: "Animal Feed"
+  milk:
+    material: MILK_BUCKET
+    display: "Milk"
+  egg:
+    material: EGG
+    display: "Egg"
+  wool:
+    material: WHITE_WOOL
+    display: "Wool"
+  animal_waste:
+    material: BROWN_DYE
+    display: "Animal Waste"
+  fertilizer:
+    material: BONE_MEAL
+    display: "Fertilizer"

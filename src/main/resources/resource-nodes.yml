@@ -1,5 +1,5 @@
 defaults:
-  nodes-per-island: 3
+  nodes-per-island: 4
 nodes:
   iron_basic:
     type: MINERAL
@@ -7,4 +7,25 @@ nodes:
     purity: 1.0
     remaining: 100000
     regen-per-hour: 100
+    required-machine-tier: 1
+  forest_basic:
+    type: FOREST
+    resource-id: wood_log
+    purity: 1.0
+    remaining: 60000
+    regen-per-hour: 300
+    required-machine-tier: 1
+  fishing_basic:
+    type: FISHING
+    resource-id: raw_fish
+    purity: 1.0
+    remaining: 50000
+    regen-per-hour: 250
+    required-machine-tier: 1
+  pasture_basic:
+    type: PASTURE
+    resource-id: animal_waste
+    purity: 1.0
+    remaining: 50000
+    regen-per-hour: 220
     required-machine-tier: 1
