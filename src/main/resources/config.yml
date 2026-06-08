@@ -10,6 +10,10 @@ settings:
   max-machines-per-cycle: 200
   max-machines-per-tick: 200
   max-backfill-cycles: 60
+  offline-production:
+    enabled: true
+    max-hours: 8
+    efficiency: 0.35
   resource-node-link-radius: 3
   allow-coop-build: false
   allow-spawn-island: false

@@ -51,6 +51,9 @@ public final class MachineTickService {
     private final FactoryIslandService islands;
     private final int maxPerCycle;
     private final int maxBackfillCycles;
+    private final boolean offlineProductionEnabled;
+    private final long offlineMaxMillis;
+    private final double offlineEfficiency;
     private final int nodeLinkRadius;
     private final Set<String> recoveryTypes;
     private final double limitedEfficiency;
@@ -64,7 +67,8 @@ public final class MachineTickService {
     public MachineTickService(JavaPlugin plugin, MachineService machines, MachineDefinitionService definitions, StorageService storage,
                               RecipeService recipes, ResearchService research, ResourceNodeService nodes, PowerNetworkService power,
                               IslandBoostService boosts, FactoryIslandService islands, int maxPerCycle,
-                              int maxBackfillCycles, int nodeLinkRadius, Set<String> recoveryTypes,
+                              int maxBackfillCycles, boolean offlineProductionEnabled, long offlineMaxMillis,
+                              double offlineEfficiency, int nodeLinkRadius, Set<String> recoveryTypes,
                               double limitedEfficiency, int limitedMaxOperatingTier,
                               double lockedRecoveryEfficiency, int lockedMaxOperatingTier, double breakWear) {
         this.plugin = plugin;
@@ -79,6 +83,9 @@ public final class MachineTickService {
         this.islands = islands;
         this.maxPerCycle = Math.max(1, maxPerCycle);
         this.maxBackfillCycles = Math.max(1, maxBackfillCycles);
+        this.offlineProductionEnabled = offlineProductionEnabled;
+        this.offlineMaxMillis = Math.max(0L, offlineMaxMillis);
+        this.offlineEfficiency = Math.max(0.0, Math.min(1.0, offlineEfficiency));
         this.nodeLinkRadius = Math.max(1, nodeLinkRadius);
         this.recoveryTypes = Set.copyOf(recoveryTypes);
         this.limitedEfficiency = Math.max(0.05, Math.min(1.0, limitedEfficiency));
@@ -135,7 +142,22 @@ public final class MachineTickService {
         if (elapsed < cycleMillis) {
             return 0;
         }
-        return (int) Math.max(1, Math.min(maxBackfillCycles, elapsed / cycleMillis));
+        long effectiveElapsed = effectiveElapsed(elapsed);
+        if (effectiveElapsed < cycleMillis) {
+            return 1;
+        }
+        return (int) Math.max(1, Math.min(maxBackfillCycles, effectiveElapsed / cycleMillis));
+    }
+
+    private long effectiveElapsed(long elapsed) {
+        if (elapsed <= 60_000L) {
+            return elapsed;
+        }
+        if (!offlineProductionEnabled) {
+            return 0L;
+        }
+        long capped = offlineMaxMillis <= 0 ? elapsed : Math.min(elapsed, offlineMaxMillis);
+        return Math.round(capped * offlineEfficiency);
     }
 
     private boolean process(MachineInstance machine, MachineDefinition definition, boolean backfill) {
