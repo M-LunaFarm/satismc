@@ -421,6 +421,27 @@ public final class DatabaseService {
         }
     }
 
+    public Optional<VirtualInventory> findInventoryByHolder(UUID islandUuid, String holderType, String holderId) {
+        try (Connection connection = connection();
+             PreparedStatement statement = connection.prepareStatement("""
+                     SELECT inventory_id FROM virtual_inventories
+                     WHERE island_uuid = ? AND holder_type = ? AND holder_id = ?
+                     LIMIT 1
+                     """)) {
+            statement.setString(1, islandUuid.toString());
+            statement.setString(2, holderType);
+            statement.setString(3, holderId);
+            try (ResultSet rs = statement.executeQuery()) {
+                if (!rs.next()) {
+                    return Optional.empty();
+                }
+                return loadInventory(UUID.fromString(rs.getString("inventory_id")));
+            }
+        } catch (SQLException exception) {
+            throw new IllegalStateException("Failed to find inventory", exception);
+        }
+    }
+
     public List<ResourceNode> loadNodes(UUID islandUuid) {
         List<ResourceNode> nodes = new ArrayList<>();
         try (Connection connection = connection();
