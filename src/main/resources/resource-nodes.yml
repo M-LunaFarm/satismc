@@ -4,28 +4,44 @@ nodes:
   iron_basic:
     type: MINERAL
     resource-id: iron_ore
-    purity: 1.0
-    remaining: 100000
+    purity-min: 0.75
+    purity-max: 1.1
+    max-remaining: 100000
     regen-per-hour: 100
     required-machine-tier: 1
+    offset-x: 8
+    offset-y: 0
+    offset-z: 8
   forest_basic:
     type: FOREST
     resource-id: wood_log
-    purity: 1.0
-    remaining: 60000
+    purity-min: 0.7
+    purity-max: 1.0
+    max-remaining: 60000
     regen-per-hour: 300
     required-machine-tier: 1
+    offset-x: -8
+    offset-y: 0
+    offset-z: 8
   fishing_basic:
     type: FISHING
     resource-id: raw_fish
-    purity: 1.0
-    remaining: 50000
+    purity-min: 0.65
+    purity-max: 1.0
+    max-remaining: 50000
     regen-per-hour: 250
     required-machine-tier: 1
+    offset-x: 8
+    offset-y: 0
+    offset-z: -8
   pasture_basic:
     type: PASTURE
     resource-id: animal_waste
-    purity: 1.0
-    remaining: 50000
+    purity-min: 0.6
+    purity-max: 1.0
+    max-remaining: 50000
     regen-per-hour: 220
     required-machine-tier: 1
+    offset-x: -8
+    offset-y: 0
+    offset-z: -8

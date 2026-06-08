@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 
 public final class ResourceNodeService {
     private final DatabaseService database;
@@ -45,24 +46,45 @@ public final class ResourceNodeService {
         int count = Math.min(config.getInt("defaults.nodes-per-island", nodeKeys.size()), nodeKeys.size());
         for (int i = 0; i < count; i++) {
             String nodeKey = nodeKeys.get(i);
-            Location location = origin.clone().add(6 + i * 4, 0, 4 + i * 3);
+            String path = "nodes." + nodeKey + ".";
+            Location location = origin.clone().add(
+                    config.getInt(path + "offset-x", 6 + i * 4),
+                    config.getInt(path + "offset-y", 0),
+                    config.getInt(path + "offset-z", 4 + i * 3)
+            );
+            double purity = purity(path);
+            long maxRemaining = config.getLong(path + "max-remaining", config.getLong(path + "remaining", 100000));
             long now = System.currentTimeMillis();
             ResourceNode node = new ResourceNode(
                     UUID.randomUUID(),
                     islandUuid,
-                    config.getString("nodes." + nodeKey + ".type", "MINERAL"),
-                    config.getString("nodes." + nodeKey + ".resource-id", "iron_ore"),
-                    config.getDouble("nodes." + nodeKey + ".purity", 1.0),
-                    config.getLong("nodes." + nodeKey + ".remaining", 100000),
-                    config.getLong("nodes." + nodeKey + ".remaining", 100000),
-                    config.getLong("nodes." + nodeKey + ".regen-per-hour", 100),
-                    config.getInt("nodes." + nodeKey + ".required-machine-tier", 1),
+                    config.getString(path + "type", "MINERAL"),
+                    config.getString(path + "resource-id", "iron_ore"),
+                    purity,
+                    maxRemaining,
+                    maxRemaining,
+                    config.getLong(path + "regen-per-hour", 100),
+                    config.getInt(path + "required-machine-tier", 1),
                     BlockKey.from(location),
                     now
             );
             database.saveNode(node);
         }
         return nodes(islandUuid);
+    }
+
+    private double purity(String path) {
+        if (config.contains(path + "purity")) {
+            return config.getDouble(path + "purity", 1.0);
+        }
+        double min = config.getDouble(path + "purity-min", 1.0);
+        double max = config.getDouble(path + "purity-max", min);
+        if (max < min) {
+            double swap = min;
+            min = max;
+            max = swap;
+        }
+        return min == max ? min : ThreadLocalRandom.current().nextDouble(min, max);
     }
 
     public Optional<ResourceNode> nearest(UUID islandUuid, BlockKey location, int maxDistance) {
