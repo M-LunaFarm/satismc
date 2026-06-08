@@ -272,7 +272,7 @@ public final class SatisSkyFactoryPlugin extends JavaPlugin {
         if (!getServer().getPluginManager().isPluginEnabled("PlaceholderAPI")) {
             return;
         }
-        placeholderHook = new PlaceholderHook(this, islands, machines, storage, power, boosts, research);
+        placeholderHook = new PlaceholderHook(this, islands, machines, storage, power, boosts, research, contracts);
         placeholderHook.register();
         getLogger().info("Registered PlaceholderAPI expansion: satisskyfactory");
     }
