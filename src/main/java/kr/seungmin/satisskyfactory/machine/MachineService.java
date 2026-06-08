@@ -138,6 +138,22 @@ public final class MachineService {
         return machines.values().stream().filter(machine -> machine.islandUuid().equals(islandUuid)).toList();
     }
 
+    public long factoryScore(UUID islandUuid) {
+        return byIsland(islandUuid).stream()
+                .map(machine -> definitions.get(machine.typeId()).orElse(null))
+                .filter(definition -> definition != null)
+                .mapToLong(MachineDefinition::factoryScore)
+                .sum();
+    }
+
+    public long maintenanceScore(UUID islandUuid) {
+        return byIsland(islandUuid).stream()
+                .map(machine -> definitions.get(machine.typeId()).orElse(null))
+                .filter(definition -> definition != null)
+                .mapToLong(MachineDefinition::maintenanceScore)
+                .sum();
+    }
+
     public Collection<MachineInstance> byChunk(Chunk chunk) {
         String worldName = chunk.getWorld().getName();
         int chunkX = chunk.getX();

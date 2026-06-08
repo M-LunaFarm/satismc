@@ -47,10 +47,12 @@ public final class MaintenanceService {
     public long chargeIfDue(FactoryIsland island, OfflinePlayer owner, Object rawIsland) {
         long now = Instant.now().toEpochMilli();
         if (island.lastMaintenanceAt() > 0 && now - island.lastMaintenanceAt() < intervalMillis) {
+            island.factoryScore(machines.factoryScore(island.islandUuid()));
             updateStatus(island);
             return 0;
         }
-        long due = baseCost + perMachineCost * machines.byIsland(island.islandUuid()).size();
+        island.factoryScore(machines.factoryScore(island.islandUuid()));
+        long due = baseCost + perMachineCost * Math.max(1, machines.maintenanceScore(island.islandUuid()));
         double paid = economy.withdrawMaintenance(owner, rawIsland, due);
         long shortage = Math.max(0, due - Math.round(paid));
         if (shortage > 0) {

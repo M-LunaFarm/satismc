@@ -10,6 +10,8 @@ machines:
     power-consumption: 4.0
     cycle-ticks: 80
     range: 4
+    factory-score: 10
+    maintenance-score: 8
     wear-per-cycle: 0.03
     harvest-drops:
       WHEAT: wheat
@@ -28,6 +30,8 @@ machines:
     power-consumption: 3.0
     cycle-ticks: 80
     range: 4
+    factory-score: 8
+    maintenance-score: 6
     wear-per-cycle: 0.025
     planting:
       wheat_seeds:
@@ -56,6 +60,8 @@ machines:
     cycle-ticks: 100
     range: 4
     amount-per-cycle: 8
+    factory-score: 12
+    maintenance-score: 10
     wear-per-cycle: 0.025
     fertilizer:
       item: fertilizer
@@ -73,6 +79,8 @@ machines:
     power-consumption: 6.0
     cycle-ticks: 80
     amount-per-cycle: 2
+    factory-score: 15
+    maintenance-score: 14
     wear-per-cycle: 0.04
     node-type: MINERAL
   grinder_t1:
@@ -84,6 +92,8 @@ machines:
     output-capacity: 512
     power-consumption: 5.0
     cycle-ticks: 60
+    factory-score: 14
+    maintenance-score: 12
     wear-per-cycle: 0.03
   furnace_t1:
     display: "Furnace T1"
@@ -94,6 +104,8 @@ machines:
     output-capacity: 512
     power-consumption: 7.0
     cycle-ticks: 80
+    factory-score: 18
+    maintenance-score: 16
     wear-per-cycle: 0.035
   assembler_t1:
     display: "Assembler T1"
@@ -104,6 +116,8 @@ machines:
     output-capacity: 512
     power-consumption: 8.0
     cycle-ticks: 80
+    factory-score: 22
+    maintenance-score: 22
     wear-per-cycle: 0.04
     required-unlocks: [advanced_processing]
   packager_t1:
@@ -115,6 +129,8 @@ machines:
     output-capacity: 512
     power-consumption: 4.0
     cycle-ticks: 60
+    factory-score: 18
+    maintenance-score: 16
     wear-per-cycle: 0.025
     required-unlocks: [advanced_processing]
   bio_generator_t1:
@@ -127,6 +143,8 @@ machines:
     output-capacity: 64
     power-generation: 24.0
     cycle-ticks: 60
+    factory-score: 16
+    maintenance-score: 14
     wear-per-cycle: 0.04
   battery_t1:
     display: "Battery T1"
@@ -137,6 +155,8 @@ machines:
     output-capacity: 64
     battery-capacity: 2000.0
     cycle-ticks: 100
+    factory-score: 12
+    maintenance-score: 10
     wear-per-cycle: 0.01
     required-unlocks: [tier_2_logistics]
   conveyor_t1:
@@ -150,6 +170,8 @@ machines:
     power-consumption: 2.0
     cycle-ticks: 40
     logistics-throughput: 32
+    factory-score: 3
+    maintenance-score: 2
     wear-per-cycle: 0.015
     required-unlocks: [tier_2_logistics]
   storage_t1:
@@ -161,6 +183,8 @@ machines:
     input-capacity: 5000
     output-capacity: 0
     cycle-ticks: 100
+    factory-score: 10
+    maintenance-score: 6
     wear-per-cycle: 0.0
   tree_farm_t1:
     display: "Tree Farm T1"
@@ -172,6 +196,8 @@ machines:
     power-consumption: 4.0
     cycle-ticks: 100
     amount-per-cycle: 2
+    factory-score: 10
+    maintenance-score: 8
     wear-per-cycle: 0.03
     node-type: FOREST
   fish_trap_t1:
@@ -184,6 +210,8 @@ machines:
     power-consumption: 3.0
     cycle-ticks: 120
     amount-per-cycle: 2
+    factory-score: 10
+    maintenance-score: 8
     wear-per-cycle: 0.025
     node-type: FISHING
   collector_t1:
@@ -196,6 +224,8 @@ machines:
     power-consumption: 3.0
     cycle-ticks: 120
     amount-per-cycle: 1
+    factory-score: 10
+    maintenance-score: 8
     wear-per-cycle: 0.025
     node-type: PASTURE
   sawmill_t1:
@@ -207,6 +237,8 @@ machines:
     output-capacity: 512
     power-consumption: 5.0
     cycle-ticks: 80
+    factory-score: 18
+    maintenance-score: 16
     wear-per-cycle: 0.035
     required-unlocks: [advanced_processing]
   charcoal_kiln_t1:
@@ -218,6 +250,8 @@ machines:
     output-capacity: 512
     power-consumption: 4.0
     cycle-ticks: 100
+    factory-score: 18
+    maintenance-score: 16
     wear-per-cycle: 0.035
     required-unlocks: [advanced_processing]
   fish_processor_t1:
@@ -229,5 +263,7 @@ machines:
     output-capacity: 512
     power-consumption: 4.0
     cycle-ticks: 80
+    factory-score: 18
+    maintenance-score: 16
     wear-per-cycle: 0.03
     required-unlocks: [advanced_processing]
