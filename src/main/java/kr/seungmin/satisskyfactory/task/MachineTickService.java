@@ -49,6 +49,7 @@ public final class MachineTickService {
     private final FactoryIslandService islands;
     private final int maxPerCycle;
     private final int maxBackfillCycles;
+    private final int nodeLinkRadius;
     private final Set<String> recoveryTypes;
     private final double limitedEfficiency;
     private final double breakWear;
@@ -58,7 +59,7 @@ public final class MachineTickService {
     public MachineTickService(JavaPlugin plugin, MachineService machines, MachineDefinitionService definitions, StorageService storage,
                               RecipeService recipes, ResourceNodeService nodes, PowerNetworkService power,
                               IslandBoostService boosts, FactoryIslandService islands, int maxPerCycle,
-                              int maxBackfillCycles, Set<String> recoveryTypes, double limitedEfficiency, double breakWear) {
+                              int maxBackfillCycles, int nodeLinkRadius, Set<String> recoveryTypes, double limitedEfficiency, double breakWear) {
         this.plugin = plugin;
         this.machines = machines;
         this.definitions = definitions;
@@ -70,6 +71,7 @@ public final class MachineTickService {
         this.islands = islands;
         this.maxPerCycle = Math.max(1, maxPerCycle);
         this.maxBackfillCycles = Math.max(1, maxBackfillCycles);
+        this.nodeLinkRadius = Math.max(1, nodeLinkRadius);
         this.recoveryTypes = Set.copyOf(recoveryTypes);
         this.limitedEfficiency = Math.max(0.05, Math.min(1.0, limitedEfficiency));
         this.breakWear = Math.max(1.0, breakWear);
@@ -370,7 +372,7 @@ public final class MachineTickService {
     private boolean processNodeProducer(MachineInstance machine, MachineDefinition definition) {
         VirtualInventory output = outputInventory(machine);
         Optional<ResourceNode> node = machine.linkedResourceNodeId() == null
-                ? nodes.nearest(machine.islandUuid(), machine.location(), 12, definition.nodeType())
+                ? nodes.nearest(machine.islandUuid(), machine.location(), nodeLinkRadius, definition.nodeType())
                 : nodes.nodes(machine.islandUuid()).stream()
                 .filter(candidate -> candidate.nodeId().equals(machine.linkedResourceNodeId()))
                 .filter(candidate -> definition.nodeType() == null || candidate.nodeType().equalsIgnoreCase(definition.nodeType().name()))

@@ -6,6 +6,7 @@ settings:
   dirty-save-interval: 200
   max-machines-per-cycle: 200
   max-backfill-cycles: 60
+  resource-node-link-radius: 3
   allow-coop-build: false
 economy:
   mode: VAULT_PLAYER

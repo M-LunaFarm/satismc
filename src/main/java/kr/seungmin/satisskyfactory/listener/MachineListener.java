@@ -11,7 +11,9 @@ import kr.seungmin.satisskyfactory.machine.MachineService;
 import kr.seungmin.satisskyfactory.model.FactoryIsland;
 import kr.seungmin.satisskyfactory.model.MachineDefinition;
 import kr.seungmin.satisskyfactory.model.MachineInstance;
+import kr.seungmin.satisskyfactory.model.MachineStatus;
 import kr.seungmin.satisskyfactory.model.MaintenanceStatus;
+import kr.seungmin.satisskyfactory.node.ResourceNodeService;
 import kr.seungmin.satisskyfactory.research.ResearchService;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
@@ -34,13 +36,16 @@ public final class MachineListener implements Listener {
     private final FactoryGuiService gui;
     private final MessageService messages;
     private final ResearchService research;
+    private final ResourceNodeService nodes;
     private final Set<String> recoveryTypes;
     private final IslandBoostService boosts;
     private final int baseMachineLimit;
+    private final int nodeLinkRadius;
 
     public MachineListener(CustomItemFactory itemFactory, MachineDefinitionService definitions, MachineService machines,
                            SuperiorSkyblockHook skyblock, FactoryIslandService islands, FactoryGuiService gui,
-                           MessageService messages, ResearchService research, FileConfiguration config, IslandBoostService boosts) {
+                           MessageService messages, ResearchService research, ResourceNodeService nodes,
+                           FileConfiguration config, IslandBoostService boosts) {
         this.itemFactory = itemFactory;
         this.definitions = definitions;
         this.machines = machines;
@@ -49,9 +54,11 @@ public final class MachineListener implements Listener {
         this.gui = gui;
         this.messages = messages;
         this.research = research;
+        this.nodes = nodes;
         this.recoveryTypes = Set.copyOf(config.getStringList("limits.recovery-machine-types"));
         this.boosts = boosts;
         this.baseMachineLimit = config.getInt("limits.base-machines-per-island", 128);
+        this.nodeLinkRadius = Math.max(1, config.getInt("settings.resource-node-link-radius", 3));
     }
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
@@ -89,10 +96,19 @@ public final class MachineListener implements Listener {
             }
             event.setCancelled(false);
             MachineInstance machine = machines.create(island.islandUuid(), player.getUniqueId(), typeId, event.getBlockPlaced().getLocation(), player.getFacing());
+            linkResourceNode(machine, definition);
             messages.send(player, "placed", Map.of("machine", definition.displayName()));
             islands.save(island);
             machines.save(machine);
         });
+    }
+
+    private void linkResourceNode(MachineInstance machine, MachineDefinition definition) {
+        if (definition.nodeType() == null) {
+            return;
+        }
+        nodes.nearest(machine.islandUuid(), machine.location(), nodeLinkRadius, definition.nodeType())
+                .ifPresentOrElse(node -> machine.linkedResourceNodeId(node.nodeId()), () -> machine.status(MachineStatus.INPUT_MISSING));
     }
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
