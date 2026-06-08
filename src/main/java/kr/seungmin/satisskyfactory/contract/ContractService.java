@@ -23,7 +23,8 @@ import java.util.stream.Collectors;
 
 public final class ContractService {
     public record ContractTemplate(String id, String type, int tier, Map<String, Long> required,
-                                   long money, long research, long reputation, long debtRelief, long expiresHours) {
+                                   long money, long research, long reputation, long debtRelief,
+                                   Map<String, Long> itemRewards, long expiresHours) {
     }
 
     public record ActiveContract(UUID contractId, ContractTemplate template, long expiresAt) {
@@ -172,7 +173,13 @@ public final class ContractService {
         if (!template.required().entrySet().stream().allMatch(entry -> inventory.amount(entry.getKey()) >= entry.getValue())) {
             return false;
         }
+        long netSpace = template.itemRewards().values().stream().mapToLong(Long::longValue).sum()
+                - template.required().values().stream().mapToLong(Long::longValue).sum();
+        if (netSpace > 0 && inventory.used() + netSpace > inventory.capacity()) {
+            return false;
+        }
         template.required().forEach((item, amount) -> inventory.remove(item, amount));
+        template.itemRewards().forEach(inventory::add);
         storage.save(inventory);
         if (template.money() > 0) {
             economy.deposit(owner, template.money());
@@ -209,6 +216,7 @@ public final class ContractService {
                 config.getLong(base + "rewards.research", 0),
                 config.getLong(base + "rewards.reputation", 0),
                 config.getLong(base + "rewards.debt-relief", 0),
+                map(config.getConfigurationSection(base + "rewards.items")),
                 config.getLong(base + "expires-hours", defaultExpiresHours(config.getString(base + "type", "DAILY")))
         );
     }
@@ -232,6 +240,7 @@ public final class ContractService {
         rewards.put("research", template.research());
         rewards.put("reputation", template.reputation());
         rewards.put("debt-relief", template.debtRelief());
+        template.itemRewards().forEach((item, amount) -> rewards.put("item:" + item, amount));
         return rewards;
     }
 

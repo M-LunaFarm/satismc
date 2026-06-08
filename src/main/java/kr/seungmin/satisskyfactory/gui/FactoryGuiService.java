@@ -160,6 +160,7 @@ public final class FactoryGuiService {
                             ChatColor.GRAY + "Money: " + template.money(),
                             ChatColor.GRAY + "Research: " + template.research(),
                             ChatColor.GRAY + "Reputation: " + template.reputation(),
+                            ChatColor.GRAY + "Items: " + template.itemRewards(),
                             ChatColor.GRAY + "Expires: " + Math.max(0, (active.expiresAt() - System.currentTimeMillis()) / 60000) + "m")));
         }
         player.openInventory(inventory);

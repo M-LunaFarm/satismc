@@ -12,6 +12,8 @@ contracts:
         money: 200
         research: 4
         reputation: 2
+        items:
+          fertilizer: 4
     iron_parts:
       type: DAILY
       tier: 1
@@ -21,6 +23,8 @@ contracts:
         money: 350
         research: 6
         reputation: 3
+        items:
+          biofuel: 8
     machine_parts_weekly:
       type: WEEKLY
       tier: 1
@@ -31,6 +35,8 @@ contracts:
         money: 1200
         research: 20
         reputation: 10
+        items:
+          quality_machine_parts: 2
   emergency:
     type: EMERGENCY
     tier: 1
@@ -40,3 +46,5 @@ contracts:
     rewards:
       debt-relief: 150
       money: 25
+      items:
+        wheat_seeds: 4
