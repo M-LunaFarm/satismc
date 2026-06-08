@@ -20,6 +20,7 @@ public final class DirtySaveService {
     private final Map<UUID, VirtualInventory> inventories = new ConcurrentHashMap<>();
     private final Map<UUID, ResourceNode> nodes = new ConcurrentHashMap<>();
     private final Map<UUID, FactoryIsland> islands = new ConcurrentHashMap<>();
+    private final Object flushLock = new Object();
     private BukkitTask task;
 
     public DirtySaveService(JavaPlugin plugin, DatabaseService database) {
@@ -65,15 +66,17 @@ public final class DirtySaveService {
     }
 
     private void flush() {
-        drain(inventories).values().forEach(database::saveInventory);
-        drain(machines).values().forEach(database::saveMachine);
-        drain(nodes).values().forEach(database::saveNode);
-        drain(islands).values().forEach(database::saveIsland);
+        synchronized (flushLock) {
+            drain(inventories).values().forEach(database::saveInventory);
+            drain(machines).values().forEach(database::saveMachine);
+            drain(nodes).values().forEach(database::saveNode);
+            drain(islands).values().forEach(database::saveIsland);
+        }
     }
 
     private <T> Map<UUID, T> drain(Map<UUID, T> source) {
         Map<UUID, T> snapshot = Map.copyOf(source);
-        snapshot.forEach(source::remove);
+        snapshot.forEach((id, value) -> source.remove(id, value));
         return snapshot;
     }
 }
