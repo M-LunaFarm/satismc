@@ -7,6 +7,7 @@ import kr.seungmin.satisskyfactory.model.MachineInstance;
 import kr.seungmin.satisskyfactory.model.MachineStatus;
 import kr.seungmin.satisskyfactory.storage.StorageService;
 import kr.seungmin.satisskyfactory.storage.VirtualInventory;
+import kr.seungmin.satisskyfactory.task.DirtySaveService;
 import org.bukkit.Location;
 import org.bukkit.block.BlockFace;
 
@@ -23,6 +24,7 @@ public final class MachineService {
     private final StorageService storage;
     private final Map<UUID, MachineInstance> machines = new ConcurrentHashMap<>();
     private final Map<BlockKey, UUID> byLocation = new ConcurrentHashMap<>();
+    private DirtySaveService dirtySaves;
 
     public MachineService(DatabaseService database, MachineDefinitionService definitions, StorageService storage) {
         this.database = database;
@@ -62,6 +64,16 @@ public final class MachineService {
         database.saveMachine(machine);
     }
 
+    public void saveLater(MachineInstance machine) {
+        machines.put(machine.machineId(), machine);
+        byLocation.put(machine.location(), machine.machineId());
+        if (dirtySaves == null) {
+            database.saveMachine(machine);
+        } else {
+            dirtySaves.markMachine(machine);
+        }
+    }
+
     public void remove(MachineInstance machine) {
         machine.status(MachineStatus.IDLE);
         machines.remove(machine.machineId());
@@ -75,5 +87,9 @@ public final class MachineService {
 
     public Collection<MachineInstance> byIsland(UUID islandUuid) {
         return machines.values().stream().filter(machine -> machine.islandUuid().equals(islandUuid)).toList();
+    }
+
+    public void dirtySaves(DirtySaveService dirtySaves) {
+        this.dirtySaves = dirtySaves;
     }
 }

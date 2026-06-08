@@ -1,6 +1,7 @@
 package kr.seungmin.satisskyfactory.storage;
 
 import kr.seungmin.satisskyfactory.database.DatabaseService;
+import kr.seungmin.satisskyfactory.task.DirtySaveService;
 
 import java.util.Map;
 import java.util.Optional;
@@ -11,6 +12,7 @@ public final class StorageService {
     private final DatabaseService database;
     private final int defaultCapacity;
     private final Map<UUID, VirtualInventory> cache = new ConcurrentHashMap<>();
+    private DirtySaveService dirtySaves;
 
     public StorageService(DatabaseService database, int defaultCapacity) {
         this.database = database;
@@ -24,13 +26,13 @@ public final class StorageService {
             return existing.get();
         }
         VirtualInventory inventory = new VirtualInventory(UUID.randomUUID(), islandUuid, "ISLAND", islandUuid.toString(), defaultCapacity);
-        save(inventory);
+        saveNow(inventory);
         return inventory;
     }
 
     public VirtualInventory createMachineInventory(UUID islandUuid, UUID machineId, String holderType, int capacity) {
         VirtualInventory inventory = new VirtualInventory(UUID.randomUUID(), islandUuid, holderType, machineId.toString(), capacity);
-        save(inventory);
+        saveNow(inventory);
         return inventory;
     }
 
@@ -49,6 +51,19 @@ public final class StorageService {
 
     public void save(VirtualInventory inventory) {
         cache.put(inventory.inventoryId(), inventory);
+        if (dirtySaves != null) {
+            dirtySaves.markInventory(inventory);
+            return;
+        }
         database.saveInventory(inventory);
+    }
+
+    public void saveNow(VirtualInventory inventory) {
+        cache.put(inventory.inventoryId(), inventory);
+        database.saveInventory(inventory);
+    }
+
+    public void dirtySaves(DirtySaveService dirtySaves) {
+        this.dirtySaves = dirtySaves;
     }
 }

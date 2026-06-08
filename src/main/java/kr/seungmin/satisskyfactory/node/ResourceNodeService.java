@@ -5,6 +5,7 @@ import kr.seungmin.satisskyfactory.model.BlockKey;
 import kr.seungmin.satisskyfactory.model.ResourceNode;
 import org.bukkit.Location;
 import org.bukkit.configuration.file.FileConfiguration;
+import kr.seungmin.satisskyfactory.task.DirtySaveService;
 
 import java.util.Comparator;
 import java.util.List;
@@ -14,6 +15,7 @@ import java.util.UUID;
 public final class ResourceNodeService {
     private final DatabaseService database;
     private FileConfiguration config;
+    private DirtySaveService dirtySaves;
 
     public ResourceNodeService(DatabaseService database) {
         this.database = database;
@@ -60,7 +62,15 @@ public final class ResourceNodeService {
     }
 
     public void save(ResourceNode node) {
+        if (dirtySaves != null) {
+            dirtySaves.markNode(node);
+            return;
+        }
         database.saveNode(node);
+    }
+
+    public void dirtySaves(DirtySaveService dirtySaves) {
+        this.dirtySaves = dirtySaves;
     }
 
     private int distanceSquared(BlockKey a, BlockKey b) {

@@ -4,6 +4,7 @@ import kr.seungmin.satisskyfactory.database.DatabaseService;
 import kr.seungmin.satisskyfactory.hook.SuperiorSkyblockHook;
 import kr.seungmin.satisskyfactory.model.FactoryContext;
 import kr.seungmin.satisskyfactory.model.FactoryIsland;
+import kr.seungmin.satisskyfactory.task.DirtySaveService;
 import org.bukkit.entity.Player;
 
 import java.util.Map;
@@ -15,6 +16,7 @@ public final class FactoryIslandService {
     private final SuperiorSkyblockHook skyblockHook;
     private final DatabaseService database;
     private final Map<UUID, FactoryIsland> cache = new ConcurrentHashMap<>();
+    private DirtySaveService dirtySaves;
 
     public FactoryIslandService(SuperiorSkyblockHook skyblockHook, DatabaseService database) {
         this.skyblockHook = skyblockHook;
@@ -40,6 +42,14 @@ public final class FactoryIslandService {
 
     public void save(FactoryIsland island) {
         cache.put(island.islandUuid(), island);
+        if (dirtySaves != null) {
+            dirtySaves.markIsland(island);
+            return;
+        }
         database.saveIsland(island);
+    }
+
+    public void dirtySaves(DirtySaveService dirtySaves) {
+        this.dirtySaves = dirtySaves;
     }
 }

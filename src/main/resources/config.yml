@@ -2,6 +2,7 @@ settings:
   language: ko_kr
   debug: false
   tick-interval: 40
+  dirty-save-interval: 200
   max-machines-per-cycle: 200
   allow-coop-build: false
 economy:

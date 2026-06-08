@@ -164,7 +164,7 @@ public final class MachineTickService {
     private void setStatus(MachineInstance machine, MachineStatus status) {
         machine.status(status);
         machine.lastProcessAt(Instant.now().toEpochMilli());
-        machines.save(machine);
+        machines.saveLater(machine);
     }
 
     private Location location(BlockKey key) {

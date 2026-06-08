@@ -22,6 +22,7 @@ import kr.seungmin.satisskyfactory.node.ResourceNodeService;
 import kr.seungmin.satisskyfactory.power.PowerNetworkService;
 import kr.seungmin.satisskyfactory.recipe.RecipeService;
 import kr.seungmin.satisskyfactory.storage.StorageService;
+import kr.seungmin.satisskyfactory.task.DirtySaveService;
 import kr.seungmin.satisskyfactory.task.MachineTickService;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -45,6 +46,7 @@ public final class SatisSkyFactoryPlugin extends JavaPlugin {
     private ContractService contracts;
     private MaintenanceService maintenance;
     private FactoryGuiService gui;
+    private DirtySaveService dirtySaves;
     private MachineTickService ticker;
 
     @Override
@@ -71,6 +73,11 @@ public final class SatisSkyFactoryPlugin extends JavaPlugin {
         islands = new FactoryIslandService(skyblock, database);
         machines = new MachineService(database, machineDefinitions, storage);
         nodes = new ResourceNodeService(database);
+        dirtySaves = new DirtySaveService(this, database);
+        storage.dirtySaves(dirtySaves);
+        islands.dirtySaves(dirtySaves);
+        machines.dirtySaves(dirtySaves);
+        nodes.dirtySaves(dirtySaves);
         power = new PowerNetworkService(machines, machineDefinitions, storage);
         market = new MarketService(storage, economy, database);
         contracts = new ContractService(storage, economy, database);
@@ -91,6 +98,7 @@ public final class SatisSkyFactoryPlugin extends JavaPlugin {
                 configs.main().getInt("settings.max-machines-per-cycle", 200)
         );
         ticker.start(configs.main().getLong("settings.tick-interval", 40));
+        dirtySaves.start(configs.main().getLong("settings.dirty-save-interval", 200));
 
         registerCommands();
         registerListeners();
@@ -101,6 +109,9 @@ public final class SatisSkyFactoryPlugin extends JavaPlugin {
     public void onDisable() {
         if (ticker != null) {
             ticker.stop();
+        }
+        if (dirtySaves != null) {
+            dirtySaves.stop();
         }
         if (database != null) {
             database.close();
