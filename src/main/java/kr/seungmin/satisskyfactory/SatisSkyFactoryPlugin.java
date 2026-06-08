@@ -297,7 +297,8 @@ public final class SatisSkyFactoryPlugin extends JavaPlugin {
                 nodes,
                 machines,
                 itemNetworks,
-                power
+                power,
+                maintenance
         ), this);
     }
 

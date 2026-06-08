@@ -17,6 +17,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import java.io.File;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.Optional;
@@ -115,6 +116,33 @@ class EconomyFlowServiceTest {
                     || island.maintenanceStatus() == MaintenanceStatus.LOCKED);
             assertEquals(0, maintenance.chargeIfDue(island, null, null));
             assertEquals(due, island.maintenanceDebt());
+        }
+    }
+
+    @Test
+    void dormantMaintenanceStopsDebtGrowthUntilIslandReturns() {
+        try (DatabaseHandle handle = openDatabase("dormant-maintenance")) {
+            DatabaseService database = handle.database();
+            MachineDefinitionService definitions = new MachineDefinitionService();
+            MachineService machines = new MachineService(database, definitions, new StorageService(database, 1000));
+            MaintenanceService maintenance = new MaintenanceService(machines, new TrackingEconomy(), database);
+            maintenance.load(load("maintenance.yml"));
+
+            UUID islandUuid = UUID.fromString("00000000-0000-0000-0000-000000001301");
+            FactoryIsland island = new FactoryIsland(islandUuid, UUID.fromString("00000000-0000-0000-0000-000000001302"));
+            island.maintenanceDebt(600);
+            island.lastTickAt(Instant.now().minus(java.time.Duration.ofDays(8)).toEpochMilli());
+
+            long due = maintenance.chargeIfDue(island, null, null);
+
+            assertEquals(0, due);
+            assertEquals(600, island.maintenanceDebt());
+            assertEquals(MaintenanceStatus.DORMANT, island.maintenanceStatus());
+
+            island.lastTickAt(Instant.now().toEpochMilli());
+            maintenance.updateStatus(island);
+
+            assertEquals(MaintenanceStatus.LIMITED, island.maintenanceStatus());
         }
     }
 

@@ -4,6 +4,7 @@ import kr.seungmin.satisskyfactory.hook.SuperiorSkyblockHook;
 import kr.seungmin.satisskyfactory.logistics.ItemNetworkService;
 import kr.seungmin.satisskyfactory.machine.FactoryIslandService;
 import kr.seungmin.satisskyfactory.machine.MachineService;
+import kr.seungmin.satisskyfactory.machine.MaintenanceService;
 import kr.seungmin.satisskyfactory.model.FactoryIsland;
 import kr.seungmin.satisskyfactory.model.MachineInstance;
 import kr.seungmin.satisskyfactory.model.MachineStatus;
@@ -24,16 +25,18 @@ public final class FactoryLifecycleListener implements Listener {
     private final MachineService machines;
     private final ItemNetworkService itemNetworks;
     private final PowerNetworkService power;
+    private final MaintenanceService maintenance;
 
     public FactoryLifecycleListener(FactoryIslandService islands, SuperiorSkyblockHook skyblock,
                                     ResourceNodeService nodes, MachineService machines, ItemNetworkService itemNetworks,
-                                    PowerNetworkService power) {
+                                    PowerNetworkService power, MaintenanceService maintenance) {
         this.islands = islands;
         this.skyblock = skyblock;
         this.nodes = nodes;
         this.machines = machines;
         this.itemNetworks = itemNetworks;
         this.power = power;
+        this.maintenance = maintenance;
     }
 
     @EventHandler
@@ -45,6 +48,7 @@ public final class FactoryLifecycleListener implements Listener {
             nodes.generateIfMissing(island.islandUuid(), origin, location -> skyblock.getIslandAt(location)
                     .map(ref -> ref.islandUuid().equals(island.islandUuid()))
                     .orElse(false));
+            maintenance.updateStatus(island);
             itemNetworks.rebuildIsland(island.islandUuid());
             power.rebuildIsland(island.islandUuid());
             islands.save(island);
