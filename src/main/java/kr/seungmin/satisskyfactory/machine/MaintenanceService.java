@@ -19,6 +19,7 @@ public final class MaintenanceService {
     private long intervalMillis;
     private long baseCost;
     private long perMachineCost;
+    private long warningThreshold;
     private long limitedThreshold;
     private long lockedThreshold;
     private long debtCap;
@@ -35,6 +36,7 @@ public final class MaintenanceService {
         intervalMillis = config.getLong("maintenance.interval-hours", 24) * 60L * 60L * 1000L;
         baseCost = config.getLong("maintenance.base-cost", 100);
         perMachineCost = config.getLong("maintenance.per-machine-cost", 8);
+        warningThreshold = config.getLong("maintenance.warning-threshold", 1);
         limitedThreshold = config.getLong("maintenance.limited-threshold", 500);
         lockedThreshold = config.getLong("maintenance.locked-threshold", 1500);
         debtCap = config.getLong("maintenance.debt-cap", 5000);
@@ -74,6 +76,8 @@ public final class MaintenanceService {
             island.maintenanceStatus(MaintenanceStatus.LOCKED);
         } else if (island.maintenanceDebt() >= limitedThreshold) {
             island.maintenanceStatus(MaintenanceStatus.LIMITED);
+        } else if (island.maintenanceDebt() >= warningThreshold) {
+            island.maintenanceStatus(MaintenanceStatus.WARNING);
         } else {
             island.maintenanceStatus(MaintenanceStatus.NORMAL);
         }

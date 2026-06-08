@@ -197,6 +197,10 @@ public final class MachineTickService {
             return true;
         }
         MaintenanceStatus status = island.get().maintenanceStatus();
+        if (status == MaintenanceStatus.DORMANT) {
+            setStatus(machine, MachineStatus.LOCKED);
+            return false;
+        }
         if (status == MaintenanceStatus.LOCKED && !recoveryTypes.contains(machine.typeId())) {
             setStatus(machine, MachineStatus.LOCKED);
             return false;

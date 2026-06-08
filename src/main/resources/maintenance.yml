@@ -2,6 +2,7 @@ maintenance:
   interval-hours: 24
   base-cost: 100
   per-machine-cost: 8
+  warning-threshold: 1
   limited-threshold: 500
   limited-efficiency: 0.45
   locked-threshold: 1500
