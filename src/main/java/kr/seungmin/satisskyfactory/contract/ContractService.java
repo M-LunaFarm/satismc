@@ -15,9 +15,11 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -41,6 +43,7 @@ public final class ContractService {
     private int storySlots;
     private int marketSlots;
     private int emergencyDailyLimit;
+    private Set<String> boostedSlotTypes = Set.of("DAILY", "WEEKLY", "STORY", "MARKET");
 
     public ContractService(StorageService storage, EconomyService economy, DatabaseService database, IslandBoostService boosts) {
         this.storage = storage;
@@ -61,6 +64,7 @@ public final class ContractService {
                 config.getInt("contracts.market-slots-base", 0)));
         emergencyDailyLimit = Math.max(1, config.getInt("contracts.emergency-daily-limit",
                 config.getInt("contracts.emergency_daily_limit", 5)));
+        boostedSlotTypes = boostedSlotTypes(config);
         ConfigurationSection section = config.getConfigurationSection("contracts.templates");
         if (section != null) {
             for (String id : section.getKeys(false)) {
@@ -130,11 +134,20 @@ public final class ContractService {
     }
 
     private void ensureDailyContracts(FactoryIsland island) {
-        int slots = Math.max(1, dailySlots + boosts.boosts(island.islandUuid()).contractSlotBonus());
-        ensureContracts(island, "DAILY", slots, 24);
-        ensureContracts(island, "WEEKLY", weeklySlots, 168);
-        ensureContracts(island, "STORY", storySlots, 168);
-        ensureContracts(island, "MARKET", marketSlots, 24);
+        IslandBoostService.Boosts islandBoosts = boosts.boosts(island.islandUuid());
+        ensureContracts(island, "DAILY", boostedSlots("DAILY", dailySlots, islandBoosts), 24);
+        ensureContracts(island, "WEEKLY", boostedSlots("WEEKLY", weeklySlots, islandBoosts), 168);
+        ensureContracts(island, "STORY", boostedSlots("STORY", storySlots, islandBoosts), 168);
+        ensureContracts(island, "MARKET", boostedSlots("MARKET", marketSlots, islandBoosts), 24);
+    }
+
+    private int boostedSlots(String type, int baseSlots, IslandBoostService.Boosts islandBoosts) {
+        if (baseSlots <= 0) {
+            return 0;
+        }
+        String normalized = type.toUpperCase(java.util.Locale.ROOT);
+        int bonus = boostedSlotTypes.contains(normalized) ? islandBoosts.contractSlotBonus() : 0;
+        return Math.max(0, baseSlots + bonus);
     }
 
     private void ensureContracts(FactoryIsland island, String type, int slots, long defaultExpiresHours) {
@@ -262,6 +275,23 @@ public final class ContractService {
             return 24;
         }
         return 24;
+    }
+
+    private Set<String> boostedSlotTypes(FileConfiguration config) {
+        List<String> values = config.getStringList("contracts.boosted-slot-types");
+        if (values.isEmpty()) {
+            values = config.getStringList("contracts.boosted_slot_types");
+        }
+        if (values.isEmpty()) {
+            return Set.of("DAILY", "WEEKLY", "STORY", "MARKET");
+        }
+        Set<String> normalized = new HashSet<>();
+        for (String value : values) {
+            if (value != null && !value.isBlank()) {
+                normalized.add(value.toUpperCase(java.util.Locale.ROOT));
+            }
+        }
+        return normalized.isEmpty() ? Set.of("DAILY", "WEEKLY", "STORY", "MARKET") : Set.copyOf(normalized);
     }
 
     private Map<String, Long> rewards(ContractTemplate template) {

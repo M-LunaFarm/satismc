@@ -22,6 +22,12 @@ superior-skyblock:
   allow-coop-build: false
   allow-spawn-island: false
   protect-spawn-island: true
+  boosts:
+    agriculture-min: 1.0
+    agriculture-max: 3.0
+    factory-slot-size-divisor: 50
+    contract-slot-worth-log-base: 10.0
+    max-contract-slot-bonus: 0
 resource-nodes:
   link-radius: 3
 economy:

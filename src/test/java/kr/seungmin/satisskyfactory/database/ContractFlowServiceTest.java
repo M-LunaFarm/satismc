@@ -110,6 +110,44 @@ class ContractFlowServiceTest {
         }
     }
 
+    @Test
+    void contractSlotBonusAppliesToConfiguredContractTypes() {
+        try (DatabaseHandle handle = openDatabase("boosted-contract-slots")) {
+            ContractService contracts = new ContractService(
+                    new StorageService(handle.database(), 1000),
+                    new TrackingEconomy(),
+                    handle.database(),
+                    new IslandBoostService(null, IslandBoostService.Settings.defaults(), new IslandBoostService.Boosts(1.0, 0, 2))
+            );
+            YamlConfiguration config = load("contracts.yml");
+            config.set("contracts.daily_slots", 1);
+            config.set("contracts.weekly_slots", 1);
+            config.set("contracts.story_slots", 1);
+            config.set("contracts.market_slots", 1);
+            config.set("contracts.templates.extra_daily.type", "DAILY");
+            config.set("contracts.templates.extra_daily.tier", 1);
+            config.set("contracts.templates.extra_daily.required.wheat", 1);
+            config.set("contracts.templates.extra_daily.rewards.money", 1);
+            config.set("contracts.templates.extra_weekly.type", "WEEKLY");
+            config.set("contracts.templates.extra_weekly.tier", 1);
+            config.set("contracts.templates.extra_weekly.required.wheat", 1);
+            config.set("contracts.templates.extra_weekly.rewards.money", 1);
+            contracts.load(config);
+            FactoryIsland island = new FactoryIsland(
+                    UUID.fromString("00000000-0000-0000-0000-000000002301"),
+                    UUID.fromString("00000000-0000-0000-0000-000000002302")
+            );
+
+            List<ContractService.ActiveContract> active = contracts.activeContracts(island);
+
+            assertEquals(7, active.size());
+            assertEquals(3, active.stream().filter(contract -> contract.template().type().equalsIgnoreCase("DAILY")).count());
+            assertEquals(2, active.stream().filter(contract -> contract.template().type().equalsIgnoreCase("WEEKLY")).count());
+            assertEquals(1, active.stream().filter(contract -> contract.template().type().equalsIgnoreCase("STORY")).count());
+            assertEquals(1, active.stream().filter(contract -> contract.template().type().equalsIgnoreCase("MARKET")).count());
+        }
+    }
+
     private DatabaseHandle openDatabase(String name) {
         DatabaseService database = new DatabaseService(tempDir.resolve(name).toFile());
         database.open();

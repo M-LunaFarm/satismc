@@ -3,6 +3,7 @@ contracts:
   weekly_slots: 1
   story_slots: 1
   market_slots: 1
+  boosted-slot-types: [DAILY, WEEKLY, STORY, MARKET]
   emergency-daily-limit: 5
   templates:
     bread_supply:

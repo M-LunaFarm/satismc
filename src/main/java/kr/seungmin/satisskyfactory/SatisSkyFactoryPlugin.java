@@ -87,6 +87,7 @@ public final class SatisSkyFactoryPlugin extends JavaPlugin {
         islands = new FactoryIslandService(skyblock, database);
         machines = new MachineService(database, machineDefinitions, storage);
         boosts = new IslandBoostService(skyblock);
+        boosts.configure(configs.main());
         nodes = new ResourceNodeService(database);
         dirtySaves = new DirtySaveService(this, database);
         storage.dirtySaves(dirtySaves);
@@ -136,6 +137,7 @@ public final class SatisSkyFactoryPlugin extends JavaPlugin {
     public void reloadPluginConfig() {
         configs.load();
         configureSkyblockHook();
+        boosts.configure(configs.main());
         loadDefinitions();
         restartRuntimeTasks();
     }
