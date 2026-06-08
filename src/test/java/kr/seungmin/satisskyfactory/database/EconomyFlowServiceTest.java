@@ -96,6 +96,64 @@ class EconomyFlowServiceTest {
     }
 
     @Test
+    void marketDemandAndPersonalCapsReduceRepeatedSalePayout() {
+        try (DatabaseHandle handle = openDatabase("market-demand")) {
+            DatabaseService database = handle.database();
+            StorageService storage = new StorageService(database, 1000);
+            ItemRegistry items = new ItemRegistry();
+            items.load(load("items.yml"));
+            TrackingEconomy economy = new TrackingEconomy();
+            MarketService market = new MarketService(storage, economy, database, items);
+            market.load(load("market.yml"));
+
+            UUID islandUuid = UUID.fromString("00000000-0000-0000-0000-000000001401");
+            FactoryIsland island = new FactoryIsland(islandUuid, UUID.fromString("00000000-0000-0000-0000-000000001402"));
+            VirtualInventory inventory = storage.islandStorage(islandUuid);
+            assertTrue(inventory.add("flour", 20));
+            storage.save(inventory);
+
+            MarketService.SellResult first = market.sell(island, null, "flour", 10).orElseThrow();
+            assertEquals(50, first.gross());
+            assertEquals(1.25, first.serverDemandFactor());
+            assertEquals(1.0, first.personalFactor());
+
+            database.recordMarketSale(islandUuid, "flour", LocalDate.now(ZoneId.systemDefault()).toString(), 4096, 0.5);
+            MarketService.SellResult capped = market.sell(island, null, "flour", 10).orElseThrow();
+
+            assertTrue(capped.gross() < first.gross());
+            assertTrue(capped.serverDemandFactor() < first.serverDemandFactor());
+            assertEquals(0.55, capped.personalFactor());
+        }
+    }
+
+    @Test
+    void marketQualityTagIncreasesPayout() {
+        try (DatabaseHandle handle = openDatabase("market-quality")) {
+            DatabaseService database = handle.database();
+            StorageService storage = new StorageService(database, 1000);
+            ItemRegistry items = new ItemRegistry();
+            items.load(load("items.yml"));
+            TrackingEconomy economy = new TrackingEconomy();
+            MarketService market = new MarketService(storage, economy, database, items);
+            market.load(load("market.yml"));
+
+            UUID islandUuid = UUID.fromString("00000000-0000-0000-0000-000000001501");
+            FactoryIsland island = new FactoryIsland(islandUuid, UUID.fromString("00000000-0000-0000-0000-000000001502"));
+            VirtualInventory inventory = storage.islandStorage(islandUuid);
+            assertTrue(inventory.add("machine_parts", 1));
+            assertTrue(inventory.add("quality_machine_parts", 1));
+            storage.save(inventory);
+
+            MarketService.SellResult normal = market.sell(island, null, "machine_parts", 1).orElseThrow();
+            MarketService.SellResult quality = market.sell(island, null, "quality_machine_parts", 1).orElseThrow();
+
+            assertEquals(1.0, normal.qualityFactor());
+            assertEquals(1.15, quality.qualityFactor());
+            assertTrue(quality.gross() > normal.gross());
+        }
+    }
+
+    @Test
     void maintenanceChargeAddsDebtWhenEconomyCannotPay() {
         try (DatabaseHandle handle = openDatabase("maintenance")) {
             DatabaseService database = handle.database();
