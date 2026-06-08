@@ -56,11 +56,7 @@ public final class PowerNetworkService {
                 continue;
             }
             if (definition.isGenerator()) {
-                boolean hasFuel = storage.get(machine.inputInventoryId())
-                        .map(inventory -> inventory.amount("biofuel") > 0)
-                        .orElse(false)
-                        || storage.islandStorage(islandUuid).amount("biofuel") > 0;
-                if (hasFuel) {
+                if (hasGeneratorFuel(machine, definition)) {
                     generation += definition.powerGeneration();
                 }
             } else if (definition.isBattery()) {
@@ -124,6 +120,28 @@ public final class PowerNetworkService {
 
     private boolean supportsRecipe(MachineDefinition definition, RecipeDefinition recipe) {
         return definition.allowedRecipes().isEmpty() || definition.allowedRecipes().contains(recipe.id());
+    }
+
+    private boolean hasGeneratorFuel(MachineInstance machine, MachineDefinition definition) {
+        VirtualInventory input = storage.get(machine.inputInventoryId()).orElse(null);
+        VirtualInventory islandStorage = storage.islandStorage(machine.islandUuid());
+        return generatorFuel(machine, definition).entrySet().stream()
+                .allMatch(entry -> amount(input, entry.getKey()) + islandStorage.amount(entry.getKey()) >= entry.getValue());
+    }
+
+    private Map<String, Long> generatorFuel(MachineInstance machine, MachineDefinition definition) {
+        String selectedRecipeId = machine.selectedRecipeId();
+        return recipes.recipesFor(machine.typeId()).stream()
+                .filter(recipe -> supportsRecipe(definition, recipe))
+                .filter(recipe -> selectedRecipeId == null || selectedRecipeId.isBlank() || recipe.id().equals(selectedRecipeId))
+                .map(RecipeDefinition::input)
+                .filter(input -> !input.isEmpty())
+                .findFirst()
+                .orElseGet(() -> Map.of("biofuel", 1L));
+    }
+
+    private long amount(VirtualInventory inventory, String itemId) {
+        return inventory == null ? 0 : inventory.amount(itemId);
     }
 
     public record NetworkState(long cycleId, double ratio, double generation, double consumption, long batteryStored, double batteryCapacity) {

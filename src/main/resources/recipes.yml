@@ -1,4 +1,10 @@
 recipes:
+  biofuel_to_power:
+    machines: [bio_generator_t1]
+    cycle-ms: 3000
+    inputs:
+      biofuel: 1
+    outputs: {}
   grind_wheat:
     machines: [grinder_t1]
     min-tier: 1

@@ -150,6 +150,7 @@ machines:
     factory-score: 16
     maintenance-score: 14
     wear-per-cycle: 0.04
+    allowed-recipes: [biofuel_to_power]
   battery_t1:
     display: "Battery T1"
     material: COPPER_BLOCK

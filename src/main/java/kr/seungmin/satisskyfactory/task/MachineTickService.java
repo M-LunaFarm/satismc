@@ -165,7 +165,7 @@ public final class MachineTickService {
             return false;
         }
         if (definition.isGenerator()) {
-            return processGenerator(machine);
+            return processGenerator(machine, definition);
         }
         if (machine.typeId().equals("harvester_t1")) {
             return processHarvester(machine, definition);
@@ -245,18 +245,52 @@ public final class MachineTickService {
         return true;
     }
 
-    private boolean processGenerator(MachineInstance machine) {
+    private boolean processGenerator(MachineInstance machine, MachineDefinition definition) {
+        if (!consumeGeneratorFuel(machine, generatorFuel(machine, definition))) {
+            setStatus(machine, MachineStatus.INPUT_MISSING);
+            return false;
+        }
+        setStatus(machine, MachineStatus.RUNNING);
+        return true;
+    }
+
+    private Map<String, Long> generatorFuel(MachineInstance machine, MachineDefinition definition) {
+        String selectedRecipeId = machine.selectedRecipeId();
+        return recipes.recipesFor(machine.typeId()).stream()
+                .filter(recipe -> supportsRecipe(machine, definition, recipe))
+                .filter(recipe -> selectedRecipeId == null || selectedRecipeId.isBlank() || recipe.id().equals(selectedRecipeId))
+                .map(RecipeDefinition::input)
+                .filter(input -> !input.isEmpty())
+                .findFirst()
+                .orElseGet(() -> Map.of("biofuel", 1L));
+    }
+
+    private boolean consumeGeneratorFuel(MachineInstance machine, Map<String, Long> fuel) {
         VirtualInventory input = inputInventory(machine);
-        if (!input.remove("biofuel", 1)) {
-            VirtualInventory islandStorage = storage.islandStorage(machine.islandUuid());
-            if (!islandStorage.remove("biofuel", 1)) {
-                setStatus(machine, MachineStatus.INPUT_MISSING);
-                return false;
+        VirtualInventory islandStorage = storage.islandStorage(machine.islandUuid());
+        if (fuel.entrySet().stream().anyMatch(entry ->
+                input.amount(entry.getKey()) + islandStorage.amount(entry.getKey()) < entry.getValue())) {
+            return false;
+        }
+        boolean changedInput = false;
+        boolean changedIsland = false;
+        for (Map.Entry<String, Long> entry : fuel.entrySet()) {
+            long remaining = entry.getValue();
+            long fromInput = Math.min(remaining, input.amount(entry.getKey()));
+            if (fromInput > 0 && input.remove(entry.getKey(), fromInput)) {
+                remaining -= fromInput;
+                changedInput = true;
             }
+            if (remaining > 0 && islandStorage.remove(entry.getKey(), remaining)) {
+                changedIsland = true;
+            }
+        }
+        if (changedInput) {
+            storage.save(input);
+        }
+        if (changedIsland) {
             storage.save(islandStorage);
         }
-        storage.save(input);
-        setStatus(machine, MachineStatus.RUNNING);
         return true;
     }
 
