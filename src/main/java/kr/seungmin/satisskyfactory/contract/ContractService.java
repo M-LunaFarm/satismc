@@ -12,6 +12,8 @@ import org.bukkit.configuration.file.FileConfiguration;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,6 +35,7 @@ public final class ContractService {
     private final Map<String, ContractTemplate> templates = new HashMap<>();
     private ContractTemplate emergency;
     private int dailySlots;
+    private int emergencyDailyLimit;
 
     public ContractService(StorageService storage, EconomyService economy, DatabaseService database, IslandBoostService boosts) {
         this.storage = storage;
@@ -44,6 +47,8 @@ public final class ContractService {
     public void load(FileConfiguration config) {
         templates.clear();
         dailySlots = Math.max(1, config.getInt("contracts.daily_slots", 3));
+        emergencyDailyLimit = Math.max(1, config.getInt("contracts.emergency-daily-limit",
+                config.getInt("contracts.emergency_daily_limit", 5)));
         ConfigurationSection section = config.getConfigurationSection("contracts.templates");
         if (section != null) {
             for (String id : section.getKeys(false)) {
@@ -82,9 +87,15 @@ public final class ContractService {
         if (emergency == null || island.maintenanceDebt() <= 0) {
             return false;
         }
+        int usedToday = database.countContracts(island.islandUuid(), "EMERGENCY", "COMPLETED", startOfToday());
+        island.emergencyContractsUsedToday(usedToday);
+        if (usedToday >= emergencyDailyLimit) {
+            database.saveIsland(island);
+            return false;
+        }
         boolean completed = complete(island, owner, new ActiveContract(UUID.randomUUID(), emergency, Instant.now().plus(Duration.ofHours(24)).toEpochMilli()));
         if (completed) {
-            island.emergencyContractsUsedToday(island.emergencyContractsUsedToday() + 1);
+            island.emergencyContractsUsedToday(usedToday + 1);
             database.saveIsland(island);
         }
         return completed;
@@ -211,5 +222,9 @@ public final class ContractService {
         return values.entrySet().stream()
                 .map(entry -> "\"" + entry.getKey() + "\":" + entry.getValue())
                 .collect(Collectors.joining(",", "{", "}"));
+    }
+
+    private long startOfToday() {
+        return LocalDate.now(ZoneId.systemDefault()).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli();
     }
 }

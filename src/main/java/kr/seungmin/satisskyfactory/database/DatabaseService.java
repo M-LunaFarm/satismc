@@ -645,6 +645,24 @@ public final class DatabaseService {
         }
     }
 
+    public int countContracts(UUID islandUuid, String contractType, String status, long updatedSince) {
+        try (Connection connection = connection();
+             PreparedStatement statement = connection.prepareStatement("""
+                     SELECT COUNT(*) AS count FROM contracts
+                     WHERE island_uuid = ? AND contract_type = ? AND status = ? AND updated_at >= ?
+                     """)) {
+            statement.setString(1, islandUuid.toString());
+            statement.setString(2, contractType);
+            statement.setString(3, status);
+            statement.setLong(4, updatedSince);
+            try (ResultSet rs = statement.executeQuery()) {
+                return rs.next() ? rs.getInt("count") : 0;
+            }
+        } catch (SQLException exception) {
+            throw new IllegalStateException("Failed to count contracts", exception);
+        }
+    }
+
     public void saveContract(StoredContract contract) {
         long now = Instant.now().toEpochMilli();
         try (Connection connection = connection();

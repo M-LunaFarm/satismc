@@ -1,5 +1,6 @@
 contracts:
   daily_slots: 3
+  emergency-daily-limit: 5
   templates:
     bread_supply:
       type: DAILY
