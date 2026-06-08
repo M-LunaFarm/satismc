@@ -88,6 +88,10 @@ public final class MachineListener implements Listener {
             messages.send(player, "unknown-machine");
             return false;
         }
+        if (consumeItem && player.getGameMode() != GameMode.CREATIVE && !hasInstallItem(player, hand, typeId)) {
+            messages.send(player, "hold-item-first");
+            return false;
+        }
         if (!replacePlacedBlock && !targetBlock.getType().isAir()) {
             messages.send(player, "place-denied");
             return false;
@@ -135,6 +139,15 @@ public final class MachineListener implements Listener {
         islands.save(island);
         machines.save(machine);
         return true;
+    }
+
+    private boolean hasInstallItem(Player player, EquipmentSlot hand, String typeId) {
+        ItemStack item = hand == EquipmentSlot.OFF_HAND
+                ? player.getInventory().getItemInOffHand()
+                : player.getInventory().getItemInMainHand();
+        return itemFactory.machineType(item)
+                .filter(typeId::equals)
+                .isPresent();
     }
 
     private void consumeHand(Player player, EquipmentSlot hand) {
