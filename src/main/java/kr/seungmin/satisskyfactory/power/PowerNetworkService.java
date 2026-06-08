@@ -5,6 +5,8 @@ import kr.seungmin.satisskyfactory.machine.MachineService;
 import kr.seungmin.satisskyfactory.model.MachineDefinition;
 import kr.seungmin.satisskyfactory.model.MachineInstance;
 import kr.seungmin.satisskyfactory.model.MachineStatus;
+import kr.seungmin.satisskyfactory.recipe.RecipeDefinition;
+import kr.seungmin.satisskyfactory.recipe.RecipeService;
 import kr.seungmin.satisskyfactory.storage.StorageService;
 import kr.seungmin.satisskyfactory.storage.VirtualInventory;
 
@@ -16,13 +18,15 @@ public final class PowerNetworkService {
     private static final String POWER_CHARGE_ITEM = "power_charge";
     private final MachineService machines;
     private final MachineDefinitionService definitions;
+    private final RecipeService recipes;
     private final StorageService storage;
     private final Map<UUID, NetworkState> cache = new ConcurrentHashMap<>();
     private long cycleId;
 
-    public PowerNetworkService(MachineService machines, MachineDefinitionService definitions, StorageService storage) {
+    public PowerNetworkService(MachineService machines, MachineDefinitionService definitions, RecipeService recipes, StorageService storage) {
         this.machines = machines;
         this.definitions = definitions;
+        this.recipes = recipes;
         this.storage = storage;
     }
 
@@ -62,7 +66,7 @@ public final class PowerNetworkService {
             } else if (definition.isBattery()) {
                 batteryCapacity += definition.batteryCapacity();
             } else {
-                consumption += definition.powerConsumption();
+                consumption += consumptionFor(machine, definition);
             }
         }
         VirtualInventory islandStorage = storage.islandStorage(islandUuid);
@@ -102,6 +106,24 @@ public final class PowerNetworkService {
         return status != MachineStatus.BROKEN
                 && status != MachineStatus.LOCKED
                 && status != MachineStatus.CHUNK_UNLOADED;
+    }
+
+    private double consumptionFor(MachineInstance machine, MachineDefinition definition) {
+        String selectedRecipeId = machine.selectedRecipeId();
+        if (selectedRecipeId == null || selectedRecipeId.isBlank()) {
+            return definition.powerConsumption();
+        }
+        return recipes.recipesFor(machine.typeId()).stream()
+                .filter(recipe -> recipe.id().equals(selectedRecipeId))
+                .filter(recipe -> supportsRecipe(definition, recipe))
+                .mapToDouble(RecipeDefinition::power)
+                .filter(power -> power > 0)
+                .findFirst()
+                .orElse(definition.powerConsumption());
+    }
+
+    private boolean supportsRecipe(MachineDefinition definition, RecipeDefinition recipe) {
+        return definition.allowedRecipes().isEmpty() || definition.allowedRecipes().contains(recipe.id());
     }
 
     public record NetworkState(long cycleId, double ratio, double generation, double consumption, long batteryStored, double batteryCapacity) {
