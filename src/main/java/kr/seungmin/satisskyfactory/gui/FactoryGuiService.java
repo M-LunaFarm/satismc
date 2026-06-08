@@ -64,10 +64,13 @@ public final class FactoryGuiService {
         FactoryGuiHolder holder = new FactoryGuiHolder("storage", island.islandUuid(), null);
         Inventory inventory = Bukkit.createInventory(holder, 54, "Factory Storage");
         holder.inventory(inventory);
+        holder.action(53, "deposit_hand", "");
+        inventory.setItem(53, icon(Material.HOPPER, ChatColor.GREEN + "Deposit Hand",
+                List.of(ChatColor.GRAY + "Move the item stack in your hand into storage.")));
         VirtualInventory virtual = storage.islandStorage(island.islandUuid());
         int slot = 0;
         for (Map.Entry<String, Long> entry : virtual.items().entrySet()) {
-            if (slot >= inventory.getSize()) {
+            if (slot >= inventory.getSize() - 1) {
                 break;
             }
             ItemRegistry.FactoryItem item = items.get(entry.getKey()).orElse(new ItemRegistry.FactoryItem(entry.getKey(), Material.PAPER, entry.getKey()));

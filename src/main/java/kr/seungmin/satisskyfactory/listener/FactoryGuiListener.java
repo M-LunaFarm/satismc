@@ -89,6 +89,10 @@ public final class FactoryGuiListener implements Listener {
         }
         if (action.type().equals("withdraw_storage")) {
             withdrawStorageItem(player, island, action.value());
+            return;
+        }
+        if (action.type().equals("deposit_hand")) {
+            depositHand(player, island);
         }
     }
 
@@ -111,6 +115,25 @@ public final class FactoryGuiListener implements Listener {
         }
         storage.save(inventory);
         player.sendMessage("Withdrew " + (amount - returned) + " " + itemId + ".");
+        gui.openStorage(player, island);
+    }
+
+    private void depositHand(Player player, FactoryIsland island) {
+        ItemStack hand = player.getInventory().getItemInMainHand();
+        if (hand.getType() == Material.AIR || hand.getAmount() <= 0) {
+            player.sendMessage("Hold an item first.");
+            return;
+        }
+        String itemId = itemFactory.factoryItemId(hand).orElseGet(() -> hand.getType().name().toLowerCase(Locale.ROOT));
+        long amount = hand.getAmount();
+        var inventory = storage.islandStorage(island.islandUuid());
+        if (!inventory.add(itemId, amount)) {
+            player.sendMessage("Factory storage is full.");
+            return;
+        }
+        hand.setAmount(0);
+        storage.save(inventory);
+        player.sendMessage("Deposited " + amount + " " + itemId + ".");
         gui.openStorage(player, island);
     }
 
