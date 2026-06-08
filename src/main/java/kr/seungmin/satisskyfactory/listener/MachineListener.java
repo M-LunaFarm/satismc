@@ -106,7 +106,11 @@ public final class MachineListener implements Listener {
                 return;
             }
             MachineDefinition definition = definitions.get(machine.typeId()).orElse(null);
-            machines.remove(machine);
+            if (!machines.remove(machine)) {
+                event.setCancelled(true);
+                player.sendMessage("Factory storage is full. Empty some space before removing this machine.");
+                return;
+            }
             if (definition != null) {
                 event.getBlock().getWorld().dropItemNaturally(event.getBlock().getLocation(), itemFactory.machineItem(definition, 1));
                 messages.send(player, "removed", Map.of("machine", definition.displayName()));

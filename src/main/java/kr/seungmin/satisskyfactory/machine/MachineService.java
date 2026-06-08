@@ -13,8 +13,11 @@ import org.bukkit.block.BlockFace;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -74,11 +77,49 @@ public final class MachineService {
         }
     }
 
-    public void remove(MachineInstance machine) {
+    public boolean remove(MachineInstance machine) {
+        if (!flushInventories(machine)) {
+            return false;
+        }
         machine.status(MachineStatus.IDLE);
         machines.remove(machine.machineId());
         byLocation.remove(machine.location());
         database.deleteMachine(machine.machineId());
+        return true;
+    }
+
+    private boolean flushInventories(MachineInstance machine) {
+        VirtualInventory islandStorage = storage.islandStorage(machine.islandUuid());
+        List<VirtualInventory> buffers = machineInventories(machine);
+        long bufferedItems = buffers.stream().mapToLong(VirtualInventory::used).sum();
+        if (!islandStorage.canAdd("__machine_buffer__", bufferedItems)) {
+            return false;
+        }
+        for (VirtualInventory buffer : buffers) {
+            for (Map.Entry<String, Long> entry : buffer.items().entrySet()) {
+                islandStorage.add(entry.getKey(), entry.getValue());
+            }
+        }
+        for (VirtualInventory buffer : buffers) {
+            new ArrayList<>(buffer.items().keySet()).forEach(itemId -> buffer.set(itemId, 0));
+            storage.save(buffer);
+        }
+        storage.save(islandStorage);
+        return true;
+    }
+
+    private List<VirtualInventory> machineInventories(MachineInstance machine) {
+        Set<UUID> inventoryIds = new HashSet<>();
+        if (machine.inputInventoryId() != null) {
+            inventoryIds.add(machine.inputInventoryId());
+        }
+        if (machine.outputInventoryId() != null) {
+            inventoryIds.add(machine.outputInventoryId());
+        }
+        return inventoryIds.stream()
+                .map(storage::get)
+                .flatMap(Optional::stream)
+                .toList();
     }
 
     public Collection<MachineInstance> all() {
