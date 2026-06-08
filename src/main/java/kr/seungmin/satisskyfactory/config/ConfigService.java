@@ -1,10 +1,12 @@
 package kr.seungmin.satisskyfactory.config;
 
+import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,10 +34,19 @@ public final class ConfigService {
 
     public void load() {
         plugin.getDataFolder().mkdirs();
-        configs.clear();
         for (String fileName : FILES) {
             plugin.saveResource(fileName, false);
-            configs.put(fileName, YamlConfiguration.loadConfiguration(new File(plugin.getDataFolder(), fileName)));
+            File file = new File(plugin.getDataFolder(), fileName);
+            FileConfiguration existing = configs.get(fileName);
+            if (existing instanceof YamlConfiguration yaml) {
+                try {
+                    yaml.load(file);
+                } catch (IOException | InvalidConfigurationException exception) {
+                    throw new IllegalStateException("Failed to load config file: " + fileName, exception);
+                }
+            } else {
+                configs.put(fileName, YamlConfiguration.loadConfiguration(file));
+            }
         }
     }
 

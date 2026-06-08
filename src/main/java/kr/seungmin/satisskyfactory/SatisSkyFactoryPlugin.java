@@ -102,34 +102,7 @@ public final class SatisSkyFactoryPlugin extends JavaPlugin {
         islands.load();
         machines.load();
 
-        ticker = new MachineTickService(
-                this,
-                machines,
-                machineDefinitions,
-                storage,
-                recipes,
-                research,
-                nodes,
-                power,
-                boosts,
-                islands,
-                configInt("settings.max-machines-per-tick", "settings.max-machines-per-cycle", 200),
-                configs.main().getInt("settings.max-backfill-cycles", 60),
-                configs.main().getBoolean("settings.offline-production.enabled", true),
-                Math.max(0L, configs.main().getLong("settings.offline-production.max-hours", 8)) * 60L * 60L * 1000L,
-                configs.main().getDouble("settings.offline-production.efficiency", 0.35),
-                configInt("resource-nodes.link-radius", "settings.resource-node-link-radius", 3),
-                Set.copyOf(configs.main().getStringList("limits.recovery-machine-types")),
-                maintenanceDouble("maintenance.limited.efficiency", "maintenance.limited-efficiency", 0.5),
-                configs.file("maintenance.yml").getInt("maintenance.limited.max-operating-tier", 2),
-                configs.file("maintenance.yml").getDouble("maintenance.locked.recovery-efficiency", 0.30),
-                configs.file("maintenance.yml").getInt("maintenance.locked.max-operating-tier", 1),
-                configs.file("maintenance.yml").getDouble("maintenance.break-wear", 100.0)
-        );
-        ticker.start(configLong("settings.tick-period-ticks", "settings.tick-interval", 40));
-        maintenanceTicker = new MaintenanceTickService(this, islands, skyblock, maintenance);
-        maintenanceTicker.start(configLong("settings.maintenance-check-period-ticks", "settings.maintenance-check-interval", 1200));
-        dirtySaves.start(configLong("settings.dirty-save-period-ticks", "settings.dirty-save-interval", 200));
+        restartRuntimeTasks();
 
         registerCommands();
         registerListeners();
@@ -160,6 +133,47 @@ public final class SatisSkyFactoryPlugin extends JavaPlugin {
         configs.load();
         configureSkyblockHook();
         loadDefinitions();
+        restartRuntimeTasks();
+    }
+
+    private void restartRuntimeTasks() {
+        if (ticker != null) {
+            ticker.stop();
+        }
+        if (maintenanceTicker != null) {
+            maintenanceTicker.stop();
+        }
+        if (dirtySaves != null) {
+            dirtySaves.stop();
+        }
+        ticker = new MachineTickService(
+                this,
+                machines,
+                machineDefinitions,
+                storage,
+                recipes,
+                research,
+                nodes,
+                power,
+                boosts,
+                islands,
+                configInt("settings.max-machines-per-tick", "settings.max-machines-per-cycle", 200),
+                configs.main().getInt("settings.max-backfill-cycles", 60),
+                configs.main().getBoolean("settings.offline-production.enabled", true),
+                Math.max(0L, configs.main().getLong("settings.offline-production.max-hours", 8)) * 60L * 60L * 1000L,
+                configs.main().getDouble("settings.offline-production.efficiency", 0.35),
+                configInt("resource-nodes.link-radius", "settings.resource-node-link-radius", 3),
+                Set.copyOf(configs.main().getStringList("limits.recovery-machine-types")),
+                maintenanceDouble("maintenance.limited.efficiency", "maintenance.limited-efficiency", 0.5),
+                configs.file("maintenance.yml").getInt("maintenance.limited.max-operating-tier", 2),
+                configs.file("maintenance.yml").getDouble("maintenance.locked.recovery-efficiency", 0.30),
+                configs.file("maintenance.yml").getInt("maintenance.locked.max-operating-tier", 1),
+                configs.file("maintenance.yml").getDouble("maintenance.break-wear", 100.0)
+        );
+        ticker.start(configLong("settings.tick-period-ticks", "settings.tick-interval", 40));
+        maintenanceTicker = new MaintenanceTickService(this, islands, skyblock, maintenance);
+        maintenanceTicker.start(configLong("settings.maintenance-check-period-ticks", "settings.maintenance-check-interval", 1200));
+        dirtySaves.start(configLong("settings.dirty-save-period-ticks", "settings.dirty-save-interval", 200));
     }
 
     private void configureSkyblockHook() {

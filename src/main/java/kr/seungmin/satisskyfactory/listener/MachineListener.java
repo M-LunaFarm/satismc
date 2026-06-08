@@ -43,13 +43,9 @@ public final class MachineListener implements Listener {
     private final MessageService messages;
     private final ResearchService research;
     private final ResourceNodeService nodes;
-    private final Set<String> recoveryTypes;
+    private final FileConfiguration config;
+    private final FileConfiguration maintenanceConfig;
     private final IslandBoostService boosts;
-    private final int baseMachineLimit;
-    private final int machineLimitPerIslandTier;
-    private final int nodeLinkRadius;
-    private final boolean limitedBlocksNewMachines;
-    private final boolean lockedAllowsRecoveryMachines;
 
     public MachineListener(CustomItemFactory itemFactory, MachineDefinitionService definitions, MachineService machines,
                            SuperiorSkyblockHook skyblock, FactoryIslandService islands, FactoryGuiService gui,
@@ -64,17 +60,9 @@ public final class MachineListener implements Listener {
         this.messages = messages;
         this.research = research;
         this.nodes = nodes;
-        this.recoveryTypes = Set.copyOf(config.getStringList("limits.recovery-machine-types"));
+        this.config = config;
+        this.maintenanceConfig = maintenanceConfig;
         this.boosts = boosts;
-        this.baseMachineLimit = config.contains("limits.base-machine-limit")
-                ? config.getInt("limits.base-machine-limit", 128)
-                : config.getInt("limits.base-machines-per-island", 128);
-        this.machineLimitPerIslandTier = Math.max(0, config.getInt("limits.machine-limit-per-island-tier", 0));
-        this.nodeLinkRadius = Math.max(1, config.contains("resource-nodes.link-radius")
-                ? config.getInt("resource-nodes.link-radius", 3)
-                : config.getInt("settings.resource-node-link-radius", 3));
-        this.limitedBlocksNewMachines = maintenanceConfig.getBoolean("maintenance.limited.block-new-machine-placement", true);
-        this.lockedAllowsRecoveryMachines = maintenanceConfig.getBoolean("maintenance.locked.allow-basic-recovery-machines", true);
     }
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
@@ -117,17 +105,17 @@ public final class MachineListener implements Listener {
             messages.send(player, "place-denied");
             return false;
         }
-        if (island.maintenanceStatus() == MaintenanceStatus.LIMITED && limitedBlocksNewMachines) {
+        if (island.maintenanceStatus() == MaintenanceStatus.LIMITED && limitedBlocksNewMachines()) {
             messages.send(player, "place-denied");
             return false;
         }
         if (island.maintenanceStatus() == MaintenanceStatus.LOCKED
-                && (!lockedAllowsRecoveryMachines || !recoveryTypes.contains(typeId))) {
+                && (!lockedAllowsRecoveryMachines() || !recoveryTypes().contains(typeId))) {
             messages.send(player, "place-denied");
             return false;
         }
-        int machineLimit = boosts.boosts(islandRef.raw()).machineLimit(baseMachineLimit
-                + Math.max(0, island.tier() - 1) * machineLimitPerIslandTier);
+        int machineLimit = boosts.boosts(islandRef.raw()).machineLimit(baseMachineLimit()
+                + Math.max(0, island.tier() - 1) * machineLimitPerIslandTier());
         if (machines.byIsland(island.islandUuid()).size() >= machineLimit) {
             messages.send(player, "place-denied");
             return false;
@@ -158,8 +146,36 @@ public final class MachineListener implements Listener {
         if (definition.nodeType() == null) {
             return;
         }
-        nodes.nearest(machine.islandUuid(), machine.location(), nodeLinkRadius, definition.nodeType())
+        nodes.nearest(machine.islandUuid(), machine.location(), nodeLinkRadius(), definition.nodeType())
                 .ifPresentOrElse(node -> machine.linkedResourceNodeId(node.nodeId()), () -> machine.status(MachineStatus.INPUT_MISSING));
+    }
+
+    private Set<String> recoveryTypes() {
+        return Set.copyOf(config.getStringList("limits.recovery-machine-types"));
+    }
+
+    private int baseMachineLimit() {
+        return config.contains("limits.base-machine-limit")
+                ? config.getInt("limits.base-machine-limit", 128)
+                : config.getInt("limits.base-machines-per-island", 128);
+    }
+
+    private int machineLimitPerIslandTier() {
+        return Math.max(0, config.getInt("limits.machine-limit-per-island-tier", 0));
+    }
+
+    private int nodeLinkRadius() {
+        return Math.max(1, config.contains("resource-nodes.link-radius")
+                ? config.getInt("resource-nodes.link-radius", 3)
+                : config.getInt("settings.resource-node-link-radius", 3));
+    }
+
+    private boolean limitedBlocksNewMachines() {
+        return maintenanceConfig.getBoolean("maintenance.limited.block-new-machine-placement", true);
+    }
+
+    private boolean lockedAllowsRecoveryMachines() {
+        return maintenanceConfig.getBoolean("maintenance.locked.allow-basic-recovery-machines", true);
     }
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
