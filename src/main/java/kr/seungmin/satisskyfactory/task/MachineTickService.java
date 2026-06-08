@@ -65,6 +65,8 @@ public final class MachineTickService {
     private final double breakWear;
     private BukkitTask task;
     private int tickCursor;
+    private long machineSnapshotRevision = Long.MIN_VALUE;
+    private List<MachineInstance> machineSnapshot = List.of();
 
     public MachineTickService(JavaPlugin plugin, MachineService machines, MachineDefinitionService definitions, StorageService storage,
                               RecipeService recipes, ResearchService research, ResourceNodeService nodes, PowerNetworkService power,
@@ -113,9 +115,7 @@ public final class MachineTickService {
         power.beginCycle();
         long now = Instant.now().toEpochMilli();
         Set<UUID> touchedIslands = new HashSet<>();
-        List<MachineInstance> snapshot = machines.all().stream()
-                .sorted(Comparator.comparing(machine -> machine.machineId().toString()))
-                .toList();
+        List<MachineInstance> snapshot = machineSnapshot();
         if (snapshot.isEmpty()) {
             tickCursor = 0;
             return;
@@ -138,6 +138,20 @@ public final class MachineTickService {
         }
         tickCursor = (start + limit) % snapshot.size();
         refreshTouchedIslands(touchedIslands, now);
+    }
+
+    private List<MachineInstance> machineSnapshot() {
+        long revision = machines.revision();
+        if (revision != machineSnapshotRevision) {
+            machineSnapshot = machines.all().stream()
+                    .sorted(Comparator.comparing(machine -> machine.machineId().toString()))
+                    .toList();
+            machineSnapshotRevision = revision;
+            if (!machineSnapshot.isEmpty()) {
+                tickCursor = Math.floorMod(tickCursor, machineSnapshot.size());
+            }
+        }
+        return machineSnapshot;
     }
 
     private void refreshTouchedIslands(Set<UUID> touchedIslands, long now) {

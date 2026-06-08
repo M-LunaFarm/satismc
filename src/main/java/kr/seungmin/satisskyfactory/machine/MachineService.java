@@ -23,6 +23,7 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Predicate;
 
 public final class MachineService {
@@ -31,6 +32,7 @@ public final class MachineService {
     private final StorageService storage;
     private final Map<UUID, MachineInstance> machines = new ConcurrentHashMap<>();
     private final Map<BlockKey, UUID> byLocation = new ConcurrentHashMap<>();
+    private final AtomicLong revision = new AtomicLong();
     private DirtySaveService dirtySaves;
 
     public MachineService(DatabaseService database, MachineDefinitionService definitions, StorageService storage) {
@@ -46,6 +48,7 @@ public final class MachineService {
             machines.put(machine.machineId(), machine);
             byLocation.put(machine.location(), machine.machineId());
         }
+        revision.incrementAndGet();
     }
 
     public Optional<MachineInstance> at(Location location) {
@@ -66,6 +69,7 @@ public final class MachineService {
         machine.inputInventoryId(input.inventoryId());
         machine.outputInventoryId(output.inventoryId());
         save(machine);
+        revision.incrementAndGet();
         return machine;
     }
 
@@ -96,6 +100,7 @@ public final class MachineService {
             dirtySaves.forgetMachine(machine.machineId());
         }
         database.deleteMachine(machine.machineId());
+        revision.incrementAndGet();
         return true;
     }
 
@@ -139,6 +144,10 @@ public final class MachineService {
 
     public Collection<MachineInstance> all() {
         return new ArrayList<>(machines.values());
+    }
+
+    public long revision() {
+        return revision.get();
     }
 
     public Collection<MachineInstance> byIsland(UUID islandUuid) {
