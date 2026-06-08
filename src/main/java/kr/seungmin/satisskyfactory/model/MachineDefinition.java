@@ -23,7 +23,11 @@ public record MachineDefinition(
         List<String> requiredUnlocks,
         ResourceNodeType nodeType,
         Map<Material, String> harvestDrops,
-        Map<String, PlantRule> plantRules
+        Map<String, PlantRule> plantRules,
+        String fertilizerItem,
+        int growthPerCycle,
+        double qualityChance,
+        String qualityItem
 ) {
     public record PlantRule(Material crop, Material soil) {
     }

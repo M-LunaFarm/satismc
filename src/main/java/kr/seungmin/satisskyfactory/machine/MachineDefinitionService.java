@@ -44,7 +44,11 @@ public final class MachineDefinitionService {
                     config.getStringList(path + "required-unlocks"),
                     nodeType(config.getString(path + "node-type", "")),
                     harvestDrops(config.getConfigurationSection(path + "harvest-drops")),
-                    plantRules(config.getConfigurationSection(path + "planting"))
+                    plantRules(config.getConfigurationSection(path + "planting")),
+                    config.getString(path + "fertilizer.item", "fertilizer"),
+                    config.getInt(path + "fertilizer.growth-per-cycle", 1),
+                    config.getDouble(path + "fertilizer.quality-chance", 0.0),
+                    config.getString(path + "fertilizer.quality-item", "")
             ));
         }
     }

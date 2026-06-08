@@ -92,3 +92,6 @@ items:
   fertilizer:
     material: BONE_MEAL
     display: "Fertilizer"
+  quality_crop:
+    material: GOLDEN_CARROT
+    display: "Quality Crop"

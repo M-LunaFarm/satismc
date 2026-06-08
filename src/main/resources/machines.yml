@@ -42,6 +42,22 @@ machines:
       nether_wart:
         crop: NETHER_WART
         soil: SOUL_SAND
+  fertilizer_sprayer_t1:
+    display: "Fertilizer Sprayer T1"
+    material: DISPENSER
+    tier: 1
+    input-capacity: 128
+    output-capacity: 128
+    power-consumption: 4.0
+    cycle-ticks: 100
+    range: 4
+    amount-per-cycle: 8
+    wear-per-cycle: 0.025
+    fertilizer:
+      item: fertilizer
+      growth-per-cycle: 2
+      quality-chance: 0.08
+      quality-item: quality_crop
   miner_drill_t1:
     display: "Miner Drill T1"
     material: IRON_PICKAXE

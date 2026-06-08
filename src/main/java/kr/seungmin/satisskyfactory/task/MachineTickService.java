@@ -164,6 +164,9 @@ public final class MachineTickService {
         if (machine.typeId().equals("planter_t1")) {
             return processPlanter(machine, definition);
         }
+        if (machine.typeId().equals("fertilizer_sprayer_t1")) {
+            return processFertilizerSprayer(machine, definition);
+        }
         if (definition.nodeType() != null || machine.typeId().equals("miner_drill_t1")) {
             return processNodeProducer(machine, definition);
         }
@@ -286,6 +289,63 @@ public final class MachineTickService {
         }
         setStatus(machine, MachineStatus.INPUT_MISSING);
         return false;
+    }
+
+    private boolean processFertilizerSprayer(MachineInstance machine, MachineDefinition definition) {
+        VirtualInventory input = inputInventory(machine);
+        String fertilizerItem = definition.fertilizerItem() == null || definition.fertilizerItem().isBlank()
+                ? "fertilizer"
+                : definition.fertilizerItem();
+        if (input.amount(fertilizerItem) <= 0) {
+            setStatus(machine, MachineStatus.INPUT_MISSING);
+            return false;
+        }
+        Location location = location(machine.location());
+        if (location == null) {
+            return false;
+        }
+        int range = Math.max(1, definition.range());
+        int limit = Math.max(1, definition.amountPerCycle());
+        int boosted = 0;
+        for (int x = -range; x <= range && boosted < limit; x++) {
+            for (int z = -range; z <= range && boosted < limit; z++) {
+                Block block = location.clone().add(x, 0, z).getBlock();
+                if (!(block.getBlockData() instanceof Ageable ageable) || ageable.getAge() >= ageable.getMaximumAge()) {
+                    continue;
+                }
+                ageable.setAge(Math.min(ageable.getMaximumAge(), ageable.getAge() + Math.max(1, definition.growthPerCycle())));
+                block.setBlockData(ageable);
+                boosted++;
+            }
+        }
+        if (boosted <= 0) {
+            setStatus(machine, MachineStatus.INPUT_MISSING);
+            return false;
+        }
+        if (!input.remove(fertilizerItem, 1)) {
+            setStatus(machine, MachineStatus.INPUT_MISSING);
+            return false;
+        }
+        storage.save(input);
+        if (definition.qualityChance() > 0.0 && definition.qualityItem() != null && !definition.qualityItem().isBlank()) {
+            grantQualityBonus(machine, definition, boosted);
+        }
+        setStatus(machine, MachineStatus.RUNNING);
+        return true;
+    }
+
+    private void grantQualityBonus(MachineInstance machine, MachineDefinition definition, int boosted) {
+        VirtualInventory output = outputInventory(machine);
+        long bonus = 0;
+        double chance = Math.max(0.0, Math.min(1.0, definition.qualityChance()));
+        for (int index = 0; index < boosted; index++) {
+            if (ThreadLocalRandom.current().nextDouble() < chance) {
+                bonus++;
+            }
+        }
+        if (bonus > 0 && output.add(definition.qualityItem(), bonus)) {
+            storage.save(output);
+        }
     }
 
     private boolean isHarvestable(Block block) {
