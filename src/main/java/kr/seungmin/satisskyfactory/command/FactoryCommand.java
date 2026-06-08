@@ -498,20 +498,104 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
         if (args.length == 1) {
             return filter(List.of("help", "main", "status", "machines", "storage", "deposit", "withdraw", "contracts", "market", "research", "emergency", "node", "sell", "repair", "admin"), args[0]);
         }
+        if (args.length == 2 && args[0].equalsIgnoreCase("sell")) {
+            List<String> values = new ArrayList<>();
+            values.add("hand");
+            values.addAll(market.prices().keySet().stream().sorted().toList());
+            return filter(values, args[1]);
+        }
+        if (args.length == 3 && args[0].equalsIgnoreCase("sell") && !args[1].equalsIgnoreCase("hand")) {
+            return filter(amountSuggestions(), args[2]);
+        }
+        if (args.length == 2 && args[0].equalsIgnoreCase("withdraw")) {
+            return filter(storedItemIds(sender), args[1]);
+        }
+        if (args.length == 3 && args[0].equalsIgnoreCase("withdraw")) {
+            return filter(amountSuggestions(), args[2]);
+        }
+        if (args.length == 2 && args[0].equalsIgnoreCase("contracts")) {
+            return filter(List.of("complete"), args[1]);
+        }
+        if (args.length == 2 && args[0].equalsIgnoreCase("emergency")) {
+            return filter(List.of("complete"), args[1]);
+        }
+        if (args.length == 2 && args[0].equalsIgnoreCase("node")) {
+            return filter(List.of("scan"), args[1]);
+        }
+        if (args.length == 2 && args[0].equalsIgnoreCase("research")) {
+            return filter(List.of("unlock"), args[1]);
+        }
         if (args.length == 2 && args[0].equalsIgnoreCase("admin")) {
             return filter(List.of("reload", "give", "giveitem", "addresearch", "setdebt", "charge", "gennodes", "debug", "removehere", "repairhere"), args[1]);
         }
         if (args.length == 3 && args[0].equalsIgnoreCase("research") && args[1].equalsIgnoreCase("unlock")) {
             return filter(research.all().keySet().stream().toList(), args[2]);
         }
+        if (args.length == 3 && args[0].equalsIgnoreCase("admin") && needsPlayer(args[1])) {
+            return filter(onlinePlayerNames(), args[2]);
+        }
         if (args.length == 4 && args[0].equalsIgnoreCase("admin") && args[1].equalsIgnoreCase("give")) {
             return filter(definitions.all().stream().map(machine -> machine.typeId()).toList(), args[3]);
+        }
+        if (args.length == 4 && args[0].equalsIgnoreCase("admin") && args[1].equalsIgnoreCase("giveitem")) {
+            return filter(itemIds(), args[3]);
+        }
+        if (args.length == 4 && args[0].equalsIgnoreCase("admin")
+                && (args[1].equalsIgnoreCase("give") || args[1].equalsIgnoreCase("giveitem")
+                || args[1].equalsIgnoreCase("addresearch") || args[1].equalsIgnoreCase("setdebt"))) {
+            return filter(amountSuggestions(), args[3]);
+        }
+        if (args.length == 5 && args[0].equalsIgnoreCase("admin")
+                && (args[1].equalsIgnoreCase("give") || args[1].equalsIgnoreCase("giveitem"))) {
+            return filter(amountSuggestions(), args[4]);
+        }
+        if (args.length == 3 && args[0].equalsIgnoreCase("admin") && args[1].equalsIgnoreCase("debug")) {
+            return filter(List.of("island", "networks"), args[2]);
         }
         return new ArrayList<>();
     }
 
     private List<String> filter(List<String> values, String prefix) {
-        return values.stream().filter(value -> value.startsWith(prefix.toLowerCase(Locale.ROOT))).toList();
+        String lower = prefix.toLowerCase(Locale.ROOT);
+        return values.stream()
+                .filter(value -> value.toLowerCase(Locale.ROOT).startsWith(lower))
+                .toList();
+    }
+
+    private List<String> storedItemIds(CommandSender sender) {
+        if (!(sender instanceof Player player)) {
+            return itemIds();
+        }
+        return islands.context(player)
+                .map(context -> storage.islandStorage(context.factoryIsland().islandUuid()).items().keySet().stream()
+                        .sorted()
+                        .toList())
+                .filter(values -> !values.isEmpty())
+                .orElseGet(this::itemIds);
+    }
+
+    private List<String> itemIds() {
+        return items.all().keySet().stream().sorted().toList();
+    }
+
+    private List<String> onlinePlayerNames() {
+        return Bukkit.getOnlinePlayers().stream()
+                .map(Player::getName)
+                .sorted(String.CASE_INSENSITIVE_ORDER)
+                .toList();
+    }
+
+    private List<String> amountSuggestions() {
+        return List.of("1", "8", "16", "32", "64", "256", "1024");
+    }
+
+    private boolean needsPlayer(String adminSubcommand) {
+        return adminSubcommand.equalsIgnoreCase("give")
+                || adminSubcommand.equalsIgnoreCase("giveitem")
+                || adminSubcommand.equalsIgnoreCase("addresearch")
+                || adminSubcommand.equalsIgnoreCase("setdebt")
+                || adminSubcommand.equalsIgnoreCase("charge")
+                || adminSubcommand.equalsIgnoreCase("gennodes");
     }
 
     @FunctionalInterface
