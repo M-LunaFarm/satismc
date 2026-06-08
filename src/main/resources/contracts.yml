@@ -1,5 +1,6 @@
 contracts:
   daily_slots: 3
+  weekly_slots: 1
   emergency-daily-limit: 5
   templates:
     bread_supply:
@@ -20,9 +21,20 @@ contracts:
         money: 350
         research: 6
         reputation: 3
+    machine_parts_weekly:
+      type: WEEKLY
+      tier: 1
+      expires-hours: 168
+      required:
+        machine_parts: 16
+      rewards:
+        money: 1200
+        research: 20
+        reputation: 10
   emergency:
     type: EMERGENCY
     tier: 1
+    expires-hours: 6
     required:
       wheat: 16
     rewards:

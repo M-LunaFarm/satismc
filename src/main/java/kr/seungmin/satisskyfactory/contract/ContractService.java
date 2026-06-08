@@ -22,7 +22,8 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 public final class ContractService {
-    public record ContractTemplate(String id, String type, int tier, Map<String, Long> required, long money, long research, long reputation, long debtRelief) {
+    public record ContractTemplate(String id, String type, int tier, Map<String, Long> required,
+                                   long money, long research, long reputation, long debtRelief, long expiresHours) {
     }
 
     public record ActiveContract(UUID contractId, ContractTemplate template, long expiresAt) {
@@ -35,6 +36,7 @@ public final class ContractService {
     private final Map<String, ContractTemplate> templates = new HashMap<>();
     private ContractTemplate emergency;
     private int dailySlots;
+    private int weeklySlots;
     private int emergencyDailyLimit;
 
     public ContractService(StorageService storage, EconomyService economy, DatabaseService database, IslandBoostService boosts) {
@@ -47,6 +49,7 @@ public final class ContractService {
     public void load(FileConfiguration config) {
         templates.clear();
         dailySlots = Math.max(1, config.getInt("contracts.daily_slots", 3));
+        weeklySlots = Math.max(0, config.getInt("contracts.weekly_slots", 1));
         emergencyDailyLimit = Math.max(1, config.getInt("contracts.emergency-daily-limit",
                 config.getInt("contracts.emergency_daily_limit", 5)));
         ConfigurationSection section = config.getConfigurationSection("contracts.templates");
@@ -106,20 +109,28 @@ public final class ContractService {
     }
 
     private void ensureDailyContracts(FactoryIsland island) {
-        long expiresAt = Instant.now().plus(Duration.ofHours(24)).toEpochMilli();
         int slots = Math.max(1, dailySlots + boosts.boosts(island.islandUuid()).contractSlotBonus());
-        int activeDaily = (int) database.loadContracts(island.islandUuid(), "ACTIVE").stream()
+        ensureContracts(island, "DAILY", slots, 24);
+        ensureContracts(island, "WEEKLY", weeklySlots, 168);
+    }
+
+    private void ensureContracts(FactoryIsland island, String type, int slots, long defaultExpiresHours) {
+        if (slots <= 0) {
+            return;
+        }
+        long expiresAt = Instant.now().plus(Duration.ofHours(defaultExpiresHours)).toEpochMilli();
+        int activeCount = (int) database.loadContracts(island.islandUuid(), "ACTIVE").stream()
                 .map(stored -> templates.get(stored.templateId()))
-                .filter(template -> template != null && template.type().equalsIgnoreCase("DAILY"))
+                .filter(template -> template != null && template.type().equalsIgnoreCase(type))
                 .count();
-        if (activeDaily >= slots) {
+        if (activeCount >= slots) {
             return;
         }
         for (ContractTemplate template : templates.values().stream().sorted((left, right) -> left.id().compareTo(right.id())).toList()) {
-            if (activeDaily >= slots) {
+            if (activeCount >= slots) {
                 return;
             }
-            if (!template.type().equalsIgnoreCase("DAILY")) {
+            if (!template.type().equalsIgnoreCase(type)) {
                 continue;
             }
             if (template.tier() > island.tier()) {
@@ -138,9 +149,11 @@ public final class ContractService {
                     "{}",
                     json(rewards(template)),
                     "ACTIVE",
-                    expiresAt
+                    template.expiresHours() > 0
+                            ? Instant.now().plus(Duration.ofHours(template.expiresHours())).toEpochMilli()
+                            : expiresAt
             ));
-            activeDaily++;
+            activeCount++;
         }
     }
 
@@ -195,8 +208,22 @@ public final class ContractService {
                 config.getLong(base + "rewards.money", 0),
                 config.getLong(base + "rewards.research", 0),
                 config.getLong(base + "rewards.reputation", 0),
-                config.getLong(base + "rewards.debt-relief", 0)
+                config.getLong(base + "rewards.debt-relief", 0),
+                config.getLong(base + "expires-hours", defaultExpiresHours(config.getString(base + "type", "DAILY")))
         );
+    }
+
+    private long defaultExpiresHours(String type) {
+        if (type == null) {
+            return 24;
+        }
+        if (type.equalsIgnoreCase("WEEKLY")) {
+            return 168;
+        }
+        if (type.equalsIgnoreCase("EMERGENCY")) {
+            return 6;
+        }
+        return 24;
     }
 
     private Map<String, Long> rewards(ContractTemplate template) {
