@@ -126,13 +126,17 @@ public final class FactoryGuiService {
         Inventory inventory = Bukkit.createInventory(holder, 27, "Factory Contracts");
         holder.inventory(inventory);
         int slot = 10;
-        for (ContractService.ActiveContract active : contracts.activeContracts(island)) {
+        List<ContractService.ActiveContract> activeContracts = contracts.activeContracts(island);
+        inventory.setItem(4, icon(Material.CLOCK, ChatColor.AQUA + "Active Contracts",
+                List.of(ChatColor.GRAY + "Open: " + activeContracts.size())));
+        for (ContractService.ActiveContract active : activeContracts) {
             if (slot >= 17) {
                 break;
             }
             ContractService.ContractTemplate template = active.template();
             inventory.setItem(slot++, icon(Material.WRITABLE_BOOK, ChatColor.GOLD + template.id(),
                     List.of(ChatColor.GRAY + "Type: " + template.type(),
+                            ChatColor.GRAY + "Tier: " + template.tier(),
                             ChatColor.GRAY + "Required: " + template.required(),
                             ChatColor.GRAY + "Money: " + template.money(),
                             ChatColor.GRAY + "Research: " + template.research(),

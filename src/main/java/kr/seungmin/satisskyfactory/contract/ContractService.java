@@ -2,6 +2,7 @@ package kr.seungmin.satisskyfactory.contract;
 
 import kr.seungmin.satisskyfactory.database.DatabaseService;
 import kr.seungmin.satisskyfactory.economy.EconomyService;
+import kr.seungmin.satisskyfactory.machine.IslandBoostService;
 import kr.seungmin.satisskyfactory.model.FactoryIsland;
 import kr.seungmin.satisskyfactory.storage.StorageService;
 import kr.seungmin.satisskyfactory.storage.VirtualInventory;
@@ -19,7 +20,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 public final class ContractService {
-    public record ContractTemplate(String id, String type, Map<String, Long> required, long money, long research, long reputation, long debtRelief) {
+    public record ContractTemplate(String id, String type, int tier, Map<String, Long> required, long money, long research, long reputation, long debtRelief) {
     }
 
     public record ActiveContract(UUID contractId, ContractTemplate template, long expiresAt) {
@@ -28,17 +29,21 @@ public final class ContractService {
     private final StorageService storage;
     private final EconomyService economy;
     private final DatabaseService database;
+    private final IslandBoostService boosts;
     private final Map<String, ContractTemplate> templates = new HashMap<>();
     private ContractTemplate emergency;
+    private int dailySlots;
 
-    public ContractService(StorageService storage, EconomyService economy, DatabaseService database) {
+    public ContractService(StorageService storage, EconomyService economy, DatabaseService database, IslandBoostService boosts) {
         this.storage = storage;
         this.economy = economy;
         this.database = database;
+        this.boosts = boosts;
     }
 
     public void load(FileConfiguration config) {
         templates.clear();
+        dailySlots = Math.max(1, config.getInt("contracts.daily_slots", 3));
         ConfigurationSection section = config.getConfigurationSection("contracts.templates");
         if (section != null) {
             for (String id : section.getKeys(false)) {
@@ -49,8 +54,8 @@ public final class ContractService {
     }
 
     public List<ActiveContract> activeContracts(FactoryIsland island) {
-        ensureDailyContracts(island);
         expireOldContracts(island);
+        ensureDailyContracts(island);
         return database.loadContracts(island.islandUuid(), "ACTIVE").stream()
                 .map(stored -> new ActiveContract(stored.contractId(), templates.get(stored.templateId()), stored.expiresAt()))
                 .filter(active -> active.template() != null)
@@ -79,8 +84,22 @@ public final class ContractService {
 
     private void ensureDailyContracts(FactoryIsland island) {
         long expiresAt = Instant.now().plus(Duration.ofHours(24)).toEpochMilli();
-        for (ContractTemplate template : templates.values()) {
+        int slots = Math.max(1, dailySlots + boosts.boosts(island.islandUuid()).contractSlotBonus());
+        int activeDaily = (int) database.loadContracts(island.islandUuid(), "ACTIVE").stream()
+                .map(stored -> templates.get(stored.templateId()))
+                .filter(template -> template != null && template.type().equalsIgnoreCase("DAILY"))
+                .count();
+        if (activeDaily >= slots) {
+            return;
+        }
+        for (ContractTemplate template : templates.values().stream().sorted((left, right) -> left.id().compareTo(right.id())).toList()) {
+            if (activeDaily >= slots) {
+                return;
+            }
             if (!template.type().equalsIgnoreCase("DAILY")) {
+                continue;
+            }
+            if (template.tier() > island.tier()) {
                 continue;
             }
             if (database.hasContractForTemplate(island.islandUuid(), template.id(), "ACTIVE")) {
@@ -91,13 +110,14 @@ public final class ContractService {
                     island.islandUuid(),
                     template.id(),
                     template.type(),
-                    1,
+                    template.tier(),
                     json(template.required()),
                     "{}",
                     json(rewards(template)),
                     "ACTIVE",
                     expiresAt
             ));
+            activeDaily++;
         }
     }
 
@@ -136,6 +156,7 @@ public final class ContractService {
         return new ContractTemplate(
                 id,
                 config.getString(base + "type", "DAILY"),
+                config.getInt(base + "tier", 1),
                 map(config.getConfigurationSection(base + "required")),
                 config.getLong(base + "rewards.money", 0),
                 config.getLong(base + "rewards.research", 0),
