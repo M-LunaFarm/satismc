@@ -105,8 +105,12 @@ public final class FactoryGuiService {
                 lore.add(ChatColor.GRAY + "Throughput: " + definition.logisticsThroughput() + "/cycle");
             }
         }
-        storage.get(machine.inputInventoryId()).ifPresent(input ->
-                lore.add(ChatColor.GRAY + "Input: " + input.used() + "/" + input.capacity()));
+        storage.get(machine.inputInventoryId()).ifPresent(input -> {
+            lore.add(ChatColor.GRAY + "Input: " + input.used() + "/" + input.capacity());
+            if (!input.items().isEmpty()) {
+                lore.add(ChatColor.DARK_GRAY + "In: " + input.items());
+            }
+        });
         storage.get(machine.outputInventoryId()).ifPresent(output -> {
             lore.add(ChatColor.GRAY + "Output: " + output.used() + "/" + output.capacity());
             if (!output.items().isEmpty()) {

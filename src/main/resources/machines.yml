@@ -88,6 +88,14 @@ machines:
     logistics-throughput: 32
     wear-per-cycle: 0.015
     required-unlocks: [tier_2_logistics]
+  storage_t1:
+    display: "Storage T1"
+    material: CHEST
+    tier: 1
+    input-capacity: 5000
+    output-capacity: 0
+    cycle-ticks: 100
+    wear-per-cycle: 0.0
   tree_farm_t1:
     display: "Tree Farm T1"
     material: OAK_SAPLING

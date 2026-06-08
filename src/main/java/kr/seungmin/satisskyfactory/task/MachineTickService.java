@@ -150,6 +150,10 @@ public final class MachineTickService {
         if (definition.isLogistics()) {
             return processLogistics(machine, definition);
         }
+        if (definition.isStorage()) {
+            setStatus(machine, MachineStatus.IDLE);
+            return false;
+        }
         if (definition.isGenerator()) {
             return processGenerator(machine);
         }
@@ -284,9 +288,19 @@ public final class MachineTickService {
         VirtualInventory buffer = inputInventory(machine);
         long remaining = definition.logisticsThroughput();
         long moved = 0;
-        List<MachineInstance> network = machines.connectedTo(machine).stream().toList();
+        List<MachineInstance> network = machines.connectedTo(machine).stream()
+                .sorted(Comparator.comparing(candidate -> candidate.machineId().toString()))
+                .toList();
+        List<MachineInstance> storageNodes = network.stream()
+                .filter(candidate -> !candidate.machineId().equals(machine.machineId()))
+                .filter(candidate -> definitions.get(candidate.typeId()).map(MachineDefinition::isStorage).orElse(false))
+                .toList();
         for (MachineInstance target : network) {
             if (target.machineId().equals(machine.machineId()) || remaining <= 0) {
+                continue;
+            }
+            MachineDefinition targetDefinition = definitions.get(target.typeId()).orElse(null);
+            if (targetDefinition == null || targetDefinition.isLogistics() || targetDefinition.isStorage()) {
                 continue;
             }
             VirtualInventory output = outputInventory(target);
@@ -303,13 +317,56 @@ public final class MachineTickService {
                     continue;
                 }
                 MachineDefinition targetDefinition = definitions.get(target.typeId()).orElse(null);
-                if (targetDefinition == null || targetDefinition.isLogistics()) {
+                if (targetDefinition == null || targetDefinition.isLogistics() || targetDefinition.isStorage()) {
                     continue;
                 }
                 VirtualInventory input = inputInventory(target);
                 long transfer = fillInput(buffer, input, targetDefinition, remaining);
                 if (transfer > 0) {
                     storage.save(input);
+                    moved += transfer;
+                    remaining -= transfer;
+                }
+            }
+        }
+        if (remaining > 0) {
+            for (MachineInstance storageNode : storageNodes) {
+                if (remaining <= 0) {
+                    break;
+                }
+                VirtualInventory storageInventory = inputInventory(storageNode);
+                long movedFromStorage = 0;
+                for (MachineInstance target : network) {
+                    if (target.machineId().equals(machine.machineId()) || target.machineId().equals(storageNode.machineId()) || remaining <= 0) {
+                        continue;
+                    }
+                    MachineDefinition targetDefinition = definitions.get(target.typeId()).orElse(null);
+                    if (targetDefinition == null || targetDefinition.isLogistics() || targetDefinition.isStorage()) {
+                        continue;
+                    }
+                    VirtualInventory input = inputInventory(target);
+                    long transfer = fillInput(storageInventory, input, targetDefinition, remaining);
+                    if (transfer > 0) {
+                        storage.save(input);
+                        moved += transfer;
+                        movedFromStorage += transfer;
+                        remaining -= transfer;
+                    }
+                }
+                if (movedFromStorage > 0) {
+                    storage.save(storageInventory);
+                }
+            }
+        }
+        if (remaining > 0) {
+            for (MachineInstance storageNode : storageNodes) {
+                if (remaining <= 0) {
+                    break;
+                }
+                VirtualInventory storageInventory = inputInventory(storageNode);
+                long transfer = moveAny(buffer, storageInventory, remaining);
+                if (transfer > 0) {
+                    storage.save(storageInventory);
                     moved += transfer;
                     remaining -= transfer;
                 }

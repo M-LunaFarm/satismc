@@ -33,4 +33,8 @@ public record MachineDefinition(
     public boolean isLogistics() {
         return logisticsThroughput > 0;
     }
+
+    public boolean isStorage() {
+        return typeId.startsWith("storage_");
+    }
 }
