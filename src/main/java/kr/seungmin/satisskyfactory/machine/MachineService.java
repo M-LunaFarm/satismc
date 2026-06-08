@@ -92,6 +92,9 @@ public final class MachineService {
         machine.status(MachineStatus.IDLE);
         machines.remove(machine.machineId());
         byLocation.remove(machine.location());
+        if (dirtySaves != null) {
+            dirtySaves.forgetMachine(machine.machineId());
+        }
         database.deleteMachine(machine.machineId());
         return true;
     }

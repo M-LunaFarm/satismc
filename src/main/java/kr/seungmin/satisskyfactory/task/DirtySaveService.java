@@ -46,6 +46,10 @@ public final class DirtySaveService {
         machines.put(machine.machineId(), machine);
     }
 
+    public void forgetMachine(UUID machineId) {
+        machines.remove(machineId);
+    }
+
     public void markInventory(VirtualInventory inventory) {
         inventories.put(inventory.inventoryId(), inventory);
     }
