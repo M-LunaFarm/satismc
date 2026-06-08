@@ -86,6 +86,8 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
             case "status" -> status(player, island);
             case "machines" -> player.sendMessage("Machines: " + machines.byIsland(island.islandUuid()).size());
             case "storage" -> gui.openStorage(player, island);
+            case "deposit" -> depositHand(player, island);
+            case "withdraw" -> withdraw(player, island, args);
             case "market" -> market.prices().forEach((item, price) -> player.sendMessage(item + ": " + price));
             case "contracts" -> {
                 if (args.length > 1 && args[1].equalsIgnoreCase("complete")) {
@@ -179,12 +181,62 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
 
     private void sellHand(Player player, FactoryIsland island) {
         ItemStack hand = player.getInventory().getItemInMainHand();
+        if (hand.getType() == Material.AIR || hand.getAmount() <= 0) {
+            player.sendMessage("Hold an item first.");
+            return;
+        }
         String itemId = itemFactory.factoryItemId(hand).orElseGet(() -> hand.getType().name().toLowerCase(Locale.ROOT));
         int amount = hand.getAmount();
         market.sellDirect(island.islandUuid(), player, itemId, amount).ifPresentOrElse(money -> {
             hand.setAmount(0);
             messages.send(player, "sold", Map.of("item", itemId, "amount", String.valueOf(amount), "money", String.valueOf(money)));
         }, () -> player.sendMessage("The item in your hand cannot be sold."));
+    }
+
+    private void depositHand(Player player, FactoryIsland island) {
+        ItemStack hand = player.getInventory().getItemInMainHand();
+        if (hand.getType() == Material.AIR || hand.getAmount() <= 0) {
+            player.sendMessage("Hold an item first.");
+            return;
+        }
+        String itemId = itemFactory.factoryItemId(hand).orElseGet(() -> hand.getType().name().toLowerCase(Locale.ROOT));
+        long amount = hand.getAmount();
+        var inventory = storage.islandStorage(island.islandUuid());
+        if (!inventory.add(itemId, amount)) {
+            player.sendMessage("Factory storage is full.");
+            return;
+        }
+        hand.setAmount(0);
+        storage.save(inventory);
+        messages.send(player, "deposited", Map.of("item", itemId, "amount", String.valueOf(amount)));
+    }
+
+    private void withdraw(Player player, FactoryIsland island, String[] args) {
+        if (args.length < 3) {
+            player.sendMessage("/factory withdraw <itemId> <amount>");
+            return;
+        }
+        String itemId = args[1];
+        long amount = parseLong(args, 2, 0);
+        if (amount <= 0 || amount > Integer.MAX_VALUE) {
+            player.sendMessage("Invalid amount.");
+            return;
+        }
+        var inventory = storage.islandStorage(island.islandUuid());
+        if (!inventory.remove(itemId, amount)) {
+            player.sendMessage("Not enough items in storage.");
+            return;
+        }
+        ItemStack stack = items.get(itemId)
+                .map(item -> itemFactory.factoryItem(item, (int) amount))
+                .orElseGet(() -> new ItemStack(Material.matchMaterial(itemId.toUpperCase(Locale.ROOT)) == null ? Material.PAPER : Material.matchMaterial(itemId.toUpperCase(Locale.ROOT)), (int) amount));
+        Map<Integer, ItemStack> overflow = player.getInventory().addItem(stack);
+        if (!overflow.isEmpty()) {
+            overflow.values().forEach(leftover -> inventory.add(itemId, leftover.getAmount()));
+            player.sendMessage("Your inventory is full.");
+        }
+        storage.save(inventory);
+        messages.send(player, "withdrew", Map.of("item", itemId, "amount", String.valueOf(amount - overflow.values().stream().mapToInt(ItemStack::getAmount).sum())));
     }
 
     private void status(Player player, FactoryIsland island) {
@@ -293,7 +345,7 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (args.length == 1) {
-            return filter(List.of("help", "status", "machines", "storage", "contracts", "market", "research", "emergency", "node", "sell", "admin"), args[0]);
+            return filter(List.of("help", "status", "machines", "storage", "deposit", "withdraw", "contracts", "market", "research", "emergency", "node", "sell", "admin"), args[0]);
         }
         if (args.length == 2 && args[0].equalsIgnoreCase("admin")) {
             return filter(List.of("reload", "give", "giveitem", "addresearch", "setdebt", "charge", "gennodes", "debug", "removehere"), args[1]);
