@@ -270,21 +270,56 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
             player.sendMessage("Invalid amount.");
             return;
         }
+        if (items.get(itemId).map(ItemRegistry.FactoryItem::virtualOnly).orElse(false)) {
+            player.sendMessage("That item is virtual-only and cannot be withdrawn.");
+            return;
+        }
         var inventory = storage.islandStorage(island.islandUuid());
         if (!inventory.remove(itemId, amount)) {
             player.sendMessage("Not enough items in storage.");
             return;
         }
-        ItemStack stack = items.get(itemId)
-                .map(item -> itemFactory.factoryItem(item, (int) amount))
-                .orElseGet(() -> new ItemStack(Material.matchMaterial(itemId.toUpperCase(Locale.ROOT)) == null ? Material.PAPER : Material.matchMaterial(itemId.toUpperCase(Locale.ROOT)), (int) amount));
-        Map<Integer, ItemStack> overflow = player.getInventory().addItem(stack);
-        if (!overflow.isEmpty()) {
-            overflow.values().forEach(leftover -> inventory.add(itemId, leftover.getAmount()));
+        long returned = giveVirtualItem(player, itemId, amount);
+        if (returned > 0) {
+            inventory.add(itemId, returned);
             player.sendMessage("Your inventory is full.");
         }
         storage.save(inventory);
-        messages.send(player, "withdrew", Map.of("item", itemId, "amount", String.valueOf(amount - overflow.values().stream().mapToInt(ItemStack::getAmount).sum())));
+        messages.send(player, "withdrew", Map.of("item", itemId, "amount", String.valueOf(amount - returned)));
+    }
+
+    private long giveVirtualItem(Player player, String itemId, long amount) {
+        long remaining = amount;
+        while (remaining > 0) {
+            ItemStack stack = itemStack(itemId, remaining);
+            int stackAmount = stack.getAmount();
+            Map<Integer, ItemStack> overflow = player.getInventory().addItem(stack);
+            if (!overflow.isEmpty()) {
+                return overflow.values().stream().mapToLong(ItemStack::getAmount).sum()
+                        + Math.max(0, remaining - stackAmount);
+            }
+            remaining -= stackAmount;
+        }
+        return 0;
+    }
+
+    private ItemStack itemStack(String itemId, long amount) {
+        return items.get(itemId)
+                .map(item -> itemFactory.factoryItem(item, stackAmount(item.material(), amount)))
+                .orElseGet(() -> {
+                    Material material = material(itemId);
+                    return new ItemStack(material, stackAmount(material, amount));
+                });
+    }
+
+    private int stackAmount(Material material, long amount) {
+        int maxStackSize = Math.max(1, material.getMaxStackSize());
+        return (int) Math.max(1, Math.min(maxStackSize, amount));
+    }
+
+    private Material material(String itemId) {
+        Material material = Material.matchMaterial(itemId.toUpperCase(Locale.ROOT));
+        return material == null ? Material.PAPER : material;
     }
 
     private void status(Player player, FactoryIsland island) {
