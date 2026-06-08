@@ -105,7 +105,7 @@ public final class ResourceNodeService {
     public Optional<ResourceNode> nearest(UUID islandUuid, BlockKey location, int maxDistance, ResourceNodeType type) {
         return nodes(islandUuid).stream()
                 .filter(node -> node.location().world().equals(location.world()))
-                .filter(node -> type == null || node.nodeType().equalsIgnoreCase(type.name()))
+                .filter(node -> type == null || type.matches(node.nodeType()))
                 .filter(node -> distanceSquared(node.location(), location) <= maxDistance * maxDistance)
                 .min(Comparator.comparingInt(node -> distanceSquared(node.location(), location)));
     }

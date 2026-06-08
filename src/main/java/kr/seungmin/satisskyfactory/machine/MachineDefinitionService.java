@@ -62,14 +62,7 @@ public final class MachineDefinitionService {
     }
 
     private ResourceNodeType nodeType(String value) {
-        if (value == null || value.isBlank()) {
-            return null;
-        }
-        try {
-            return ResourceNodeType.valueOf(value.toUpperCase());
-        } catch (IllegalArgumentException exception) {
-            return null;
-        }
+        return ResourceNodeType.fromConfig(value);
     }
 
     private Map<Material, String> harvestDrops(ConfigurationSection section) {

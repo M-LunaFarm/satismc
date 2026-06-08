@@ -375,7 +375,7 @@ public final class MachineTickService {
                 ? nodes.nearest(machine.islandUuid(), machine.location(), nodeLinkRadius, definition.nodeType())
                 : nodes.nodes(machine.islandUuid()).stream()
                 .filter(candidate -> candidate.nodeId().equals(machine.linkedResourceNodeId()))
-                .filter(candidate -> definition.nodeType() == null || candidate.nodeType().equalsIgnoreCase(definition.nodeType().name()))
+                .filter(candidate -> definition.nodeType() == null || definition.nodeType().matches(candidate.nodeType()))
                 .findFirst();
         if (node.isEmpty() || node.get().remaining() <= 0 || node.get().requiredMachineTier() > definition.tier()) {
             setStatus(machine, MachineStatus.INPUT_MISSING);
