@@ -4,6 +4,7 @@ import kr.seungmin.satisskyfactory.machine.MachineDefinitionService;
 import kr.seungmin.satisskyfactory.machine.MachineService;
 import kr.seungmin.satisskyfactory.model.MachineDefinition;
 import kr.seungmin.satisskyfactory.model.MachineInstance;
+import kr.seungmin.satisskyfactory.model.MachineStatus;
 import kr.seungmin.satisskyfactory.storage.StorageService;
 import kr.seungmin.satisskyfactory.storage.VirtualInventory;
 
@@ -45,6 +46,9 @@ public final class PowerNetworkService {
         for (MachineInstance machine : machines.byIsland(islandUuid)) {
             MachineDefinition definition = definitions.get(machine.typeId()).orElse(null);
             if (definition == null) {
+                continue;
+            }
+            if (!canParticipate(machine)) {
                 continue;
             }
             if (definition.isGenerator()) {
@@ -91,6 +95,13 @@ public final class PowerNetworkService {
         }
         double ratio = Math.max(0.0, Math.min(1.0, available / consumption));
         return new NetworkState(cycleId, ratio, generation, consumption, stored, batteryCapacity);
+    }
+
+    private boolean canParticipate(MachineInstance machine) {
+        MachineStatus status = machine.status();
+        return status != MachineStatus.BROKEN
+                && status != MachineStatus.LOCKED
+                && status != MachineStatus.CHUNK_UNLOADED;
     }
 
     public record NetworkState(long cycleId, double ratio, double generation, double consumption, long batteryStored, double batteryCapacity) {
