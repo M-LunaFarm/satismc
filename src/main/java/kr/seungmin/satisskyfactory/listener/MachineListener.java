@@ -4,6 +4,7 @@ import kr.seungmin.satisskyfactory.config.MessageService;
 import kr.seungmin.satisskyfactory.gui.FactoryGuiService;
 import kr.seungmin.satisskyfactory.hook.SuperiorSkyblockHook;
 import kr.seungmin.satisskyfactory.item.CustomItemFactory;
+import kr.seungmin.satisskyfactory.logistics.ItemNetworkService;
 import kr.seungmin.satisskyfactory.machine.FactoryIslandService;
 import kr.seungmin.satisskyfactory.machine.IslandBoostService;
 import kr.seungmin.satisskyfactory.machine.MachineDefinitionService;
@@ -45,6 +46,7 @@ public final class MachineListener implements Listener {
     private final MessageService messages;
     private final ResearchService research;
     private final ResourceNodeService nodes;
+    private final ItemNetworkService itemNetworks;
     private final FileConfiguration config;
     private final FileConfiguration maintenanceConfig;
     private final IslandBoostService boosts;
@@ -52,6 +54,7 @@ public final class MachineListener implements Listener {
     public MachineListener(JavaPlugin plugin, CustomItemFactory itemFactory, MachineDefinitionService definitions, MachineService machines,
                            SuperiorSkyblockHook skyblock, FactoryIslandService islands, FactoryGuiService gui,
                            MessageService messages, ResearchService research, ResourceNodeService nodes,
+                           ItemNetworkService itemNetworks,
                            FileConfiguration config, FileConfiguration maintenanceConfig, IslandBoostService boosts) {
         this.plugin = plugin;
         this.itemFactory = itemFactory;
@@ -63,6 +66,7 @@ public final class MachineListener implements Listener {
         this.messages = messages;
         this.research = research;
         this.nodes = nodes;
+        this.itemNetworks = itemNetworks;
         this.config = config;
         this.maintenanceConfig = maintenanceConfig;
         this.boosts = boosts;
@@ -138,6 +142,7 @@ public final class MachineListener implements Listener {
         messages.send(player, "placed", Map.of("machine", definition.displayName()));
         islands.save(island);
         machines.save(machine);
+        itemNetworks.rebuildIsland(island.islandUuid());
         return true;
     }
 
@@ -224,6 +229,7 @@ public final class MachineListener implements Listener {
                 event.getBlock().getWorld().dropItemNaturally(event.getBlock().getLocation(), itemFactory.machineItem(definition, 1));
                 messages.send(player, "removed", Map.of("machine", definition.displayName()));
             }
+            itemNetworks.rebuildIsland(machine.islandUuid());
         });
     }
 

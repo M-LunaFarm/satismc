@@ -15,6 +15,7 @@ import kr.seungmin.satisskyfactory.item.ItemRegistry;
 import kr.seungmin.satisskyfactory.listener.FactoryLifecycleListener;
 import kr.seungmin.satisskyfactory.listener.FactoryGuiListener;
 import kr.seungmin.satisskyfactory.listener.MachineListener;
+import kr.seungmin.satisskyfactory.logistics.ItemNetworkService;
 import kr.seungmin.satisskyfactory.machine.FactoryIslandService;
 import kr.seungmin.satisskyfactory.machine.IslandBoostService;
 import kr.seungmin.satisskyfactory.machine.MachineDefinitionService;
@@ -49,6 +50,7 @@ public final class SatisSkyFactoryPlugin extends JavaPlugin {
     private MachineService machines;
     private IslandBoostService boosts;
     private ResourceNodeService nodes;
+    private ItemNetworkService itemNetworks;
     private PowerNetworkService power;
     private MarketService market;
     private ContractService contracts;
@@ -91,6 +93,7 @@ public final class SatisSkyFactoryPlugin extends JavaPlugin {
         islands.dirtySaves(dirtySaves);
         machines.dirtySaves(dirtySaves);
         nodes.dirtySaves(dirtySaves);
+        itemNetworks = new ItemNetworkService(database, machines, machineDefinitions);
         power = new PowerNetworkService(machines, machineDefinitions, recipes, storage);
         market = new MarketService(storage, economy, database, itemRegistry);
         contracts = new ContractService(storage, economy, database, boosts);
@@ -101,6 +104,7 @@ public final class SatisSkyFactoryPlugin extends JavaPlugin {
         loadDefinitions();
         islands.load();
         machines.load();
+        rebuildItemNetworks();
 
         restartRuntimeTasks();
 
@@ -263,6 +267,7 @@ public final class SatisSkyFactoryPlugin extends JavaPlugin {
                 messages,
                 research,
                 nodes,
+                itemNetworks,
                 configs.main(),
                 configs.file("maintenance.yml"),
                 boosts
@@ -287,8 +292,16 @@ public final class SatisSkyFactoryPlugin extends JavaPlugin {
                 islands,
                 skyblock,
                 nodes,
-                machines
+                machines,
+                itemNetworks
         ), this);
+    }
+
+    private void rebuildItemNetworks() {
+        machines.all().stream()
+                .map(machine -> machine.islandUuid())
+                .distinct()
+                .forEach(itemNetworks::rebuildIsland);
     }
 
     private void registerPlaceholders() {

@@ -2,6 +2,7 @@ package kr.seungmin.satisskyfactory.database;
 
 import kr.seungmin.satisskyfactory.model.BlockKey;
 import kr.seungmin.satisskyfactory.model.FactoryIsland;
+import kr.seungmin.satisskyfactory.model.ItemNetwork;
 import kr.seungmin.satisskyfactory.model.MachineInstance;
 import kr.seungmin.satisskyfactory.model.MachineStatus;
 import kr.seungmin.satisskyfactory.model.MaintenanceStatus;
@@ -47,6 +48,8 @@ class DatabaseServiceTest {
                         "island_unlocks",
                         "market_daily",
                         "market_personal_daily",
+                        "item_networks",
+                        "machine_network_links",
                         "ledger",
                         "schema_version"
                 )));
@@ -179,6 +182,53 @@ class DatabaseServiceTest {
 
         try (DatabaseHandle handle = openDatabase(dataFolder)) {
             assertTrue(handle.database().loadMachines().isEmpty());
+        }
+    }
+
+    @Test
+    void itemNetworksAndLinksSurviveReopen() {
+        UUID islandUuid = UUID.fromString("00000000-0000-0000-0000-000000000301");
+        UUID ownerUuid = UUID.fromString("00000000-0000-0000-0000-000000000302");
+        UUID conveyorId = UUID.fromString("00000000-0000-0000-0000-000000000303");
+        UUID grinderId = UUID.fromString("00000000-0000-0000-0000-000000000304");
+        UUID storageId = UUID.fromString("00000000-0000-0000-0000-000000000305");
+        UUID networkId = UUID.fromString("00000000-0000-0000-0000-000000000306");
+        UUID bufferInventoryId = UUID.fromString("00000000-0000-0000-0000-000000000307");
+        File dataFolder = tempDir.resolve("network-db").toFile();
+
+        try (DatabaseHandle handle = openDatabase(dataFolder)) {
+            MachineInstance conveyor = new MachineInstance(conveyorId, islandUuid, ownerUuid, "conveyor_t1", 1,
+                    new BlockKey("world", 0, 64, 0));
+            conveyor.inputInventoryId(bufferInventoryId);
+            MachineInstance grinder = new MachineInstance(grinderId, islandUuid, ownerUuid, "grinder_t1", 1,
+                    new BlockKey("world", 1, 64, 0));
+            MachineInstance storage = new MachineInstance(storageId, islandUuid, ownerUuid, "storage_t1", 1,
+                    new BlockKey("world", -1, 64, 0));
+            handle.database().saveMachine(conveyor);
+            handle.database().saveMachine(grinder);
+            handle.database().saveMachine(storage);
+            handle.database().replaceItemNetworks(islandUuid, java.util.List.of(new ItemNetwork(
+                    networkId,
+                    islandUuid,
+                    32,
+                    bufferInventoryId,
+                    false,
+                    1234L,
+                    Set.of(conveyorId, grinderId, storageId)
+            )));
+        }
+
+        try (DatabaseHandle handle = openDatabase(dataFolder)) {
+            ItemNetwork network = handle.database().loadItemNetworks(islandUuid).stream().findFirst().orElseThrow();
+            assertEquals(networkId, network.networkId());
+            assertEquals(32, network.throughputPerMinute());
+            assertEquals(bufferInventoryId, network.bufferInventoryId());
+            assertEquals(Set.of(conveyorId, grinderId, storageId), network.connectedMachineIds());
+            MachineInstance conveyor = handle.database().loadMachines().stream()
+                    .filter(machine -> machine.machineId().equals(conveyorId))
+                    .findFirst()
+                    .orElseThrow();
+            assertEquals(networkId, conveyor.itemNetworkId());
         }
     }
 

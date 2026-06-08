@@ -1,6 +1,7 @@
 package kr.seungmin.satisskyfactory.listener;
 
 import kr.seungmin.satisskyfactory.hook.SuperiorSkyblockHook;
+import kr.seungmin.satisskyfactory.logistics.ItemNetworkService;
 import kr.seungmin.satisskyfactory.machine.FactoryIslandService;
 import kr.seungmin.satisskyfactory.machine.MachineService;
 import kr.seungmin.satisskyfactory.model.FactoryIsland;
@@ -20,13 +21,15 @@ public final class FactoryLifecycleListener implements Listener {
     private final SuperiorSkyblockHook skyblock;
     private final ResourceNodeService nodes;
     private final MachineService machines;
+    private final ItemNetworkService itemNetworks;
 
     public FactoryLifecycleListener(FactoryIslandService islands, SuperiorSkyblockHook skyblock,
-                                    ResourceNodeService nodes, MachineService machines) {
+                                    ResourceNodeService nodes, MachineService machines, ItemNetworkService itemNetworks) {
         this.islands = islands;
         this.skyblock = skyblock;
         this.nodes = nodes;
         this.machines = machines;
+        this.itemNetworks = itemNetworks;
     }
 
     @EventHandler
@@ -38,6 +41,7 @@ public final class FactoryLifecycleListener implements Listener {
             nodes.generateIfMissing(island.islandUuid(), origin, location -> skyblock.getIslandAt(location)
                     .map(ref -> ref.islandUuid().equals(island.islandUuid()))
                     .orElse(false));
+            itemNetworks.rebuildIsland(island.islandUuid());
             islands.save(island);
         });
     }
@@ -61,6 +65,7 @@ public final class FactoryLifecycleListener implements Listener {
             if (machine.status() == MachineStatus.CHUNK_UNLOADED) {
                 machine.status(MachineStatus.IDLE);
                 machines.saveLater(machine);
+                itemNetworks.rebuildIsland(machine.islandUuid());
             }
         }
     }

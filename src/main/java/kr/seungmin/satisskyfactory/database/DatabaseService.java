@@ -4,6 +4,7 @@ import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import kr.seungmin.satisskyfactory.model.BlockKey;
 import kr.seungmin.satisskyfactory.model.FactoryIsland;
+import kr.seungmin.satisskyfactory.model.ItemNetwork;
 import kr.seungmin.satisskyfactory.model.MachineInstance;
 import kr.seungmin.satisskyfactory.model.MachineStatus;
 import kr.seungmin.satisskyfactory.model.MaintenanceStatus;
@@ -466,6 +467,108 @@ public final class DatabaseService {
         } catch (SQLException exception) {
             throw new IllegalStateException("Failed to delete machine", exception);
         }
+    }
+
+    public void replaceItemNetworks(UUID islandUuid, List<ItemNetwork> networks) {
+        long now = Instant.now().toEpochMilli();
+        try (Connection connection = connection()) {
+            connection.setAutoCommit(false);
+            try (PreparedStatement deleteLinks = connection.prepareStatement("""
+                    DELETE FROM machine_network_links
+                    WHERE network_type = 'ITEM'
+                      AND network_id IN (SELECT network_id FROM item_networks WHERE island_uuid = ?)
+                    """)) {
+                deleteLinks.setString(1, islandUuid.toString());
+                deleteLinks.executeUpdate();
+            }
+            try (PreparedStatement deleteNetworks = connection.prepareStatement("DELETE FROM item_networks WHERE island_uuid = ?")) {
+                deleteNetworks.setString(1, islandUuid.toString());
+                deleteNetworks.executeUpdate();
+            }
+            try (PreparedStatement clearMachines = connection.prepareStatement("UPDATE machines SET item_network_id = NULL WHERE island_uuid = ?")) {
+                clearMachines.setString(1, islandUuid.toString());
+                clearMachines.executeUpdate();
+            }
+            try (PreparedStatement networkStatement = connection.prepareStatement("""
+                    INSERT INTO item_networks(network_id, island_uuid, throughput_per_minute, buffer_inventory_id, dirty, updated_at)
+                    VALUES(?, ?, ?, ?, ?, ?)
+                    """);
+                 PreparedStatement linkStatement = connection.prepareStatement("""
+                    INSERT INTO machine_network_links(machine_id, network_id, network_type)
+                    VALUES(?, ?, 'ITEM')
+                    """);
+                 PreparedStatement machineStatement = connection.prepareStatement("""
+                    UPDATE machines SET item_network_id = ?, updated_at = ? WHERE machine_id = ?
+                    """)) {
+                for (ItemNetwork network : networks) {
+                    networkStatement.setString(1, network.networkId().toString());
+                    networkStatement.setString(2, network.islandUuid().toString());
+                    networkStatement.setInt(3, network.throughputPerMinute());
+                    networkStatement.setString(4, stringOrNull(network.bufferInventoryId()));
+                    networkStatement.setInt(5, network.dirty() ? 1 : 0);
+                    networkStatement.setLong(6, now);
+                    networkStatement.addBatch();
+                    for (UUID machineId : network.connectedMachineIds()) {
+                        linkStatement.setString(1, machineId.toString());
+                        linkStatement.setString(2, network.networkId().toString());
+                        linkStatement.addBatch();
+                        machineStatement.setString(1, network.networkId().toString());
+                        machineStatement.setLong(2, now);
+                        machineStatement.setString(3, machineId.toString());
+                        machineStatement.addBatch();
+                    }
+                }
+                networkStatement.executeBatch();
+                linkStatement.executeBatch();
+                machineStatement.executeBatch();
+            }
+            connection.commit();
+        } catch (SQLException exception) {
+            throw new IllegalStateException("Failed to replace item networks", exception);
+        }
+    }
+
+    public List<ItemNetwork> loadItemNetworks(UUID islandUuid) {
+        List<ItemNetwork> networks = new ArrayList<>();
+        try (Connection connection = connection();
+             PreparedStatement statement = connection.prepareStatement("""
+                     SELECT * FROM item_networks WHERE island_uuid = ? ORDER BY network_id
+                     """)) {
+            statement.setString(1, islandUuid.toString());
+            try (ResultSet rs = statement.executeQuery()) {
+                while (rs.next()) {
+                    UUID networkId = UUID.fromString(rs.getString("network_id"));
+                    networks.add(new ItemNetwork(
+                            networkId,
+                            islandUuid,
+                            rs.getInt("throughput_per_minute"),
+                            uuidOrNull(rs.getString("buffer_inventory_id")),
+                            rs.getInt("dirty") != 0,
+                            rs.getLong("updated_at"),
+                            loadNetworkMachineIds(connection, networkId, "ITEM")
+                    ));
+                }
+            }
+            return networks;
+        } catch (SQLException exception) {
+            throw new IllegalStateException("Failed to load item networks", exception);
+        }
+    }
+
+    private Set<UUID> loadNetworkMachineIds(Connection connection, UUID networkId, String networkType) throws SQLException {
+        Set<UUID> machineIds = new HashSet<>();
+        try (PreparedStatement statement = connection.prepareStatement("""
+                SELECT machine_id FROM machine_network_links WHERE network_id = ? AND network_type = ?
+                """)) {
+            statement.setString(1, networkId.toString());
+            statement.setString(2, networkType);
+            try (ResultSet rs = statement.executeQuery()) {
+                while (rs.next()) {
+                    machineIds.add(UUID.fromString(rs.getString("machine_id")));
+                }
+            }
+        }
+        return machineIds;
     }
 
     public void saveInventory(VirtualInventory inventory) {
