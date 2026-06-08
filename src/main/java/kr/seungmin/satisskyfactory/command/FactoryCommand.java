@@ -233,7 +233,12 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
             messages.send(player, "hold-item-first");
             return;
         }
-        String itemId = itemIdForHand(hand);
+        Optional<String> resolvedItemId = itemIdForHand(hand);
+        if (resolvedItemId.isEmpty()) {
+            messages.send(player, "unknown-item");
+            return;
+        }
+        String itemId = resolvedItemId.get();
         int amount = hand.getAmount();
         market.sellDirect(island, player, itemId, amount).ifPresentOrElse(result -> {
             hand.setAmount(0);
@@ -256,7 +261,12 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
             messages.send(player, "hold-item-first");
             return;
         }
-        String itemId = itemIdForHand(hand);
+        Optional<String> resolvedItemId = itemIdForHand(hand);
+        if (resolvedItemId.isEmpty()) {
+            messages.send(player, "unknown-item");
+            return;
+        }
+        String itemId = resolvedItemId.get();
         long amount = hand.getAmount();
         var inventory = storage.islandStorage(island.islandUuid());
         if (!inventory.add(itemId, amount)) {
@@ -268,13 +278,16 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
         messages.send(player, "deposited", Map.of("item", itemId, "amount", String.valueOf(amount)));
     }
 
-    private String itemIdForHand(ItemStack stack) {
+    private Optional<String> itemIdForHand(ItemStack stack) {
+        if (itemFactory.isMachineItem(stack)) {
+            return Optional.empty();
+        }
         Optional<String> pdcItemId = itemFactory.factoryItemId(stack);
         if (pdcItemId.isPresent()) {
-            return pdcItemId.get();
+            return pdcItemId;
         }
-        return items.itemIdForMaterial(stack.getType())
-                .orElseGet(() -> stack.getType().name().toLowerCase(Locale.ROOT));
+        return Optional.of(items.itemIdForMaterial(stack.getType())
+                .orElseGet(() -> stack.getType().name().toLowerCase(Locale.ROOT)));
     }
 
     private void withdraw(Player player, FactoryIsland island, String[] args) {

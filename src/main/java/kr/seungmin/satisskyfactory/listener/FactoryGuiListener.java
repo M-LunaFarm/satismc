@@ -253,7 +253,12 @@ public final class FactoryGuiListener implements Listener {
             messages.send(player, "hold-item-first");
             return;
         }
-        String itemId = itemIdForHand(hand);
+        Optional<String> resolvedItemId = itemIdForHand(hand);
+        if (resolvedItemId.isEmpty()) {
+            messages.send(player, "unknown-item");
+            return;
+        }
+        String itemId = resolvedItemId.get();
         long amount = hand.getAmount();
         var inventory = storage.islandStorage(island.islandUuid());
         if (!inventory.add(itemId, amount)) {
@@ -301,7 +306,12 @@ public final class FactoryGuiListener implements Listener {
             messages.send(player, "machine-input-missing");
             return;
         }
-        String itemId = itemIdForHand(hand);
+        Optional<String> resolvedItemId = itemIdForHand(hand);
+        if (resolvedItemId.isEmpty()) {
+            messages.send(player, "unknown-item");
+            return;
+        }
+        String itemId = resolvedItemId.get();
         long amount = hand.getAmount();
         if (!inventory.add(itemId, amount)) {
             messages.send(player, "machine-input-full");
@@ -359,13 +369,16 @@ public final class FactoryGuiListener implements Listener {
         return 0;
     }
 
-    private String itemIdForHand(ItemStack stack) {
+    private Optional<String> itemIdForHand(ItemStack stack) {
+        if (itemFactory.isMachineItem(stack)) {
+            return Optional.empty();
+        }
         Optional<String> pdcItemId = itemFactory.factoryItemId(stack);
         if (pdcItemId.isPresent()) {
-            return pdcItemId.get();
+            return pdcItemId;
         }
-        return items.itemIdForMaterial(stack.getType())
-                .orElseGet(() -> stack.getType().name().toLowerCase(Locale.ROOT));
+        return Optional.of(items.itemIdForMaterial(stack.getType())
+                .orElseGet(() -> stack.getType().name().toLowerCase(Locale.ROOT)));
     }
 
     private long withdrawAmount(InventoryClickEvent event) {

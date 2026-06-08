@@ -68,6 +68,10 @@ public final class CustomItemFactory {
         return Optional.ofNullable(pdc.get(machineTypeKey, PersistentDataType.STRING));
     }
 
+    public boolean isMachineItem(ItemStack stack) {
+        return machineType(stack).isPresent();
+    }
+
     public Optional<String> factoryItemId(ItemStack stack) {
         if (stack == null || !stack.hasItemMeta()) {
             return Optional.empty();
