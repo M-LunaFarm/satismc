@@ -7,6 +7,7 @@ import kr.seungmin.satisskyfactory.gui.FactoryGuiService;
 import kr.seungmin.satisskyfactory.hook.SuperiorSkyblockHook;
 import kr.seungmin.satisskyfactory.item.CustomItemFactory;
 import kr.seungmin.satisskyfactory.item.ItemRegistry;
+import kr.seungmin.satisskyfactory.logistics.ItemNetworkService;
 import kr.seungmin.satisskyfactory.machine.FactoryIslandService;
 import kr.seungmin.satisskyfactory.machine.MachineDefinitionService;
 import kr.seungmin.satisskyfactory.machine.MachineService;
@@ -16,6 +17,7 @@ import kr.seungmin.satisskyfactory.model.BlockKey;
 import kr.seungmin.satisskyfactory.model.FactoryIsland;
 import kr.seungmin.satisskyfactory.model.MachineDefinition;
 import kr.seungmin.satisskyfactory.model.MachineInstance;
+import kr.seungmin.satisskyfactory.power.PowerNetworkService;
 import kr.seungmin.satisskyfactory.recipe.RecipeDefinition;
 import kr.seungmin.satisskyfactory.recipe.RecipeService;
 import kr.seungmin.satisskyfactory.research.ResearchService;
@@ -51,12 +53,14 @@ public final class FactoryGuiListener implements Listener {
     private final MarketService market;
     private final MachineDefinitionService definitions;
     private final MaintenanceService maintenance;
+    private final ItemNetworkService itemNetworks;
+    private final PowerNetworkService power;
     private final MessageService messages;
 
     public FactoryGuiListener(FactoryIslandService islands, SuperiorSkyblockHook skyblock, ContractService contracts, ResearchService research, FactoryGuiService gui,
                               MachineService machines, RecipeService recipes, StorageService storage, ItemRegistry items, CustomItemFactory itemFactory,
                               MarketService market, MachineDefinitionService definitions, MaintenanceService maintenance,
-                              MessageService messages) {
+                              ItemNetworkService itemNetworks, PowerNetworkService power, MessageService messages) {
         this.islands = islands;
         this.skyblock = skyblock;
         this.contracts = contracts;
@@ -70,6 +74,8 @@ public final class FactoryGuiListener implements Listener {
         this.market = market;
         this.definitions = definitions;
         this.maintenance = maintenance;
+        this.itemNetworks = itemNetworks;
+        this.power = power;
         this.messages = messages;
     }
 
@@ -450,6 +456,8 @@ public final class FactoryGuiListener implements Listener {
             return;
         }
         location(machine.location()).ifPresent(location -> location.getBlock().setType(Material.AIR, false));
+        itemNetworks.rebuildIsland(island.islandUuid());
+        power.rebuildIsland(island.islandUuid());
         Map<Integer, ItemStack> overflow = player.getInventory().addItem(itemFactory.machineItem(definition, 1));
         overflow.values().forEach(item -> player.getWorld().dropItemNaturally(player.getLocation(), item));
         player.closeInventory();
