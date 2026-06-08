@@ -77,7 +77,7 @@ public final class MachineListener implements Listener {
             BlockFace direction = player.getFacing();
             EquipmentSlot hand = event.getHand();
             plugin.getServer().getScheduler().runTask(plugin,
-                    () -> installMachine(player, typeId, targetBlock, direction, true, hand, true));
+                    () -> installMachine(player, typeId, targetBlock, direction, true, hand, false));
         });
     }
 
