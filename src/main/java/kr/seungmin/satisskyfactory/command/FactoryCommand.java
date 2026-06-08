@@ -151,15 +151,25 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
     }
 
     private boolean admin(CommandSender sender, String[] args) {
-        if (!sender.hasPermission("satisskyfactory.admin")) {
-            messages.send(sender, "no-permission");
-            return true;
-        }
         if (args.length < 2) {
+            if (!sender.hasPermission("satisskyfactory.admin")) {
+                messages.send(sender, "no-permission");
+                return true;
+            }
             messages.send(sender, "admin-usage");
             return true;
         }
-        switch (args[1].toLowerCase(Locale.ROOT)) {
+        String subcommand = args[1].toLowerCase(Locale.ROOT);
+        if (subcommand.equals("debug")) {
+            if (!sender.hasPermission("satisskyfactory.debug") && !sender.hasPermission("satisskyfactory.admin")) {
+                messages.send(sender, "no-permission");
+                return true;
+            }
+        } else if (!sender.hasPermission("satisskyfactory.admin")) {
+            messages.send(sender, "no-permission");
+            return true;
+        }
+        switch (subcommand) {
             case "reload" -> {
                 reload.run();
                 messages.send(sender, "reloaded");
