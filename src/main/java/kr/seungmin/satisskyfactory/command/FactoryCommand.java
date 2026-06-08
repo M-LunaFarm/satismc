@@ -115,7 +115,7 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
             case "contracts" -> {
                 if (args.length > 1 && args[1].equalsIgnoreCase("complete")) {
                     contracts.completeAny(island, player).ifPresentOrElse(active -> {
-                        islands.save(island);
+                        refreshMaintenanceStatus(island);
                         messages.send(player, "contract-completed", Map.of("contract", active.template().id()));
                     }, () -> messages.send(player, "contract-requirements-missing"));
                 } else {
@@ -220,6 +220,7 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
                 .ifPresentOrElse(result -> {
                             messages.send(player, "sold", Map.of("item", itemId, "amount", String.valueOf(amount), "money", String.valueOf(result.paidToPlayer())));
                             if (result.debtRepaid() > 0) {
+                                refreshMaintenanceStatus(island);
                                 messages.send(player, "debt-repaid", Map.of("amount", String.valueOf(result.debtRepaid())));
                             }
                         },
@@ -238,9 +239,15 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
             hand.setAmount(0);
             messages.send(player, "sold", Map.of("item", itemId, "amount", String.valueOf(amount), "money", String.valueOf(result.paidToPlayer())));
             if (result.debtRepaid() > 0) {
+                refreshMaintenanceStatus(island);
                 messages.send(player, "debt-repaid", Map.of("amount", String.valueOf(result.debtRepaid())));
             }
         }, () -> messages.send(player, "hand-item-cannot-sell"));
+    }
+
+    private void refreshMaintenanceStatus(FactoryIsland island) {
+        maintenance.updateStatus(island);
+        islands.save(island);
     }
 
     private void depositHand(Player player, FactoryIsland island) {

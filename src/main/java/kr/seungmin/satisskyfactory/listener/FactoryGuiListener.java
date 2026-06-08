@@ -140,7 +140,7 @@ public final class FactoryGuiListener implements Listener {
             try {
                 UUID contractId = UUID.fromString(action.value());
                 contracts.completeContract(island, player, contractId).ifPresentOrElse(active -> {
-                    islands.save(island);
+                    refreshMaintenanceStatus(island);
                     messages.send(player, "contract-completed", Map.of("contract", active.template().id()));
                 }, () -> messages.send(player, "contract-requirements-missing"));
                 gui.openContracts(player, island, contracts);
@@ -256,11 +256,17 @@ public final class FactoryGuiListener implements Listener {
         market.sell(island, player, itemId, amount).ifPresentOrElse(result -> {
             messages.send(player, "sold", Map.of("item", itemId, "amount", String.valueOf(amount), "money", String.valueOf(result.paidToPlayer())));
             if (result.debtRepaid() > 0) {
+                refreshMaintenanceStatus(island);
                 messages.send(player, "debt-repaid", Map.of("amount", String.valueOf(result.debtRepaid())));
             }
         }, () -> messages.send(player, "cannot-sell"));
         islands.save(island);
         gui.openMarket(player, island, market, page);
+    }
+
+    private void refreshMaintenanceStatus(FactoryIsland island) {
+        maintenance.updateStatus(island);
+        islands.save(island);
     }
 
     private void depositMachineInput(Player player, MachineInstance machine) {
