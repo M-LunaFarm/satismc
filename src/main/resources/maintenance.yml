@@ -1,11 +1,16 @@
 maintenance:
   interval-hours: 24
+  formula: EXPONENTIAL_SCORE
+  base-fee: 120
   base-cost: 100
   per-machine-cost: 8
+  exponent: 1.08
+  min-fee: 0
   warning-threshold: 1
   limited-threshold: 500
   limited-efficiency: 0.45
   locked-threshold: 1500
+  debt-cap-days: 5
   debt-cap: 5000
   break-wear: 100.0
   repair-cost:

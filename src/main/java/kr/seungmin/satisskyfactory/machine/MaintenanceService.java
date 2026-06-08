@@ -19,6 +19,10 @@ public final class MaintenanceService {
     private long intervalMillis;
     private long baseCost;
     private long perMachineCost;
+    private long minFee;
+    private double exponent;
+    private boolean exponentialFormula;
+    private long debtCapDays;
     private long warningThreshold;
     private long limitedThreshold;
     private long lockedThreshold;
@@ -34,8 +38,12 @@ public final class MaintenanceService {
 
     public void load(FileConfiguration config) {
         intervalMillis = config.getLong("maintenance.interval-hours", 24) * 60L * 60L * 1000L;
-        baseCost = config.getLong("maintenance.base-cost", 100);
+        baseCost = config.getLong("maintenance.base-fee", config.getLong("maintenance.base-cost", 100));
         perMachineCost = config.getLong("maintenance.per-machine-cost", 8);
+        minFee = config.getLong("maintenance.min-fee", 0);
+        exponent = Math.max(0.1, config.getDouble("maintenance.exponent", 1.0));
+        exponentialFormula = config.getString("maintenance.formula", "LINEAR_SCORE").equalsIgnoreCase("EXPONENTIAL_SCORE");
+        debtCapDays = Math.max(0, config.getLong("maintenance.debt-cap-days", 0));
         warningThreshold = config.getLong("maintenance.warning-threshold", 1);
         limitedThreshold = config.getLong("maintenance.limited-threshold", 500);
         lockedThreshold = config.getLong("maintenance.locked-threshold", 1500);
@@ -52,11 +60,11 @@ public final class MaintenanceService {
             return 0;
         }
         island.factoryScore(machines.factoryScore(island.islandUuid()));
-        long due = baseCost + perMachineCost * Math.max(1, machines.maintenanceScore(island.islandUuid()));
+        long due = maintenanceFee(island);
         double paid = economy.withdrawMaintenance(owner, rawIsland, due);
         long shortage = Math.max(0, due - Math.round(paid));
         if (shortage > 0) {
-            island.maintenanceDebt(Math.min(debtCap, island.maintenanceDebt() + shortage));
+            island.maintenanceDebt(Math.min(debtLimit(due), island.maintenanceDebt() + shortage));
         } else {
             island.maintenanceDebt(Math.max(0, island.maintenanceDebt() - Math.round(paid - due)));
         }
@@ -69,8 +77,24 @@ public final class MaintenanceService {
     }
 
     public void setDebt(FactoryIsland island, long debt) {
-        island.maintenanceDebt(Math.max(0, Math.min(debtCap, debt)));
+        island.factoryScore(machines.factoryScore(island.islandUuid()));
+        island.maintenanceDebt(Math.max(0, Math.min(debtLimit(maintenanceFee(island)), debt)));
         updateStatus(island);
+    }
+
+    private long maintenanceFee(FactoryIsland island) {
+        long score = Math.max(1, machines.maintenanceScore(island.islandUuid()));
+        long calculated = exponentialFormula
+                ? Math.round(baseCost * Math.pow(score, exponent))
+                : baseCost + perMachineCost * score;
+        return Math.max(minFee, calculated);
+    }
+
+    private long debtLimit(long fee) {
+        if (debtCapDays <= 0) {
+            return debtCap;
+        }
+        return Math.max(debtCap, fee * debtCapDays);
     }
 
     public void updateStatus(FactoryIsland island) {
