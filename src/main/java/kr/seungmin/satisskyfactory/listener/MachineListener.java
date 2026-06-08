@@ -29,11 +29,13 @@ import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.Map;
 import java.util.Set;
 
 public final class MachineListener implements Listener {
+    private final JavaPlugin plugin;
     private final CustomItemFactory itemFactory;
     private final MachineDefinitionService definitions;
     private final MachineService machines;
@@ -47,10 +49,11 @@ public final class MachineListener implements Listener {
     private final FileConfiguration maintenanceConfig;
     private final IslandBoostService boosts;
 
-    public MachineListener(CustomItemFactory itemFactory, MachineDefinitionService definitions, MachineService machines,
+    public MachineListener(JavaPlugin plugin, CustomItemFactory itemFactory, MachineDefinitionService definitions, MachineService machines,
                            SuperiorSkyblockHook skyblock, FactoryIslandService islands, FactoryGuiService gui,
                            MessageService messages, ResearchService research, ResourceNodeService nodes,
                            FileConfiguration config, FileConfiguration maintenanceConfig, IslandBoostService boosts) {
+        this.plugin = plugin;
         this.itemFactory = itemFactory;
         this.definitions = definitions;
         this.machines = machines;
@@ -70,14 +73,16 @@ public final class MachineListener implements Listener {
         Player player = event.getPlayer();
         itemFactory.machineType(event.getItemInHand()).ifPresent(typeId -> {
             event.setCancelled(true);
-            if (installMachine(player, typeId, event.getBlockPlaced(), player.getFacing(), false, true)) {
-                event.setCancelled(false);
-            }
+            Block targetBlock = event.getBlockPlaced();
+            BlockFace direction = player.getFacing();
+            EquipmentSlot hand = event.getHand();
+            plugin.getServer().getScheduler().runTask(plugin,
+                    () -> installMachine(player, typeId, targetBlock, direction, true, hand, true));
         });
     }
 
     private boolean installMachine(Player player, String typeId, Block targetBlock, BlockFace direction,
-                                   boolean consumeItem, boolean replacePlacedBlock) {
+                                   boolean consumeItem, EquipmentSlot hand, boolean replacePlacedBlock) {
         MachineDefinition definition = definitions.get(typeId).orElse(null);
         if (definition == null) {
             messages.send(player, "unknown-machine");
@@ -124,7 +129,7 @@ public final class MachineListener implements Listener {
         MachineInstance machine = machines.create(island.islandUuid(), player.getUniqueId(), typeId, targetBlock.getLocation(), direction);
         linkResourceNode(machine, definition);
         if (consumeItem && player.getGameMode() != GameMode.CREATIVE) {
-            consumeMainHand(player);
+            consumeHand(player, hand);
         }
         messages.send(player, "placed", Map.of("machine", definition.displayName()));
         islands.save(island);
@@ -132,11 +137,17 @@ public final class MachineListener implements Listener {
         return true;
     }
 
-    private void consumeMainHand(Player player) {
-        ItemStack item = player.getInventory().getItemInMainHand();
+    private void consumeHand(Player player, EquipmentSlot hand) {
+        ItemStack item = hand == EquipmentSlot.OFF_HAND
+                ? player.getInventory().getItemInOffHand()
+                : player.getInventory().getItemInMainHand();
         int amount = item.getAmount();
         if (amount <= 1) {
-            player.getInventory().setItemInMainHand(null);
+            if (hand == EquipmentSlot.OFF_HAND) {
+                player.getInventory().setItemInOffHand(null);
+            } else {
+                player.getInventory().setItemInMainHand(null);
+            }
             return;
         }
         item.setAmount(amount - 1);
@@ -217,7 +228,7 @@ public final class MachineListener implements Listener {
             itemFactory.machineType(event.getItem()).ifPresent(typeId -> {
                 event.setCancelled(true);
                 Block target = event.getClickedBlock().getRelative(event.getBlockFace());
-                installMachine(event.getPlayer(), typeId, target, event.getBlockFace(), true, false);
+                installMachine(event.getPlayer(), typeId, target, event.getBlockFace(), true, event.getHand(), false);
             });
             if (event.isCancelled()) {
                 return;

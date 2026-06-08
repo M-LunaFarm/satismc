@@ -253,6 +253,7 @@ public final class SatisSkyFactoryPlugin extends JavaPlugin {
 
     private void registerListeners() {
         getServer().getPluginManager().registerEvents(new MachineListener(
+                this,
                 itemFactory,
                 machineDefinitions,
                 machines,
