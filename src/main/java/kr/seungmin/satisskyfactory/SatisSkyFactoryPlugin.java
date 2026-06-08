@@ -107,6 +107,7 @@ public final class SatisSkyFactoryPlugin extends JavaPlugin {
                 machineDefinitions,
                 storage,
                 recipes,
+                research,
                 nodes,
                 power,
                 boosts,

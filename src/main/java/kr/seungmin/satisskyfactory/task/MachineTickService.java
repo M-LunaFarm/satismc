@@ -15,6 +15,7 @@ import kr.seungmin.satisskyfactory.node.ResourceNodeService;
 import kr.seungmin.satisskyfactory.power.PowerNetworkService;
 import kr.seungmin.satisskyfactory.recipe.RecipeDefinition;
 import kr.seungmin.satisskyfactory.recipe.RecipeService;
+import kr.seungmin.satisskyfactory.research.ResearchService;
 import kr.seungmin.satisskyfactory.storage.StorageService;
 import kr.seungmin.satisskyfactory.storage.VirtualInventory;
 import org.bukkit.Bukkit;
@@ -43,6 +44,7 @@ public final class MachineTickService {
     private final MachineDefinitionService definitions;
     private final StorageService storage;
     private final RecipeService recipes;
+    private final ResearchService research;
     private final ResourceNodeService nodes;
     private final PowerNetworkService power;
     private final IslandBoostService boosts;
@@ -57,7 +59,7 @@ public final class MachineTickService {
     private int tickCursor;
 
     public MachineTickService(JavaPlugin plugin, MachineService machines, MachineDefinitionService definitions, StorageService storage,
-                              RecipeService recipes, ResourceNodeService nodes, PowerNetworkService power,
+                              RecipeService recipes, ResearchService research, ResourceNodeService nodes, PowerNetworkService power,
                               IslandBoostService boosts, FactoryIslandService islands, int maxPerCycle,
                               int maxBackfillCycles, int nodeLinkRadius, Set<String> recoveryTypes, double limitedEfficiency, double breakWear) {
         this.plugin = plugin;
@@ -65,6 +67,7 @@ public final class MachineTickService {
         this.definitions = definitions;
         this.storage = storage;
         this.recipes = recipes;
+        this.research = research;
         this.nodes = nodes;
         this.power = power;
         this.boosts = boosts;
@@ -408,6 +411,11 @@ public final class MachineTickService {
         VirtualInventory output = outputInventory(machine);
         for (RecipeDefinition recipe : recipes.recipesFor(machine.typeId())) {
             if (recipe.minTier() > definition.tier()) {
+                continue;
+            }
+            Optional<FactoryIsland> island = islands.find(machine.islandUuid());
+            if (!recipe.researchRequired().isEmpty()
+                    && (island.isEmpty() || !research.unlocked(island.get()).containsAll(recipe.researchRequired()))) {
                 continue;
             }
             Map<String, Long> produced = recipeOutput(recipe);

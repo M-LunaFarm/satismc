@@ -34,6 +34,7 @@ recipes:
   assemble_machine_parts:
     machines: [assembler_t1]
     min-tier: 2
+    research-required: [advanced_processing]
     inputs:
       iron_plate: 2
     outputs:
@@ -43,6 +44,7 @@ recipes:
   package_bread:
     machines: [packager_t1]
     min-tier: 2
+    research-required: [advanced_processing]
     inputs:
       flour: 3
     outputs:
