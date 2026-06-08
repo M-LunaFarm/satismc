@@ -57,7 +57,7 @@ public final class FactoryGuiListener implements Listener {
                 || !event.getClickedInventory().equals(event.getInventory())) {
             return;
         }
-        holder.action(event.getRawSlot()).ifPresent(action -> handle(player, holder, action));
+        holder.action(event.getRawSlot()).ifPresent(action -> handle(player, holder, action, event));
     }
 
     @EventHandler
@@ -67,10 +67,14 @@ public final class FactoryGuiListener implements Listener {
         }
     }
 
-    private void handle(Player player, FactoryGuiHolder holder, FactoryGuiHolder.GuiAction action) {
+    private void handle(Player player, FactoryGuiHolder holder, FactoryGuiHolder.GuiAction action, InventoryClickEvent event) {
         FactoryIsland island = islands.find(holder.islandUuid()).orElse(null);
         if (island == null) {
             player.sendMessage("Factory island is not loaded.");
+            return;
+        }
+        if (action.type().equals("storage_page")) {
+            gui.openStorage(player, island, parsePage(action.value()));
             return;
         }
         if (action.type().equals("unlock_research")) {
@@ -94,7 +98,7 @@ public final class FactoryGuiListener implements Listener {
             return;
         }
         if (action.type().equals("withdraw_storage")) {
-            withdrawStorageItem(player, island, action.value());
+            withdrawStorageItem(player, island, action.value(), holder.page(), withdrawAmount(event));
             return;
         }
         if (action.type().equals("deposit_hand")) {
@@ -127,26 +131,22 @@ public final class FactoryGuiListener implements Listener {
         return machineId == null ? Optional.empty() : machines.find(machineId);
     }
 
-    private void withdrawStorageItem(Player player, FactoryIsland island, String itemId) {
+    private void withdrawStorageItem(Player player, FactoryIsland island, String itemId, int page, long requested) {
         var inventory = storage.islandStorage(island.islandUuid());
-        long amount = Math.min(64, inventory.amount(itemId));
+        long amount = Math.min(requested, inventory.amount(itemId));
         if (amount <= 0 || !inventory.remove(itemId, amount)) {
             player.sendMessage("That item is no longer available.");
-            gui.openStorage(player, island);
+            gui.openStorage(player, island, page);
             return;
         }
-        ItemStack stack = items.get(itemId)
-                .map(item -> itemFactory.factoryItem(item, (int) amount))
-                .orElseGet(() -> new ItemStack(material(itemId), (int) amount));
-        Map<Integer, ItemStack> overflow = player.getInventory().addItem(stack);
-        long returned = overflow.values().stream().mapToLong(ItemStack::getAmount).sum();
+        long returned = giveVirtualItem(player, itemId, amount);
         if (returned > 0) {
             inventory.add(itemId, returned);
             player.sendMessage("Your inventory is full.");
         }
         storage.save(inventory);
         player.sendMessage("Withdrew " + (amount - returned) + " " + itemId + ".");
-        gui.openStorage(player, island);
+        gui.openStorage(player, island, page);
     }
 
     private void depositHand(Player player, FactoryIsland island) {
@@ -219,6 +219,37 @@ public final class FactoryGuiListener implements Listener {
         storage.save(inventory);
         player.sendMessage("Withdrew " + (amount - returned) + " " + itemId + ".");
         gui.openMachine(player, machine);
+    }
+
+    private long giveVirtualItem(Player player, String itemId, long amount) {
+        long remaining = amount;
+        while (remaining > 0) {
+            int stackAmount = (int) Math.min(64, remaining);
+            ItemStack stack = items.get(itemId)
+                    .map(item -> itemFactory.factoryItem(item, stackAmount))
+                    .orElseGet(() -> new ItemStack(material(itemId), stackAmount));
+            Map<Integer, ItemStack> overflow = player.getInventory().addItem(stack);
+            if (!overflow.isEmpty()) {
+                return overflow.values().stream().mapToLong(ItemStack::getAmount).sum() + Math.max(0, remaining - stackAmount);
+            }
+            remaining -= stackAmount;
+        }
+        return 0;
+    }
+
+    private long withdrawAmount(InventoryClickEvent event) {
+        if (event.isShiftClick()) {
+            return 64L * 36L;
+        }
+        return event.isRightClick() ? 1L : 64L;
+    }
+
+    private int parsePage(String value) {
+        try {
+            return Math.max(0, Integer.parseInt(value));
+        } catch (NumberFormatException exception) {
+            return 0;
+        }
     }
 
     private void selectRecipe(Player player, MachineInstance machine, String recipeId) {

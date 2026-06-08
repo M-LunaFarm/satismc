@@ -22,6 +22,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
@@ -65,24 +66,47 @@ public final class FactoryGuiService {
     }
 
     public void openStorage(Player player, FactoryIsland island) {
-        FactoryGuiHolder holder = new FactoryGuiHolder("storage", island.islandUuid(), null);
+        openStorage(player, island, 0);
+    }
+
+    public void openStorage(Player player, FactoryIsland island, int page) {
+        int safePage = Math.max(0, page);
+        FactoryGuiHolder holder = new FactoryGuiHolder("storage", island.islandUuid(), null, safePage);
         Inventory inventory = Bukkit.createInventory(holder, 54, "Factory Storage");
         holder.inventory(inventory);
+        VirtualInventory virtual = storage.islandStorage(island.islandUuid());
+        List<Map.Entry<String, Long>> entries = virtual.items().entrySet().stream()
+                .sorted(Comparator.comparing(Map.Entry::getKey))
+                .toList();
+        int pageSize = 45;
+        int maxPage = Math.max(0, (entries.size() - 1) / pageSize);
+        if (safePage > maxPage) {
+            openStorage(player, island, maxPage);
+            return;
+        }
+        holder.action(45, "storage_page", String.valueOf(Math.max(0, safePage - 1)));
+        inventory.setItem(45, icon(Material.ARROW, ChatColor.YELLOW + "Previous Page",
+                List.of(ChatColor.GRAY + "Page " + (safePage + 1) + " of " + (maxPage + 1))));
+        inventory.setItem(49, icon(Material.BOOK, ChatColor.AQUA + "Storage",
+                List.of(ChatColor.GRAY + "Used: " + virtual.used() + "/" + virtual.capacity(),
+                        ChatColor.GRAY + "Page: " + (safePage + 1) + "/" + (maxPage + 1))));
         holder.action(53, "deposit_hand", "");
         inventory.setItem(53, icon(Material.HOPPER, ChatColor.GREEN + "Deposit Hand",
                 List.of(ChatColor.GRAY + "Move the item stack in your hand into storage.")));
-        VirtualInventory virtual = storage.islandStorage(island.islandUuid());
+        holder.action(52, "storage_page", String.valueOf(Math.min(maxPage, safePage + 1)));
+        inventory.setItem(52, icon(Material.ARROW, ChatColor.YELLOW + "Next Page",
+                List.of(ChatColor.GRAY + "Page " + (safePage + 1) + " of " + (maxPage + 1))));
         int slot = 0;
-        for (Map.Entry<String, Long> entry : virtual.items().entrySet()) {
-            if (slot >= inventory.getSize() - 1) {
-                break;
-            }
+        int start = safePage * pageSize;
+        int end = Math.min(entries.size(), start + pageSize);
+        for (Map.Entry<String, Long> entry : entries.subList(start, end)) {
             ItemRegistry.FactoryItem item = items.get(entry.getKey()).orElse(new ItemRegistry.FactoryItem(
                     entry.getKey(), Material.PAPER, entry.getKey(), 0, false, 0, List.of()));
             ItemStack stack = new ItemStack(item.material(), (int) Math.max(1, Math.min(64, entry.getValue())));
             ItemMeta meta = stack.getItemMeta();
             meta.setDisplayName(ChatColor.WHITE + item.displayName());
-            meta.setLore(List.of(ChatColor.GRAY + "Amount: " + entry.getValue()));
+            meta.setLore(List.of(ChatColor.GRAY + "Amount: " + entry.getValue(),
+                    ChatColor.DARK_GRAY + "Left: 64, Right: 1, Shift: max"));
             stack.setItemMeta(meta);
             holder.action(slot, "withdraw_storage", entry.getKey());
             inventory.setItem(slot++, stack);

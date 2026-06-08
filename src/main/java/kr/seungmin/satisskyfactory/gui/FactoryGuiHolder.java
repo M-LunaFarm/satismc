@@ -15,13 +15,19 @@ public final class FactoryGuiHolder implements InventoryHolder {
     private final String type;
     private final UUID islandUuid;
     private final UUID machineId;
+    private final int page;
     private Inventory inventory;
     private final Map<Integer, GuiAction> actions = new HashMap<>();
 
     public FactoryGuiHolder(String type, UUID islandUuid, UUID machineId) {
+        this(type, islandUuid, machineId, 0);
+    }
+
+    public FactoryGuiHolder(String type, UUID islandUuid, UUID machineId, int page) {
         this.type = type;
         this.islandUuid = islandUuid;
         this.machineId = machineId;
+        this.page = Math.max(0, page);
     }
 
     public String type() {
@@ -34,6 +40,10 @@ public final class FactoryGuiHolder implements InventoryHolder {
 
     public UUID machineId() {
         return machineId;
+    }
+
+    public int page() {
+        return page;
     }
 
     public void inventory(Inventory inventory) {
