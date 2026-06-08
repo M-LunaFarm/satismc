@@ -59,6 +59,7 @@ recipes:
     outputs:
       machine_parts: 1
     quality-chance: 0.03
+    quality-item: quality_machine_parts
     power-cost: 8.0
   package_bread:
     machines: [packager_t1]
@@ -70,6 +71,7 @@ recipes:
     outputs:
       bread_box: 1
     quality-chance: 0.05
+    quality-item: quality_bread_box
     power-cost: 4.0
   saw_logs:
     machine: sawmill_t1

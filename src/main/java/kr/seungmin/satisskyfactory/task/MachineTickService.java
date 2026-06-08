@@ -580,7 +580,12 @@ public final class MachineTickService {
         Map<String, Long> produced = new HashMap<>(recipe.output());
         recipe.byproducts().forEach((item, amount) -> produced.merge(item, amount, Long::sum));
         if (recipe.qualityChance() > 0.0 && ThreadLocalRandom.current().nextDouble() < Math.min(1.0, recipe.qualityChance())) {
-            recipe.output().forEach((item, amount) -> produced.merge("quality_" + item, Math.max(1L, amount), Long::sum));
+            recipe.output().forEach((item, amount) -> {
+                String qualityItem = recipe.qualityItem() == null || recipe.qualityItem().isBlank()
+                        ? "quality_" + item
+                        : recipe.qualityItem();
+                produced.merge(qualityItem, Math.max(1L, amount), Long::sum);
+            });
         }
         return produced;
     }

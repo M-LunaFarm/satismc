@@ -13,7 +13,8 @@ public record RecipeDefinition(
         double power,
         int minTier,
         List<String> researchRequired,
-        double qualityChance
+        double qualityChance,
+        String qualityItem
 ) {
     public boolean supports(String machineType) {
         return machineTypes.contains(machineType);

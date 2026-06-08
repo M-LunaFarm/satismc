@@ -29,7 +29,8 @@ public final class RecipeService {
                     config.getDouble(base + "power-cost", config.getDouble(base + "power", 0.0)),
                     config.getInt(base + "min-tier", config.getInt(base + "minTier", 1)),
                     stringList(config, base + "research-required", base + "researchRequired"),
-                    config.getDouble(base + "quality-chance", 0.0)
+                    config.getDouble(base + "quality-chance", 0.0),
+                    config.getString(base + "quality-item", "")
             ));
         }
     }
