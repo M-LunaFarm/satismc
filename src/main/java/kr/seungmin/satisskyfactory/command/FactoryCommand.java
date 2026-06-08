@@ -107,9 +107,7 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
             case "storage" -> gui.openStorage(player, island);
             case "deposit" -> depositHand(player, island);
             case "withdraw" -> withdraw(player, island, args);
-            case "market" -> market.prices().keySet().stream().sorted().forEach(item ->
-                    player.sendMessage(item + ": " + market.price(island.islandUuid(), item, 1)
-                            + " each (base " + market.prices().get(item) + ")"));
+            case "market" -> gui.openMarket(player, island, market);
             case "contracts" -> {
                 if (args.length > 1 && args[1].equalsIgnoreCase("complete")) {
                     contracts.completeAny(island, player).ifPresentOrElse(active -> {

@@ -4,6 +4,7 @@ import kr.seungmin.satisskyfactory.contract.ContractService;
 import kr.seungmin.satisskyfactory.item.ItemRegistry;
 import kr.seungmin.satisskyfactory.machine.IslandBoostService;
 import kr.seungmin.satisskyfactory.machine.MachineDefinitionService;
+import kr.seungmin.satisskyfactory.market.MarketService;
 import kr.seungmin.satisskyfactory.model.FactoryIsland;
 import kr.seungmin.satisskyfactory.model.MachineDefinition;
 import kr.seungmin.satisskyfactory.model.MachineInstance;
@@ -62,6 +63,16 @@ public final class FactoryGuiService {
                         ChatColor.GRAY + "Agriculture x" + String.format(java.util.Locale.US, "%.2f", boosts.agricultureBoost()),
                         ChatColor.GRAY + "Machine slots +" + boosts.factorySlotBonus(),
                         ChatColor.GRAY + "Contract slots +" + boosts.contractSlotBonus())));
+        holder.action(16, "main_research", "");
+        holder.action(20, "main_contracts", "");
+        inventory.setItem(20, icon(Material.WRITABLE_BOOK, ChatColor.GOLD + "Contracts",
+                List.of(ChatColor.GRAY + "Open delivery contracts.")));
+        holder.action(22, "main_market", "");
+        inventory.setItem(22, icon(Material.EMERALD, ChatColor.GREEN + "Market",
+                List.of(ChatColor.GRAY + "Sell stored factory items.")));
+        holder.action(24, "main_storage", "");
+        inventory.setItem(24, icon(Material.CHEST, ChatColor.YELLOW + "Storage",
+                List.of(ChatColor.GRAY + "Browse island virtual storage.")));
         player.openInventory(inventory);
     }
 
@@ -221,6 +232,53 @@ public final class FactoryGuiService {
                             ChatColor.GRAY + "Reputation: " + template.reputation(),
                             ChatColor.GRAY + "Items: " + template.itemRewards(),
                             ChatColor.GRAY + "Expires: " + Math.max(0, (active.expiresAt() - System.currentTimeMillis()) / 60000) + "m")));
+        }
+        player.openInventory(inventory);
+    }
+
+    public void openMarket(Player player, FactoryIsland island, MarketService market) {
+        openMarket(player, island, market, 0);
+    }
+
+    public void openMarket(Player player, FactoryIsland island, MarketService market, int page) {
+        int safePage = Math.max(0, page);
+        FactoryGuiHolder holder = new FactoryGuiHolder("market", island.islandUuid(), null, safePage);
+        Inventory inventory = Bukkit.createInventory(holder, 54, "Factory Market");
+        holder.inventory(inventory);
+        List<String> itemIds = market.prices().keySet().stream().sorted().toList();
+        int pageSize = 45;
+        int maxPage = Math.max(0, (itemIds.size() - 1) / pageSize);
+        if (safePage > maxPage) {
+            openMarket(player, island, market, maxPage);
+            return;
+        }
+        holder.action(45, "market_page", String.valueOf(Math.max(0, safePage - 1)));
+        inventory.setItem(45, icon(Material.ARROW, ChatColor.YELLOW + "Previous Page",
+                List.of(ChatColor.GRAY + "Page " + (safePage + 1) + " of " + (maxPage + 1))));
+        inventory.setItem(49, icon(Material.EMERALD, ChatColor.GREEN + "Market",
+                List.of(ChatColor.GRAY + "Debt: " + island.maintenanceDebt(),
+                        ChatColor.GRAY + "Page: " + (safePage + 1) + "/" + (maxPage + 1))));
+        holder.action(52, "market_page", String.valueOf(Math.min(maxPage, safePage + 1)));
+        inventory.setItem(52, icon(Material.ARROW, ChatColor.YELLOW + "Next Page",
+                List.of(ChatColor.GRAY + "Page " + (safePage + 1) + " of " + (maxPage + 1))));
+        int start = safePage * pageSize;
+        int end = Math.min(itemIds.size(), start + pageSize);
+        int slot = 0;
+        VirtualInventory virtual = storage.islandStorage(island.islandUuid());
+        for (String itemId : itemIds.subList(start, end)) {
+            ItemRegistry.FactoryItem item = items.get(itemId).orElse(new ItemRegistry.FactoryItem(
+                    itemId, Material.PAPER, itemId, 0, false, market.prices().getOrDefault(itemId, 0L), List.of()));
+            long stored = virtual.amount(itemId);
+            long unitPrice = market.price(island.islandUuid(), itemId, 1);
+            ItemStack stack = new ItemStack(item.material(), (int) Math.max(1, Math.min(64, stored)));
+            ItemMeta meta = stack.getItemMeta();
+            meta.setDisplayName((stored > 0 ? ChatColor.GREEN : ChatColor.GRAY) + item.displayName());
+            meta.setLore(List.of(ChatColor.GRAY + "Stored: " + stored,
+                    ChatColor.GRAY + "Current price: " + unitPrice,
+                    ChatColor.DARK_GRAY + "Left: 64, Right: 1, Shift: max"));
+            stack.setItemMeta(meta);
+            holder.action(slot, "sell_market_item", itemId);
+            inventory.setItem(slot++, stack);
         }
         player.openInventory(inventory);
     }

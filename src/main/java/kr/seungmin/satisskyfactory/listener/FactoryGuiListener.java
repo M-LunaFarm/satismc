@@ -7,6 +7,7 @@ import kr.seungmin.satisskyfactory.item.CustomItemFactory;
 import kr.seungmin.satisskyfactory.item.ItemRegistry;
 import kr.seungmin.satisskyfactory.machine.FactoryIslandService;
 import kr.seungmin.satisskyfactory.machine.MachineService;
+import kr.seungmin.satisskyfactory.market.MarketService;
 import kr.seungmin.satisskyfactory.model.FactoryIsland;
 import kr.seungmin.satisskyfactory.model.MachineInstance;
 import kr.seungmin.satisskyfactory.research.ResearchService;
@@ -34,9 +35,11 @@ public final class FactoryGuiListener implements Listener {
     private final StorageService storage;
     private final ItemRegistry items;
     private final CustomItemFactory itemFactory;
+    private final MarketService market;
 
     public FactoryGuiListener(FactoryIslandService islands, ContractService contracts, ResearchService research, FactoryGuiService gui,
-                              MachineService machines, StorageService storage, ItemRegistry items, CustomItemFactory itemFactory) {
+                              MachineService machines, StorageService storage, ItemRegistry items, CustomItemFactory itemFactory,
+                              MarketService market) {
         this.islands = islands;
         this.contracts = contracts;
         this.research = research;
@@ -45,6 +48,7 @@ public final class FactoryGuiListener implements Listener {
         this.storage = storage;
         this.items = items;
         this.itemFactory = itemFactory;
+        this.market = market;
     }
 
     @EventHandler
@@ -77,6 +81,26 @@ public final class FactoryGuiListener implements Listener {
             gui.openStorage(player, island, parsePage(action.value()));
             return;
         }
+        if (action.type().equals("market_page")) {
+            gui.openMarket(player, island, market, parsePage(action.value()));
+            return;
+        }
+        if (action.type().equals("main_storage")) {
+            gui.openStorage(player, island);
+            return;
+        }
+        if (action.type().equals("main_contracts")) {
+            gui.openContracts(player, island, contracts);
+            return;
+        }
+        if (action.type().equals("main_research")) {
+            gui.openResearch(player, island, research);
+            return;
+        }
+        if (action.type().equals("main_market")) {
+            gui.openMarket(player, island, market);
+            return;
+        }
         if (action.type().equals("unlock_research")) {
             ResearchService.UnlockResult result = research.unlock(island, player, action.value());
             islands.save(island);
@@ -99,6 +123,10 @@ public final class FactoryGuiListener implements Listener {
         }
         if (action.type().equals("withdraw_storage")) {
             withdrawStorageItem(player, island, action.value(), holder.page(), withdrawAmount(event));
+            return;
+        }
+        if (action.type().equals("sell_market_item")) {
+            sellMarketItem(player, island, action.value(), holder.page(), withdrawAmount(event));
             return;
         }
         if (action.type().equals("deposit_hand")) {
@@ -166,6 +194,24 @@ public final class FactoryGuiListener implements Listener {
         storage.save(inventory);
         player.sendMessage("Deposited " + amount + " " + itemId + ".");
         gui.openStorage(player, island);
+    }
+
+    private void sellMarketItem(Player player, FactoryIsland island, String itemId, int page, long requested) {
+        long stored = storage.islandStorage(island.islandUuid()).amount(itemId);
+        long amount = Math.min(requested, stored);
+        if (amount <= 0) {
+            player.sendMessage("There is nothing to sell.");
+            gui.openMarket(player, island, market, page);
+            return;
+        }
+        market.sell(island, player, itemId, amount).ifPresentOrElse(result -> {
+            player.sendMessage("Sold " + amount + " " + itemId + " for " + result.paidToPlayer() + ".");
+            if (result.debtRepaid() > 0) {
+                player.sendMessage("Debt repaid from sale: " + result.debtRepaid());
+            }
+        }, () -> player.sendMessage("Cannot sell that item or amount."));
+        islands.save(island);
+        gui.openMarket(player, island, market, page);
     }
 
     private void depositMachineInput(Player player, MachineInstance machine) {
