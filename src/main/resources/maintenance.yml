@@ -6,3 +6,4 @@ maintenance:
   limited-efficiency: 0.45
   locked-threshold: 1500
   debt-cap: 5000
+  break-wear: 100.0

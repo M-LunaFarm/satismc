@@ -40,6 +40,7 @@ public final class MachineDefinitionService {
                     config.getInt(path + "range", 0),
                     config.getInt(path + "amount-per-cycle", 1),
                     config.getInt(path + "logistics-throughput", 0),
+                    config.getDouble(path + "wear-per-cycle", 0.02),
                     config.getStringList(path + "required-unlocks"),
                     nodeType(config.getString(path + "node-type", ""))
             ));

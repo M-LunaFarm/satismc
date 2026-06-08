@@ -18,6 +18,7 @@ public record MachineDefinition(
         int range,
         int amountPerCycle,
         int logisticsThroughput,
+        double wearPerCycle,
         List<String> requiredUnlocks,
         ResourceNodeType nodeType
 ) {

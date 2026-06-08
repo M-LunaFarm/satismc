@@ -47,12 +47,13 @@ public final class MachineTickService {
     private final int maxPerCycle;
     private final Set<String> recoveryTypes;
     private final double limitedEfficiency;
+    private final double breakWear;
     private BukkitTask task;
 
     public MachineTickService(JavaPlugin plugin, MachineService machines, MachineDefinitionService definitions, StorageService storage,
                               RecipeService recipes, ResourceNodeService nodes, PowerNetworkService power,
                               IslandBoostService boosts, FactoryIslandService islands, int maxPerCycle,
-                              Set<String> recoveryTypes, double limitedEfficiency) {
+                              Set<String> recoveryTypes, double limitedEfficiency, double breakWear) {
         this.plugin = plugin;
         this.machines = machines;
         this.definitions = definitions;
@@ -65,6 +66,7 @@ public final class MachineTickService {
         this.maxPerCycle = maxPerCycle;
         this.recoveryTypes = Set.copyOf(recoveryTypes);
         this.limitedEfficiency = Math.max(0.05, Math.min(1.0, limitedEfficiency));
+        this.breakWear = Math.max(1.0, breakWear);
     }
 
     public void start(long intervalTicks) {
@@ -91,6 +93,15 @@ public final class MachineTickService {
     }
 
     private void process(MachineInstance machine, MachineDefinition definition) {
+        if (machine.wear() >= breakWear) {
+            if (machine.status() != MachineStatus.BROKEN) {
+                setStatus(machine, MachineStatus.BROKEN);
+            }
+            return;
+        }
+        if (isCoolingDown(machine, definition)) {
+            return;
+        }
         if (!passesMaintenanceGate(machine)) {
             return;
         }
@@ -115,6 +126,15 @@ public final class MachineTickService {
         } else {
             processRecipe(machine);
         }
+    }
+
+    private boolean isCoolingDown(MachineInstance machine, MachineDefinition definition) {
+        long last = machine.lastProcessAt();
+        if (last <= 0) {
+            return false;
+        }
+        long cycleMillis = Math.max(1L, definition.cycleTicks()) * 50L;
+        return Instant.now().toEpochMilli() - last < cycleMillis;
     }
 
     private boolean passesMaintenanceGate(MachineInstance machine) {
@@ -312,6 +332,13 @@ public final class MachineTickService {
     }
 
     private void setStatus(MachineInstance machine, MachineStatus status) {
+        if (status == MachineStatus.RUNNING) {
+            definitions.get(machine.typeId()).ifPresent(definition ->
+                    machine.wear(Math.min(breakWear, machine.wear() + Math.max(0.0, definition.wearPerCycle()))));
+            if (machine.wear() >= breakWear) {
+                status = MachineStatus.BROKEN;
+            }
+        }
         machine.status(status);
         machine.lastProcessAt(Instant.now().toEpochMilli());
         machines.saveLater(machine);

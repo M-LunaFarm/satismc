@@ -89,6 +89,7 @@ public final class FactoryGuiService {
         List<String> lore = new ArrayList<>();
         lore.add(ChatColor.GRAY + "Type: " + machine.typeId());
         lore.add(ChatColor.GRAY + "Status: " + machine.status().name());
+        lore.add(ChatColor.GRAY + "Wear: " + String.format(java.util.Locale.US, "%.2f", machine.wear()));
         lore.add(ChatColor.GRAY + "Island: " + machine.islandUuid());
         if (definition != null) {
             lore.add(ChatColor.GRAY + "Power: " + definition.powerConsumption());

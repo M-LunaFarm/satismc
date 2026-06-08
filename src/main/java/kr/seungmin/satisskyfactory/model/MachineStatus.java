@@ -6,5 +6,6 @@ public enum MachineStatus {
     NO_POWER,
     INPUT_MISSING,
     OUTPUT_FULL,
-    LOCKED
+    LOCKED,
+    BROKEN
 }

@@ -109,7 +109,8 @@ public final class SatisSkyFactoryPlugin extends JavaPlugin {
                 islands,
                 configs.main().getInt("settings.max-machines-per-cycle", 200),
                 Set.copyOf(configs.main().getStringList("limits.recovery-machine-types")),
-                configs.file("maintenance.yml").getDouble("maintenance.limited-efficiency", 0.5)
+                configs.file("maintenance.yml").getDouble("maintenance.limited-efficiency", 0.5),
+                configs.file("maintenance.yml").getDouble("maintenance.break-wear", 100.0)
         );
         ticker.start(configs.main().getLong("settings.tick-interval", 40));
         dirtySaves.start(configs.main().getLong("settings.dirty-save-interval", 200));
