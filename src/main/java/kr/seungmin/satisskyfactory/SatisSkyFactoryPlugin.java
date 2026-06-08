@@ -164,7 +164,7 @@ public final class SatisSkyFactoryPlugin extends JavaPlugin {
                 power,
                 boosts,
                 islands,
-                configInt("settings.max-machines-per-tick", "settings.max-machines-per-cycle", 200),
+                configInt("settings.max-machines-per-tick", "settings.max-machines-per-cycle", 300),
                 configs.main().getInt("settings.max-backfill-cycles", 60),
                 configs.main().getBoolean("settings.offline-production.enabled", true),
                 Math.max(0L, configs.main().getLong("settings.offline-production.max-hours", 8)) * 60L * 60L * 1000L,
@@ -177,7 +177,7 @@ public final class SatisSkyFactoryPlugin extends JavaPlugin {
                 configs.file("maintenance.yml").getInt("maintenance.locked.max-operating-tier", 1),
                 configs.file("maintenance.yml").getDouble("maintenance.break-wear", 100.0)
         );
-        ticker.start(configLong("settings.tick-period-ticks", "settings.tick-interval", 40));
+        ticker.start(configLong("settings.tick-period-ticks", "settings.tick-interval", 20));
         maintenanceTicker = new MaintenanceTickService(this, islands, skyblock, maintenance);
         maintenanceTicker.start(configLong("settings.maintenance-check-period-ticks", "settings.maintenance-check-interval", 1200));
         dirtySaves.start(configLong("settings.dirty-save-period-ticks", "settings.dirty-save-interval", 200));

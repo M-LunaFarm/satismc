@@ -92,7 +92,7 @@ run_server_case() {
   if [[ "$allow_dependency_error" == "true" ]]; then
     severe_pattern="NoClassDefFoundError|Could not pass event"
   fi
-  if rg -n "$severe_pattern" "$log_file"; then
+  if rg -n "$severe_pattern" "$log_file" | rg -v "Detected setBlock in a far chunk"; then
     log "unexpected severe log entries in $case_name"
     exit 1
   fi

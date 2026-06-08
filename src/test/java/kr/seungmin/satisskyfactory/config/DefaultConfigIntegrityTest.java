@@ -17,6 +17,7 @@ class DefaultConfigIntegrityTest {
     @Test
     void pluginMetadataUsesSeungminPackageAndExpectedCommands() {
         YamlConfiguration plugin = load("plugin.yml");
+        YamlConfiguration config = load("config.yml");
         YamlConfiguration messages = load("messages.yml");
         YamlConfiguration maintenance = load("maintenance.yml");
 
@@ -25,6 +26,24 @@ class DefaultConfigIntegrityTest {
         assertEquals(List.of("SuperiorSkyblock2"), plugin.getStringList("depend"));
         assertTrue(plugin.isConfigurationSection("commands.factory"));
         assertTrue(plugin.isConfigurationSection("commands.sfactory"));
+        assertEquals(20, config.getInt("settings.tick-period-ticks"));
+        assertEquals(300, config.getInt("settings.max-machines-per-tick"));
+        assertEquals(60, config.getInt("settings.max-backfill-cycles"));
+        assertTrue(config.getBoolean("settings.offline-production.enabled"));
+        assertEquals(8, config.getInt("settings.offline-production.max-hours"));
+        assertEquals(0.35, config.getDouble("settings.offline-production.efficiency"));
+        assertEquals("VAULT_PLAYER", config.getString("economy.mode"));
+        assertTrue(config.getBoolean("economy.use-vault"));
+        assertEquals("원", config.getString("economy.currency-symbol"));
+        assertEquals("SQLITE", config.getString("database.type"));
+        assertEquals("data.db", config.getString("database.sqlite-file"));
+        assertEquals(60, config.getInt("database.save-interval-seconds"));
+        assertTrue(config.getBoolean("visuals.particles"));
+        assertFalse(config.getBoolean("visuals.display-entities"));
+        assertEquals(30, config.getInt("visuals.max-display-entities-per-island"));
+        assertEquals(50, config.getInt("limits.base-machine-limit"));
+        assertEquals(25, config.getInt("limits.machine-limit-per-island-tier"));
+        assertEquals(20, config.getInt("limits.base-network-limit"));
         assertTrue(messages.getString("messages.machine-status", "").contains("{status}"));
         assertEquals(24, maintenance.getInt("maintenance.charge-interval-hours"));
         assertEquals(1, maintenance.getInt("maintenance.status-thresholds.warning-days"));

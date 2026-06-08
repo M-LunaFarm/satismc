@@ -1,14 +1,14 @@
 settings:
   language: ko_kr
   debug: false
-  tick-interval: 40
-  tick-period-ticks: 40
+  tick-interval: 20
+  tick-period-ticks: 20
   maintenance-check-interval: 1200
   maintenance-check-period-ticks: 1200
   dirty-save-interval: 200
   dirty-save-period-ticks: 200
-  max-machines-per-cycle: 200
-  max-machines-per-tick: 200
+  max-machines-per-cycle: 300
+  max-machines-per-tick: 300
   max-backfill-cycles: 60
   offline-production:
     enabled: true
@@ -32,12 +32,23 @@ resource-nodes:
   link-radius: 3
 economy:
   mode: VAULT_PLAYER
+  use-vault: true
+  currency-symbol: "원"
+database:
+  type: SQLITE
+  sqlite-file: "data.db"
+  save-interval-seconds: 60
+visuals:
+  particles: true
+  display-entities: false
+  max-display-entities-per-island: 30
 storage:
   default-capacity: 10000
 limits:
-  base-machines-per-island: 128
-  base-machine-limit: 128
+  base-machines-per-island: 50
+  base-machine-limit: 50
   machine-limit-per-island-tier: 25
+  base-network-limit: 20
   recovery-machine-types:
     - harvester_t1
     - planter_t1

@@ -190,8 +190,8 @@ public final class MachineListener implements Listener {
 
     private int baseMachineLimit() {
         return config.contains("limits.base-machine-limit")
-                ? config.getInt("limits.base-machine-limit", 128)
-                : config.getInt("limits.base-machines-per-island", 128);
+                ? config.getInt("limits.base-machine-limit", 50)
+                : config.getInt("limits.base-machines-per-island", 50);
     }
 
     private int machineLimitPerIslandTier() {
