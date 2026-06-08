@@ -134,6 +134,10 @@ public final class MachineTickService {
             }
             return false;
         }
+        if (!isChunkLoaded(machine.location())) {
+            setStatus(machine, MachineStatus.CHUNK_UNLOADED);
+            return false;
+        }
         if (!backfill && isCoolingDown(machine, definition)) {
             return false;
         }
@@ -582,5 +586,10 @@ public final class MachineTickService {
     private Location location(BlockKey key) {
         World world = Bukkit.getWorld(key.world());
         return world == null ? null : new Location(world, key.x(), key.y(), key.z());
+    }
+
+    private boolean isChunkLoaded(BlockKey key) {
+        World world = Bukkit.getWorld(key.world());
+        return world != null && world.isChunkLoaded(key.chunkX(), key.chunkZ());
     }
 }

@@ -14,6 +14,14 @@ public record BlockKey(String world, int x, int y, int z) {
         return world + ":" + x + ":" + y + ":" + z;
     }
 
+    public int chunkX() {
+        return x >> 4;
+    }
+
+    public int chunkZ() {
+        return z >> 4;
+    }
+
     public BlockKey relative(int dx, int dy, int dz) {
         return new BlockKey(world, x + dx, y + dy, z + dz);
     }

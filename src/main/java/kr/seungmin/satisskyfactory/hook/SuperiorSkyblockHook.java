@@ -60,6 +60,12 @@ public final class SuperiorSkyblockHook {
         return islandRef(invokeStatic("getIslandByUUID", new Class<?>[]{UUID.class}, islandUuid));
     }
 
+    public Optional<Location> getIslandCenter(IslandRef island) {
+        return locationFrom(invoke(island.raw(), "getCenter"))
+                .or(() -> locationFrom(invoke(island.raw(), "getIslandHome")))
+                .or(() -> locationFrom(invoke(island.raw(), "getHome")));
+    }
+
     public boolean canBuildFactory(Player player, Location location) {
         Optional<IslandRef> locationIsland = getIslandAt(location);
         return locationIsland.isPresent()
@@ -162,5 +168,9 @@ public final class SuperiorSkyblockHook {
     private Boolean invokeBoolean(Object target, String methodName, Object... args) {
         Object value = invoke(target, methodName, args);
         return value instanceof Boolean bool ? bool : null;
+    }
+
+    private Optional<Location> locationFrom(Object value) {
+        return value instanceof Location location ? Optional.of(location) : Optional.empty();
     }
 }

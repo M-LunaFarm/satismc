@@ -12,6 +12,7 @@ import kr.seungmin.satisskyfactory.hook.PlaceholderHook;
 import kr.seungmin.satisskyfactory.hook.SuperiorSkyblockHook;
 import kr.seungmin.satisskyfactory.item.CustomItemFactory;
 import kr.seungmin.satisskyfactory.item.ItemRegistry;
+import kr.seungmin.satisskyfactory.listener.FactoryLifecycleListener;
 import kr.seungmin.satisskyfactory.listener.FactoryGuiListener;
 import kr.seungmin.satisskyfactory.listener.MachineListener;
 import kr.seungmin.satisskyfactory.machine.FactoryIslandService;
@@ -213,6 +214,12 @@ public final class SatisSkyFactoryPlugin extends JavaPlugin {
                 storage,
                 itemRegistry,
                 itemFactory
+        ), this);
+        getServer().getPluginManager().registerEvents(new FactoryLifecycleListener(
+                islands,
+                skyblock,
+                nodes,
+                machines
         ), this);
     }
 

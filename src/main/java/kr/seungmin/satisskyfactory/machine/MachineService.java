@@ -9,6 +9,7 @@ import kr.seungmin.satisskyfactory.storage.StorageService;
 import kr.seungmin.satisskyfactory.storage.VirtualInventory;
 import kr.seungmin.satisskyfactory.task.DirtySaveService;
 import org.bukkit.Location;
+import org.bukkit.Chunk;
 import org.bukkit.block.BlockFace;
 
 import java.util.ArrayList;
@@ -135,6 +136,26 @@ public final class MachineService {
 
     public Collection<MachineInstance> byIsland(UUID islandUuid) {
         return machines.values().stream().filter(machine -> machine.islandUuid().equals(islandUuid)).toList();
+    }
+
+    public Collection<MachineInstance> byChunk(Chunk chunk) {
+        String worldName = chunk.getWorld().getName();
+        int chunkX = chunk.getX();
+        int chunkZ = chunk.getZ();
+        return machines.values().stream()
+                .filter(machine -> machine.location().world().equals(worldName))
+                .filter(machine -> machine.location().chunkX() == chunkX && machine.location().chunkZ() == chunkZ)
+                .toList();
+    }
+
+    public void markChunkStatus(Chunk chunk, MachineStatus status) {
+        for (MachineInstance machine : byChunk(chunk)) {
+            if (machine.status() == MachineStatus.BROKEN || machine.status() == status) {
+                continue;
+            }
+            machine.status(status);
+            saveLater(machine);
+        }
     }
 
     public Collection<MachineInstance> connectedTo(MachineInstance start) {
