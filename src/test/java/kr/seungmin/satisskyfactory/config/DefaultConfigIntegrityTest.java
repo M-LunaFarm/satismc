@@ -17,12 +17,14 @@ class DefaultConfigIntegrityTest {
     @Test
     void pluginMetadataUsesSeungminPackageAndExpectedCommands() {
         YamlConfiguration plugin = load("plugin.yml");
+        YamlConfiguration messages = load("messages.yml");
 
         assertEquals("SatisSkyFactory", plugin.getString("name"));
         assertEquals("kr.seungmin.satisskyfactory.SatisSkyFactoryPlugin", plugin.getString("main"));
         assertEquals(List.of("SuperiorSkyblock2"), plugin.getStringList("depend"));
         assertTrue(plugin.isConfigurationSection("commands.factory"));
         assertTrue(plugin.isConfigurationSection("commands.sfactory"));
+        assertTrue(messages.getString("messages.machine-status", "").contains("{status}"));
     }
 
     @Test

@@ -5,6 +5,7 @@ import kr.seungmin.satisskyfactory.machine.MachineService;
 import kr.seungmin.satisskyfactory.model.BlockKey;
 import kr.seungmin.satisskyfactory.model.MachineDefinition;
 import kr.seungmin.satisskyfactory.model.MachineInstance;
+import kr.seungmin.satisskyfactory.model.MachineStatus;
 import kr.seungmin.satisskyfactory.model.PowerNetwork;
 import kr.seungmin.satisskyfactory.power.PowerNetworkService;
 import kr.seungmin.satisskyfactory.recipe.RecipeService;
@@ -131,6 +132,43 @@ class PowerNetworkServiceTest {
             assertEquals(20.0 / 30.0, power.powerRatio(islandUuid), 0.0001);
             assertEquals(0, storage.islandStorage(islandUuid).amount("power_charge"));
             assertEquals(0, power.state(islandUuid).batteryStored());
+        } finally {
+            database.close();
+        }
+    }
+
+    @Test
+    void invalidLocationMachinesDoNotConsumePower() {
+        UUID islandUuid = UUID.fromString("00000000-0000-0000-0000-000000000631");
+        UUID ownerUuid = UUID.fromString("00000000-0000-0000-0000-000000000632");
+
+        DatabaseService database = new DatabaseService(tempDir.resolve("invalid-location-power-db").toFile());
+        database.open();
+        try {
+            MachineDefinitionService definitions = new MachineDefinitionService();
+            register(definitions, definition("bio_generator_t1", 20.0, 0.0, 0.0));
+            register(definitions, definition("grinder_t1", 0.0, 30.0, 0.0));
+            StorageService storage = new StorageService(database, 1000);
+            VirtualInventory islandStorage = storage.islandStorage(islandUuid);
+            islandStorage.add("biofuel", 4);
+            storage.saveNow(islandStorage);
+            MachineService machines = new MachineService(database, definitions, storage);
+            saveMachine(machines, islandUuid, ownerUuid, "bio_generator_t1", 0);
+            MachineInstance grinder = new MachineInstance(
+                    UUID.fromString("00000000-0000-0000-0000-000000000633"),
+                    islandUuid,
+                    ownerUuid,
+                    "grinder_t1",
+                    1,
+                    new BlockKey("missing_world", 1, 64, 0)
+            );
+            grinder.status(MachineStatus.INVALID_LOCATION);
+            machines.save(grinder);
+
+            PowerNetworkService power = new PowerNetworkService(database, machines, definitions, new RecipeService(), storage);
+
+            assertEquals(1.0, power.powerRatio(islandUuid));
+            assertEquals(0.0, power.state(islandUuid).consumption());
         } finally {
             database.close();
         }

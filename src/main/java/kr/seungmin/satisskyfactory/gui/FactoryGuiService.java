@@ -146,7 +146,7 @@ public final class FactoryGuiService {
         MachineDefinition definition = definitions.get(machine.typeId()).orElse(null);
         List<String> lore = new ArrayList<>();
         lore.add(ChatColor.GRAY + "Type: " + machine.typeId());
-        lore.add(ChatColor.GRAY + "Status: " + machine.status().name());
+        lore.add(messages.raw("machine-status", Map.of("status", machine.status().name())));
         lore.add(ChatColor.GRAY + "Wear: " + String.format(java.util.Locale.US, "%.2f", machine.wear()));
         lore.add(ChatColor.GRAY + "Island: " + machine.islandUuid());
         if (definition != null) {

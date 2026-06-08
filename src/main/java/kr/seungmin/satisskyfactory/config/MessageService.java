@@ -36,6 +36,14 @@ public final class MessageService {
         return color(configs.file("messages.yml").getString("messages." + key, key));
     }
 
+    public String raw(String key, Map<String, String> placeholders) {
+        String text = raw(key);
+        for (Map.Entry<String, String> entry : placeholders.entrySet()) {
+            text = text.replace("{" + entry.getKey() + "}", entry.getValue());
+        }
+        return text;
+    }
+
     @SuppressWarnings("deprecation")
     private String color(String input) {
         return ChatColor.translateAlternateColorCodes('&', input);
