@@ -24,7 +24,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 public final class ContractService {
-    public record ContractTemplate(String id, String type, int tier, Map<String, Long> required,
+    public record ContractTemplate(String id, String type, int tier, int maxTier, Map<String, Long> required,
                                    long money, long research, long reputation, long debtRelief,
                                    Map<String, Long> itemRewards, long expiresHours) {
     }
@@ -169,7 +169,7 @@ public final class ContractService {
             if (!template.type().equalsIgnoreCase(type)) {
                 continue;
             }
-            if (template.tier() > island.tier()) {
+            if (!matchesTier(island, template)) {
                 continue;
             }
             if (database.hasContractForTemplate(island.islandUuid(), template.id(), "ACTIVE")) {
@@ -241,11 +241,17 @@ public final class ContractService {
         return true;
     }
 
+    private boolean matchesTier(FactoryIsland island, ContractTemplate template) {
+        return template.tier() <= island.tier()
+                && (template.maxTier() <= 0 || island.tier() <= template.maxTier());
+    }
+
     private ContractTemplate template(FileConfiguration config, String base, String id) {
         return new ContractTemplate(
                 id,
                 config.getString(base + "type", "DAILY"),
                 config.getInt(base + "tier", config.getInt(base + "min-tier", 1)),
+                config.getInt(base + "max-tier", config.getInt(base + "max_tier", 0)),
                 map(config.getConfigurationSection(base + "required")),
                 config.getLong(base + "rewards.money", 0),
                 config.getLong(base + "rewards.research",

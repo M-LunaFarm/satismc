@@ -148,6 +148,36 @@ class ContractFlowServiceTest {
         }
     }
 
+    @Test
+    void maxTierContractsDoNotGenerateAboveTheirTierWindow() {
+        try (DatabaseHandle handle = openDatabase("contract-max-tier")) {
+            ContractService contracts = new ContractService(
+                    new StorageService(handle.database(), 1000),
+                    new TrackingEconomy(),
+                    handle.database(),
+                    new IslandBoostService(null)
+            );
+            YamlConfiguration config = load("contracts.yml");
+            config.set("contracts.daily_slots", 2);
+            config.set("contracts.weekly_slots", 0);
+            config.set("contracts.story_slots", 0);
+            config.set("contracts.market_slots", 0);
+            config.set("contracts.templates.bread_supply.max-tier", 1);
+            config.set("contracts.templates.iron_parts.tier", 2);
+            contracts.load(config);
+            FactoryIsland island = new FactoryIsland(
+                    UUID.fromString("00000000-0000-0000-0000-000000002401"),
+                    UUID.fromString("00000000-0000-0000-0000-000000002402")
+            );
+            island.tier(2);
+
+            List<ContractService.ActiveContract> active = contracts.activeContracts(island);
+
+            assertEquals(1, active.size());
+            assertEquals("iron_parts", active.getFirst().template().id());
+        }
+    }
+
     private DatabaseHandle openDatabase(String name) {
         DatabaseService database = new DatabaseService(tempDir.resolve(name).toFile());
         database.open();
