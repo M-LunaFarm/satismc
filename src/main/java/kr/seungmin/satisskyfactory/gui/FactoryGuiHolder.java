@@ -3,13 +3,20 @@ package kr.seungmin.satisskyfactory.gui;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 public final class FactoryGuiHolder implements InventoryHolder {
+    public record GuiAction(String type, String value) {
+    }
+
     private final String type;
     private final UUID islandUuid;
     private final UUID machineId;
     private Inventory inventory;
+    private final Map<Integer, GuiAction> actions = new HashMap<>();
 
     public FactoryGuiHolder(String type, UUID islandUuid, UUID machineId) {
         this.type = type;
@@ -31,6 +38,14 @@ public final class FactoryGuiHolder implements InventoryHolder {
 
     public void inventory(Inventory inventory) {
         this.inventory = inventory;
+    }
+
+    public void action(int slot, String type, String value) {
+        actions.put(slot, new GuiAction(type, value));
+    }
+
+    public Optional<GuiAction> action(int slot) {
+        return Optional.ofNullable(actions.get(slot));
     }
 
     @Override

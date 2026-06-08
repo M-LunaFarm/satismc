@@ -134,6 +134,7 @@ public final class FactoryGuiService {
                 break;
             }
             ContractService.ContractTemplate template = active.template();
+            holder.action(slot, "complete_contract", active.contractId().toString());
             inventory.setItem(slot++, icon(Material.WRITABLE_BOOK, ChatColor.GOLD + template.id(),
                     List.of(ChatColor.GRAY + "Type: " + template.type(),
                             ChatColor.GRAY + "Tier: " + template.tier(),
@@ -156,6 +157,7 @@ public final class FactoryGuiService {
                 break;
             }
             boolean unlocked = research.unlocked(island).contains(unlock.id());
+            holder.action(slot, "unlock_research", unlock.id());
             inventory.setItem(slot++, icon(unlocked ? Material.LIME_DYE : Material.GRAY_DYE,
                     (unlocked ? ChatColor.GREEN : ChatColor.YELLOW) + unlock.id(),
                     List.of(ChatColor.GRAY + "Cost: " + unlock.cost(),

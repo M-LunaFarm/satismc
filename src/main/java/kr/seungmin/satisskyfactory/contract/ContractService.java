@@ -71,6 +71,13 @@ public final class ContractService {
         return Optional.empty();
     }
 
+    public Optional<ActiveContract> completeContract(FactoryIsland island, OfflinePlayer owner, UUID contractId) {
+        return activeContracts(island).stream()
+                .filter(active -> active.contractId().equals(contractId))
+                .filter(active -> complete(island, owner, active))
+                .findFirst();
+    }
+
     public boolean completeEmergency(FactoryIsland island, OfflinePlayer owner) {
         if (emergency == null) {
             return false;
