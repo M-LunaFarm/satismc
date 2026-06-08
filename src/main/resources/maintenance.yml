@@ -10,10 +10,14 @@ maintenance:
   limited-threshold: 500
   limited-efficiency: 0.45
   limited:
+    efficiency: 0.45
+    max-operating-tier: 2
     block-new-machine-placement: true
   locked-threshold: 1500
   locked:
     allow-basic-recovery-machines: true
+    recovery-efficiency: 0.30
+    max-operating-tier: 1
   debt-cap-days: 5
   debt-cap: 5000
   dormant:

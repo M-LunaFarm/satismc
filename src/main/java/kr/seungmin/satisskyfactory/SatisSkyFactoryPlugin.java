@@ -117,7 +117,10 @@ public final class SatisSkyFactoryPlugin extends JavaPlugin {
                 configs.main().getInt("settings.max-backfill-cycles", 60),
                 configInt("resource-nodes.link-radius", "settings.resource-node-link-radius", 3),
                 Set.copyOf(configs.main().getStringList("limits.recovery-machine-types")),
-                configs.file("maintenance.yml").getDouble("maintenance.limited-efficiency", 0.5),
+                maintenanceDouble("maintenance.limited.efficiency", "maintenance.limited-efficiency", 0.5),
+                configs.file("maintenance.yml").getInt("maintenance.limited.max-operating-tier", 2),
+                configs.file("maintenance.yml").getDouble("maintenance.locked.recovery-efficiency", 0.30),
+                configs.file("maintenance.yml").getInt("maintenance.locked.max-operating-tier", 1),
                 configs.file("maintenance.yml").getDouble("maintenance.break-wear", 100.0)
         );
         ticker.start(configLong("settings.tick-period-ticks", "settings.tick-interval", 40));
@@ -180,6 +183,12 @@ public final class SatisSkyFactoryPlugin extends JavaPlugin {
         return configs.main().contains(primaryPath)
                 ? configs.main().getBoolean(primaryPath, fallback)
                 : configs.main().getBoolean(aliasPath, fallback);
+    }
+
+    private double maintenanceDouble(String primaryPath, String aliasPath, double fallback) {
+        return configs.file("maintenance.yml").contains(primaryPath)
+                ? configs.file("maintenance.yml").getDouble(primaryPath, fallback)
+                : configs.file("maintenance.yml").getDouble(aliasPath, fallback);
     }
 
     private void loadDefinitions() {

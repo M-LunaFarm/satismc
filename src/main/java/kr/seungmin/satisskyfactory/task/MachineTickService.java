@@ -54,6 +54,9 @@ public final class MachineTickService {
     private final int nodeLinkRadius;
     private final Set<String> recoveryTypes;
     private final double limitedEfficiency;
+    private final int limitedMaxOperatingTier;
+    private final double lockedRecoveryEfficiency;
+    private final int lockedMaxOperatingTier;
     private final double breakWear;
     private BukkitTask task;
     private int tickCursor;
@@ -61,7 +64,9 @@ public final class MachineTickService {
     public MachineTickService(JavaPlugin plugin, MachineService machines, MachineDefinitionService definitions, StorageService storage,
                               RecipeService recipes, ResearchService research, ResourceNodeService nodes, PowerNetworkService power,
                               IslandBoostService boosts, FactoryIslandService islands, int maxPerCycle,
-                              int maxBackfillCycles, int nodeLinkRadius, Set<String> recoveryTypes, double limitedEfficiency, double breakWear) {
+                              int maxBackfillCycles, int nodeLinkRadius, Set<String> recoveryTypes,
+                              double limitedEfficiency, int limitedMaxOperatingTier,
+                              double lockedRecoveryEfficiency, int lockedMaxOperatingTier, double breakWear) {
         this.plugin = plugin;
         this.machines = machines;
         this.definitions = definitions;
@@ -77,6 +82,9 @@ public final class MachineTickService {
         this.nodeLinkRadius = Math.max(1, nodeLinkRadius);
         this.recoveryTypes = Set.copyOf(recoveryTypes);
         this.limitedEfficiency = Math.max(0.05, Math.min(1.0, limitedEfficiency));
+        this.limitedMaxOperatingTier = Math.max(1, limitedMaxOperatingTier);
+        this.lockedRecoveryEfficiency = Math.max(0.05, Math.min(1.0, lockedRecoveryEfficiency));
+        this.lockedMaxOperatingTier = Math.max(1, lockedMaxOperatingTier);
         this.breakWear = Math.max(1.0, breakWear);
     }
 
@@ -144,7 +152,7 @@ public final class MachineTickService {
         if (!backfill && isCoolingDown(machine, definition)) {
             return false;
         }
-        if (!passesMaintenanceGate(machine)) {
+        if (!passesMaintenanceGate(machine, definition)) {
             return false;
         }
         double ratio = power.powerRatio(machine.islandUuid());
@@ -223,7 +231,7 @@ public final class MachineTickService {
                 .orElse(fallbackMillis);
     }
 
-    private boolean passesMaintenanceGate(MachineInstance machine) {
+    private boolean passesMaintenanceGate(MachineInstance machine, MachineDefinition definition) {
         Optional<FactoryIsland> island = islands.find(machine.islandUuid());
         if (island.isEmpty()) {
             return true;
@@ -233,14 +241,26 @@ public final class MachineTickService {
             setStatus(machine, MachineStatus.LOCKED);
             return false;
         }
-        if (status == MaintenanceStatus.LOCKED && !recoveryTypes.contains(machine.typeId())) {
-            setStatus(machine, MachineStatus.LOCKED);
-            return false;
+        if (status == MaintenanceStatus.LOCKED) {
+            if (!recoveryTypes.contains(machine.typeId()) || definition.tier() > lockedMaxOperatingTier) {
+                setStatus(machine, MachineStatus.LOCKED);
+                return false;
+            }
+            if (ThreadLocalRandom.current().nextDouble() > lockedRecoveryEfficiency) {
+                setStatus(machine, MachineStatus.IDLE);
+                return false;
+            }
+            return true;
         }
-        if (status == MaintenanceStatus.LIMITED && !recoveryTypes.contains(machine.typeId())
-                && ThreadLocalRandom.current().nextDouble() > limitedEfficiency) {
-            setStatus(machine, MachineStatus.IDLE);
-            return false;
+        if (status == MaintenanceStatus.LIMITED) {
+            if (definition.tier() > limitedMaxOperatingTier) {
+                setStatus(machine, MachineStatus.LOCKED);
+                return false;
+            }
+            if (ThreadLocalRandom.current().nextDouble() > limitedEfficiency) {
+                setStatus(machine, MachineStatus.IDLE);
+                return false;
+            }
         }
         return true;
     }
