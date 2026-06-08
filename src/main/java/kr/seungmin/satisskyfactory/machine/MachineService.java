@@ -105,7 +105,7 @@ public final class MachineService {
     }
 
     private void delete(MachineInstance machine) {
-        machine.status(MachineStatus.IDLE);
+        machine.status(MachineStatus.SLEEPING);
         machines.remove(machine.machineId());
         byLocation.remove(machine.location());
         if (dirtySaves != null) {

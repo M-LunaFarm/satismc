@@ -200,6 +200,10 @@ public final class MachineTickService {
             }
             return false;
         }
+        if (!isValidWorld(machine.location())) {
+            setStatus(machine, MachineStatus.INVALID_LOCATION);
+            return false;
+        }
         if (!isChunkLoaded(machine.location())) {
             setStatus(machine, MachineStatus.CHUNK_UNLOADED);
             return false;
@@ -217,14 +221,14 @@ public final class MachineTickService {
         }
         if (!definition.isGenerator() && !definition.isBattery() && ratio < 1.0
                 && ThreadLocalRandom.current().nextDouble() > ratio) {
-            setStatus(machine, MachineStatus.IDLE);
+            setStatus(machine, MachineStatus.SLEEPING);
             return false;
         }
         if (definition.isLogistics()) {
             return processLogistics(machine, definition);
         }
         if (definition.isStorage()) {
-            setStatus(machine, MachineStatus.IDLE);
+            setStatus(machine, MachineStatus.SLEEPING);
             return false;
         }
         if (definition.isGenerator()) {
@@ -295,27 +299,27 @@ public final class MachineTickService {
         }
         MaintenanceStatus status = island.get().maintenanceStatus();
         if (status == MaintenanceStatus.DORMANT) {
-            setStatus(machine, MachineStatus.LOCKED);
+            setStatus(machine, MachineStatus.MAINTENANCE_LOCKED);
             return false;
         }
         if (status == MaintenanceStatus.LOCKED) {
             if (!recoveryTypes.contains(machine.typeId()) || definition.tier() > lockedMaxOperatingTier) {
-                setStatus(machine, MachineStatus.LOCKED);
+                setStatus(machine, MachineStatus.MAINTENANCE_LOCKED);
                 return false;
             }
             if (ThreadLocalRandom.current().nextDouble() > lockedRecoveryEfficiency) {
-                setStatus(machine, MachineStatus.IDLE);
+                setStatus(machine, MachineStatus.SLEEPING);
                 return false;
             }
             return true;
         }
         if (status == MaintenanceStatus.LIMITED) {
             if (definition.tier() > limitedMaxOperatingTier) {
-                setStatus(machine, MachineStatus.LOCKED);
+                setStatus(machine, MachineStatus.MAINTENANCE_LOCKED);
                 return false;
             }
             if (ThreadLocalRandom.current().nextDouble() > limitedEfficiency) {
-                setStatus(machine, MachineStatus.IDLE);
+                setStatus(machine, MachineStatus.SLEEPING);
                 return false;
             }
         }
@@ -324,10 +328,10 @@ public final class MachineTickService {
 
     private boolean processGenerator(MachineInstance machine, MachineDefinition definition) {
         if (!consumeGeneratorFuel(machine, generatorFuel(machine, definition))) {
-            setStatus(machine, MachineStatus.INPUT_MISSING);
+            setStatus(machine, MachineStatus.NO_INPUT);
             return false;
         }
-        setStatus(machine, MachineStatus.RUNNING);
+        setStatus(machine, MachineStatus.ACTIVE);
         return true;
     }
 
@@ -375,6 +379,7 @@ public final class MachineTickService {
         VirtualInventory output = outputInventory(machine);
         Location location = location(machine.location());
         if (location == null) {
+            setStatus(machine, MachineStatus.INVALID_LOCATION);
             return false;
         }
         int harvested = 0;
@@ -400,13 +405,13 @@ public final class MachineTickService {
             }
         }
         storage.save(output);
-        setStatus(machine, harvested > 0 ? MachineStatus.RUNNING : MachineStatus.INPUT_MISSING);
+        setStatus(machine, harvested > 0 ? MachineStatus.ACTIVE : MachineStatus.NO_INPUT);
         return harvested > 0;
     }
 
     private boolean processPlanter(MachineInstance machine, MachineDefinition definition) {
         if (definition.plantRules().isEmpty()) {
-            setStatus(machine, MachineStatus.INPUT_MISSING);
+            setStatus(machine, MachineStatus.NO_INPUT);
             return false;
         }
         VirtualInventory input = inputInventory(machine);
@@ -414,11 +419,12 @@ public final class MachineTickService {
                 .filter(entry -> input.amount(entry.getKey()) > 0)
                 .findFirst();
         if (seed.isEmpty()) {
-            setStatus(machine, MachineStatus.INPUT_MISSING);
+            setStatus(machine, MachineStatus.NO_INPUT);
             return false;
         }
         Location location = location(machine.location());
         if (location == null) {
+            setStatus(machine, MachineStatus.INVALID_LOCATION);
             return false;
         }
         int range = Math.max(1, definition.range());
@@ -431,16 +437,16 @@ public final class MachineTickService {
                     continue;
                 }
                 if (!input.remove(seed.get().getKey(), 1)) {
-                    setStatus(machine, MachineStatus.INPUT_MISSING);
+                    setStatus(machine, MachineStatus.NO_INPUT);
                     return false;
                 }
                 crop.setType(rule.crop());
                 storage.save(input);
-                setStatus(machine, MachineStatus.RUNNING);
+                setStatus(machine, MachineStatus.ACTIVE);
                 return true;
             }
         }
-        setStatus(machine, MachineStatus.INPUT_MISSING);
+        setStatus(machine, MachineStatus.NO_INPUT);
         return false;
     }
 
@@ -450,11 +456,12 @@ public final class MachineTickService {
                 ? "fertilizer"
                 : definition.fertilizerItem();
         if (input.amount(fertilizerItem) <= 0) {
-            setStatus(machine, MachineStatus.INPUT_MISSING);
+            setStatus(machine, MachineStatus.NO_INPUT);
             return false;
         }
         Location location = location(machine.location());
         if (location == null) {
+            setStatus(machine, MachineStatus.INVALID_LOCATION);
             return false;
         }
         int range = Math.max(1, definition.range());
@@ -472,18 +479,18 @@ public final class MachineTickService {
             }
         }
         if (boosted <= 0) {
-            setStatus(machine, MachineStatus.INPUT_MISSING);
+            setStatus(machine, MachineStatus.NO_INPUT);
             return false;
         }
         if (!input.remove(fertilizerItem, 1)) {
-            setStatus(machine, MachineStatus.INPUT_MISSING);
+            setStatus(machine, MachineStatus.NO_INPUT);
             return false;
         }
         storage.save(input);
         if (definition.qualityChance() > 0.0 && definition.qualityItem() != null && !definition.qualityItem().isBlank()) {
             grantQualityBonus(machine, definition, boosted);
         }
-        setStatus(machine, MachineStatus.RUNNING);
+        setStatus(machine, MachineStatus.ACTIVE);
         return true;
     }
 
@@ -529,7 +536,7 @@ public final class MachineTickService {
                 .filter(candidate -> definition.nodeType() == null || definition.nodeType().matches(candidate.nodeType()))
                 .findFirst();
         if (node.isEmpty() || node.get().remaining() <= 0 || node.get().requiredMachineTier() > definition.tier()) {
-            setStatus(machine, MachineStatus.INPUT_MISSING);
+            setStatus(machine, MachineStatus.NO_INPUT);
             return false;
         }
         long amount = Math.max(1, Math.round(definition.amountPerCycle() * node.get().purity()));
@@ -542,7 +549,7 @@ public final class MachineTickService {
         machine.linkedResourceNodeId(node.get().nodeId());
         storage.save(output);
         nodes.save(node.get());
-        setStatus(machine, MachineStatus.RUNNING);
+        setStatus(machine, MachineStatus.ACTIVE);
         return true;
     }
 
@@ -551,7 +558,7 @@ public final class MachineTickService {
         VirtualInventory output = outputInventory(machine);
         Optional<ResourceNode> recipeNode = recipeNode(machine, definition);
         if (definition.recipeNodeType() != null && recipeNode.isEmpty()) {
-            setStatus(machine, MachineStatus.INPUT_MISSING);
+            setStatus(machine, MachineStatus.NO_INPUT);
             return false;
         }
         Optional<FactoryIsland> island = islands.find(machine.islandUuid());
@@ -574,11 +581,11 @@ public final class MachineTickService {
                 recipeNode.ifPresent(node -> consumeRecipeNode(machine, definition, node));
                 storage.save(input);
                 storage.save(output);
-                setStatus(machine, MachineStatus.RUNNING);
+                setStatus(machine, MachineStatus.ACTIVE);
                 return true;
             }
         }
-        setStatus(machine, inputReady ? MachineStatus.OUTPUT_FULL : MachineStatus.INPUT_MISSING);
+        setStatus(machine, inputReady ? MachineStatus.OUTPUT_FULL : MachineStatus.NO_INPUT);
         return false;
     }
 
@@ -716,7 +723,7 @@ public final class MachineTickService {
         if (moved > 0) {
             storage.save(buffer);
         }
-        setStatus(machine, moved > 0 ? MachineStatus.RUNNING : MachineStatus.IDLE);
+        setStatus(machine, moved > 0 ? MachineStatus.ACTIVE : MachineStatus.SLEEPING);
         return moved > 0;
     }
 
@@ -817,7 +824,7 @@ public final class MachineTickService {
     }
 
     private void setStatus(MachineInstance machine, MachineStatus status) {
-        if (status == MachineStatus.RUNNING) {
+        if (status == MachineStatus.ACTIVE) {
             definitions.get(machine.typeId()).ifPresent(definition ->
                     machine.wear(Math.min(breakWear, machine.wear() + Math.max(0.0, definition.wearPerCycle()))));
             if (machine.wear() >= breakWear) {
@@ -837,5 +844,9 @@ public final class MachineTickService {
     private boolean isChunkLoaded(BlockKey key) {
         World world = Bukkit.getWorld(key.world());
         return world != null && world.isChunkLoaded(key.chunkX(), key.chunkZ());
+    }
+
+    private boolean isValidWorld(BlockKey key) {
+        return Bukkit.getWorld(key.world()) != null;
     }
 }

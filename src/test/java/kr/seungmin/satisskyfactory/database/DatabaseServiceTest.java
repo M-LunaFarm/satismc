@@ -99,7 +99,7 @@ class DatabaseServiceTest {
 
             MachineInstance machine = new MachineInstance(machineId, islandUuid, ownerUuid, "grinder_t1", 1, new BlockKey("world", 10, 64, 12));
             machine.direction(BlockFace.EAST);
-            machine.status(MachineStatus.RUNNING);
+            machine.status(MachineStatus.ACTIVE);
             machine.inputInventoryId(inputInventoryId);
             machine.outputInventoryId(outputInventoryId);
             machine.selectedRecipeId("grind_wheat");
@@ -151,7 +151,7 @@ class DatabaseServiceTest {
                     .orElseThrow();
             assertEquals("grinder_t1", machine.typeId());
             assertEquals(BlockFace.EAST, machine.direction());
-            assertEquals(MachineStatus.RUNNING, machine.status());
+            assertEquals(MachineStatus.ACTIVE, machine.status());
             assertEquals("grind_wheat", machine.selectedRecipeId());
             assertEquals(1.25, machine.wear());
 
@@ -187,6 +187,46 @@ class DatabaseServiceTest {
         try (DatabaseHandle handle = openDatabase(dataFolder)) {
             assertTrue(handle.database().loadMachines().isEmpty());
         }
+    }
+
+    @Test
+    void legacyMachineStatusesLoadAsGoalStatuses() throws Exception {
+        UUID islandUuid = UUID.fromString("00000000-0000-0000-0000-000000000241");
+        UUID ownerUuid = UUID.fromString("00000000-0000-0000-0000-000000000242");
+
+        try (DatabaseHandle handle = openDatabase(tempDir.resolve("legacy-status-db").toFile());
+             Connection connection = handle.database().connection();
+             Statement statement = connection.createStatement()) {
+            insertMachine(statement, islandUuid, ownerUuid,
+                    "00000000-0000-0000-0000-000000000243", 0, "RUNNING");
+            insertMachine(statement, islandUuid, ownerUuid,
+                    "00000000-0000-0000-0000-000000000244", 1, "IDLE");
+            insertMachine(statement, islandUuid, ownerUuid,
+                    "00000000-0000-0000-0000-000000000245", 2, "INPUT_MISSING");
+            insertMachine(statement, islandUuid, ownerUuid,
+                    "00000000-0000-0000-0000-000000000246", 3, "LOCKED");
+
+            Set<MachineStatus> statuses = handle.database().loadMachines().stream()
+                    .map(MachineInstance::status)
+                    .collect(java.util.stream.Collectors.toSet());
+
+            assertTrue(statuses.containsAll(Set.of(
+                    MachineStatus.ACTIVE,
+                    MachineStatus.SLEEPING,
+                    MachineStatus.NO_INPUT,
+                    MachineStatus.MAINTENANCE_LOCKED
+            )));
+        }
+    }
+
+    private void insertMachine(Statement statement, UUID islandUuid, UUID ownerUuid,
+                               String machineId, int x, String status) throws Exception {
+        statement.executeUpdate("""
+                INSERT INTO machines(machine_id, island_uuid, owner_uuid, type_id, tier, world, x, y, z, direction,
+                  status, last_process_at, wear, config_json, created_at, updated_at)
+                VALUES('%s', '%s', '%s', 'grinder_t1', 1, 'world', %d, 64, 0, 'NORTH',
+                  '%s', 0, 0, '{}', 1, 1)
+                """.formatted(machineId, islandUuid, ownerUuid, x, status));
     }
 
     @Test

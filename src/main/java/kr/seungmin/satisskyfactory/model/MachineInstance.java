@@ -30,7 +30,7 @@ public final class MachineInstance {
         this.tier = tier;
         this.location = location;
         this.direction = BlockFace.NORTH;
-        this.status = MachineStatus.IDLE;
+        this.status = MachineStatus.SLEEPING;
     }
 
     public UUID machineId() { return machineId; }

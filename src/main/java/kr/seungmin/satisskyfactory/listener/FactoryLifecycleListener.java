@@ -72,7 +72,7 @@ public final class FactoryLifecycleListener implements Listener {
     public void onChunkLoad(ChunkLoadEvent event) {
         for (MachineInstance machine : machines.byChunk(event.getChunk())) {
             if (machine.status() == MachineStatus.CHUNK_UNLOADED) {
-                machine.status(MachineStatus.IDLE);
+                machine.status(MachineStatus.SLEEPING);
                 machines.saveLater(machine);
                 itemNetworks.rebuildIsland(machine.islandUuid());
                 power.rebuildIsland(machine.islandUuid());

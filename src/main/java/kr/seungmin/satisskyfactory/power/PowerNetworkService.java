@@ -188,8 +188,9 @@ public final class PowerNetworkService {
     private boolean canParticipate(MachineInstance machine) {
         MachineStatus status = machine.status();
         return status != MachineStatus.BROKEN
-                && status != MachineStatus.LOCKED
-                && status != MachineStatus.CHUNK_UNLOADED;
+                && status != MachineStatus.MAINTENANCE_LOCKED
+                && status != MachineStatus.CHUNK_UNLOADED
+                && status != MachineStatus.INVALID_LOCATION;
     }
 
     private double consumptionFor(MachineInstance machine, MachineDefinition definition) {

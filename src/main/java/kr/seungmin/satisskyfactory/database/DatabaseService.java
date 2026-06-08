@@ -363,7 +363,7 @@ public final class DatabaseService {
                         new BlockKey(rs.getString("world"), rs.getInt("x"), rs.getInt("y"), rs.getInt("z"))
                 );
                 machine.direction(BlockFace.valueOf(rs.getString("direction")));
-                machine.status(MachineStatus.valueOf(rs.getString("status")));
+                machine.status(MachineStatus.fromStoredValue(rs.getString("status")));
                 machine.inputInventoryId(uuidOrNull(rs.getString("input_inventory_id")));
                 machine.outputInventoryId(uuidOrNull(rs.getString("output_inventory_id")));
                 machine.powerNetworkId(uuidOrNull(rs.getString("power_network_id")));

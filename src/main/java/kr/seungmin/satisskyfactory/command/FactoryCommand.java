@@ -589,7 +589,7 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
 
     private void repair(MachineInstance machine) {
         machine.wear(0.0);
-        machine.status(MachineStatus.IDLE);
+        machine.status(MachineStatus.SLEEPING);
         machines.save(machine);
     }
 

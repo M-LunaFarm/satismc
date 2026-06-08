@@ -181,7 +181,7 @@ public final class MachineListener implements Listener {
             return;
         }
         nodes.nearest(machine.islandUuid(), machine.location(), nodeLinkRadius(), definition.nodeType())
-                .ifPresentOrElse(node -> machine.linkedResourceNodeId(node.nodeId()), () -> machine.status(MachineStatus.INPUT_MISSING));
+                .ifPresentOrElse(node -> machine.linkedResourceNodeId(node.nodeId()), () -> machine.status(MachineStatus.NO_INPUT));
     }
 
     private Set<String> recoveryTypes() {
