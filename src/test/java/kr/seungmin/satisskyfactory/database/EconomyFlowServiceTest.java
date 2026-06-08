@@ -154,6 +154,26 @@ class EconomyFlowServiceTest {
     }
 
     @Test
+    void marketUsesItemBasePriceWhenMarketConfigOmitsPrice() {
+        try (DatabaseHandle handle = openDatabase("market-item-price")) {
+            ItemRegistry items = new ItemRegistry();
+            items.load(load("items.yml"));
+            MarketService market = new MarketService(
+                    new StorageService(handle.database(), 1000),
+                    new TrackingEconomy(),
+                    handle.database(),
+                    items
+            );
+            YamlConfiguration config = load("market.yml");
+            config.set("market.items.flour.base-price", null);
+
+            market.load(config);
+
+            assertEquals(8, market.price("flour", 2));
+        }
+    }
+
+    @Test
     void maintenanceChargeAddsDebtWhenEconomyCannotPay() {
         try (DatabaseHandle handle = openDatabase("maintenance")) {
             DatabaseService database = handle.database();

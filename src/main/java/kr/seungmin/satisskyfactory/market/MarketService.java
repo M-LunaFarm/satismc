@@ -65,15 +65,17 @@ public final class MarketService {
         lockedDebtRepayRate = config.getDouble("market.locked-debt-repay-rate", 0.70);
         loadPersonalTiers(config);
         loadQualityFactors(config);
-        ConfigurationSection items = config.getConfigurationSection("market.items");
-        if (items == null) {
+        ConfigurationSection marketItems = config.getConfigurationSection("market.items");
+        if (marketItems == null) {
             return;
         }
-        for (String itemId : items.getKeys(false)) {
-            prices.put(itemId, items.getLong(itemId + ".base-price", 1));
-            targetDailyAmounts.put(itemId, items.getLong(itemId + ".target-daily-amount", Math.max(1, personalSoftCap * 4L)));
-            if (items.contains(itemId + ".quality-factor")) {
-                itemQualityFactors.put(itemId, Math.max(0.0, items.getDouble(itemId + ".quality-factor", 1.0)));
+        for (String itemId : marketItems.getKeys(false)) {
+            prices.put(itemId, marketItems.contains(itemId + ".base-price")
+                    ? marketItems.getLong(itemId + ".base-price", 1)
+                    : itemBasePrice(itemId));
+            targetDailyAmounts.put(itemId, marketItems.getLong(itemId + ".target-daily-amount", Math.max(1, personalSoftCap * 4L)));
+            if (marketItems.contains(itemId + ".quality-factor")) {
+                itemQualityFactors.put(itemId, Math.max(0.0, marketItems.getDouble(itemId + ".quality-factor", 1.0)));
             }
         }
     }
@@ -118,6 +120,13 @@ public final class MarketService {
 
     public Map<String, Long> prices() {
         return Map.copyOf(prices);
+    }
+
+    private long itemBasePrice(String itemId) {
+        return items.get(itemId)
+                .map(ItemRegistry.FactoryItem::basePrice)
+                .filter(price -> price > 0)
+                .orElse(1L);
     }
 
     private Optional<SellResult> payout(FactoryIsland island, OfflinePlayer owner, String itemId, long amount) {
