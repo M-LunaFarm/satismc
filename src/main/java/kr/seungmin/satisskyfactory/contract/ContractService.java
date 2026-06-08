@@ -79,10 +79,15 @@ public final class ContractService {
     }
 
     public boolean completeEmergency(FactoryIsland island, OfflinePlayer owner) {
-        if (emergency == null) {
+        if (emergency == null || island.maintenanceDebt() <= 0) {
             return false;
         }
-        return complete(island, owner, new ActiveContract(UUID.randomUUID(), emergency, Instant.now().plus(Duration.ofHours(24)).toEpochMilli()));
+        boolean completed = complete(island, owner, new ActiveContract(UUID.randomUUID(), emergency, Instant.now().plus(Duration.ofHours(24)).toEpochMilli()));
+        if (completed) {
+            island.emergencyContractsUsedToday(island.emergencyContractsUsedToday() + 1);
+            database.saveIsland(island);
+        }
+        return completed;
     }
 
     public Map<String, ContractTemplate> templates() {
@@ -155,7 +160,18 @@ public final class ContractService {
             island.maintenanceDebt(Math.max(0, island.maintenanceDebt() - template.debtRelief()));
         }
         database.saveIsland(island);
-        database.updateContractStatus(active.contractId(), "COMPLETED", json(template.required()));
+        database.saveContract(new DatabaseService.StoredContract(
+                active.contractId(),
+                island.islandUuid(),
+                template.id(),
+                template.type(),
+                template.tier(),
+                json(template.required()),
+                json(template.required()),
+                json(rewards(template)),
+                "COMPLETED",
+                active.expiresAt()
+        ));
         return true;
     }
 
