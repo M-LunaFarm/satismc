@@ -143,11 +143,35 @@ public final class MachineService {
     }
 
     public long factoryScore(UUID islandUuid) {
-        return byIsland(islandUuid).stream()
-                .map(machine -> definitions.get(machine.typeId()).orElse(null))
-                .filter(definition -> definition != null)
-                .mapToLong(MachineDefinition::factoryScore)
-                .sum();
+        return factoryScore(islandUuid, 1);
+    }
+
+    public long factoryScore(UUID islandUuid, int islandTier) {
+        long baseScore = 0;
+        long logisticsScore = 0;
+        long storageScore = 0;
+        long powerScore = 0;
+        for (MachineInstance machine : byIsland(islandUuid)) {
+            MachineDefinition definition = definitions.get(machine.typeId()).orElse(null);
+            if (definition == null) {
+                continue;
+            }
+            baseScore += definition.factoryScore();
+            if (definition.isLogistics()) {
+                logisticsScore += Math.max(1, definition.logisticsThroughput() / 8L);
+            }
+            if (definition.isStorage()) {
+                storageScore += Math.max(1, definition.inputCapacity() / 500L);
+            }
+            if (definition.isGenerator()) {
+                powerScore += Math.max(1, Math.round(definition.powerGeneration() / 4.0));
+            }
+            if (definition.isBattery()) {
+                powerScore += Math.max(1, Math.round(definition.batteryCapacity() / 500.0));
+            }
+        }
+        long islandTierBonus = Math.max(0, islandTier - 1L) * 25L;
+        return baseScore + logisticsScore + storageScore + powerScore + islandTierBonus;
     }
 
     public long maintenanceScore(UUID islandUuid) {

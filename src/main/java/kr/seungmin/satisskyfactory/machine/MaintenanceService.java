@@ -58,11 +58,11 @@ public final class MaintenanceService {
     public long chargeIfDue(FactoryIsland island, OfflinePlayer owner, Object rawIsland) {
         long now = Instant.now().toEpochMilli();
         if (island.lastMaintenanceAt() > 0 && now - island.lastMaintenanceAt() < intervalMillis) {
-            island.factoryScore(machines.factoryScore(island.islandUuid()));
+            island.factoryScore(machines.factoryScore(island.islandUuid(), island.tier()));
             updateStatus(island);
             return 0;
         }
-        island.factoryScore(machines.factoryScore(island.islandUuid()));
+        island.factoryScore(machines.factoryScore(island.islandUuid(), island.tier()));
         if (shouldDormant(island, now)) {
             island.maintenanceStatus(MaintenanceStatus.DORMANT);
             return 0;
@@ -84,13 +84,13 @@ public final class MaintenanceService {
     }
 
     public void setDebt(FactoryIsland island, long debt) {
-        island.factoryScore(machines.factoryScore(island.islandUuid()));
+        island.factoryScore(machines.factoryScore(island.islandUuid(), island.tier()));
         island.maintenanceDebt(Math.max(0, Math.min(debtLimit(maintenanceFee(island)), debt)));
         updateStatus(island);
     }
 
     private long maintenanceFee(FactoryIsland island) {
-        long score = Math.max(1, machines.maintenanceScore(island.islandUuid()));
+        long score = Math.max(1, exponentialFormula ? island.factoryScore() : machines.maintenanceScore(island.islandUuid()));
         long calculated = exponentialFormula
                 ? Math.round(baseCost * Math.pow(score, exponent))
                 : baseCost + perMachineCost * score;

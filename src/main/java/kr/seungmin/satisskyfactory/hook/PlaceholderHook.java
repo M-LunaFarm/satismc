@@ -94,7 +94,7 @@ public final class PlaceholderHook extends PlaceholderExpansion {
             return island.maintenanceStatus().name();
         }
         if (key.equals("factory_score")) {
-            return String.valueOf(machines.factoryScore(island.islandUuid()));
+            return String.valueOf(machines.factoryScore(island.islandUuid(), island.tier()));
         }
         if (key.equals("maintenance_score")) {
             return String.valueOf(machines.maintenanceScore(island.islandUuid()));
