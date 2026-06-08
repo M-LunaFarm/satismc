@@ -20,6 +20,9 @@ items:
   iron_plate:
     material: HEAVY_WEIGHTED_PRESSURE_PLATE
     display: "Iron Plate"
+  machine_parts:
+    material: IRON_NUGGET
+    display: "Machine Parts"
   biofuel:
     material: DRIED_KELP
     display: "Biofuel"

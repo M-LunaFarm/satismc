@@ -14,6 +14,8 @@ import kr.seungmin.satisskyfactory.machine.MaintenanceService;
 import kr.seungmin.satisskyfactory.market.MarketService;
 import kr.seungmin.satisskyfactory.model.FactoryContext;
 import kr.seungmin.satisskyfactory.model.FactoryIsland;
+import kr.seungmin.satisskyfactory.model.MachineInstance;
+import kr.seungmin.satisskyfactory.model.MachineStatus;
 import kr.seungmin.satisskyfactory.node.ResourceNodeService;
 import kr.seungmin.satisskyfactory.power.PowerNetworkService;
 import kr.seungmin.satisskyfactory.research.ResearchService;
@@ -129,6 +131,7 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
                 }
             }
             case "sell" -> sell(player, island, args);
+            case "repair" -> repairTarget(player, island);
             default -> help(player);
         }
         return true;
@@ -140,7 +143,7 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
             return true;
         }
         if (args.length < 2) {
-            sender.sendMessage("/factory admin reload|give|giveitem|addresearch|setdebt|charge|gennodes|debug|removehere");
+            sender.sendMessage("/factory admin reload|give|giveitem|addresearch|setdebt|charge|gennodes|debug|removehere|repairhere");
             return true;
         }
         switch (args[1].toLowerCase(Locale.ROOT)) {
@@ -171,6 +174,7 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
             });
             case "debug" -> debug(sender, args);
             case "removehere" -> removeHere(sender);
+            case "repairhere" -> repairHere(sender);
             default -> sender.sendMessage("Unknown admin command.");
         }
         return true;
@@ -283,8 +287,43 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
     }
 
     private void help(Player player) {
-        player.sendMessage("/factory status, storage, machines, market, contracts, research");
+        player.sendMessage("/factory status, storage, machines, market, contracts, research, repair");
         player.sendMessage("/factory node scan, sell <itemId> <amount>, emergency");
+    }
+
+    private void repairTarget(Player player, FactoryIsland island) {
+        Block block = player.getTargetBlockExact(8);
+        if (block == null || block.getType() == Material.AIR) {
+            player.sendMessage("No target machine.");
+            return;
+        }
+        machines.at(block.getLocation()).ifPresentOrElse(machine -> {
+            if (!machine.islandUuid().equals(island.islandUuid())) {
+                player.sendMessage("That machine belongs to another island.");
+                return;
+            }
+            if (!consumeRepairParts(island, machine)) {
+                player.sendMessage("Repair requires iron_plate x2 and machine_parts x1.");
+                return;
+            }
+            repair(machine);
+            player.sendMessage("Machine repaired.");
+        }, () -> player.sendMessage("No machine here."));
+    }
+
+    private boolean consumeRepairParts(FactoryIsland island, MachineInstance machine) {
+        var inventory = storage.islandStorage(island.islandUuid());
+        long plateCost = machine.status() == MachineStatus.BROKEN ? 2 : 1;
+        long partsCost = machine.status() == MachineStatus.BROKEN ? 1 : 0;
+        if (inventory.amount("iron_plate") < plateCost || inventory.amount("machine_parts") < partsCost) {
+            return false;
+        }
+        inventory.remove("iron_plate", plateCost);
+        if (partsCost > 0) {
+            inventory.remove("machine_parts", partsCost);
+        }
+        storage.save(inventory);
+        return true;
     }
 
     private void giveMachine(CommandSender sender, String[] args) {
@@ -358,6 +397,28 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
         }, () -> sender.sendMessage("No machine here."));
     }
 
+    private void repairHere(CommandSender sender) {
+        if (!(sender instanceof Player player)) {
+            messages.send(sender, "no-player");
+            return;
+        }
+        Block block = player.getTargetBlockExact(8);
+        if (block == null || block.getType() == Material.AIR) {
+            sender.sendMessage("No target block.");
+            return;
+        }
+        machines.at(block.getLocation()).ifPresentOrElse(machine -> {
+            repair(machine);
+            sender.sendMessage("Machine repaired.");
+        }, () -> sender.sendMessage("No machine here."));
+    }
+
+    private void repair(MachineInstance machine) {
+        machine.wear(0.0);
+        machine.status(MachineStatus.IDLE);
+        machines.save(machine);
+    }
+
     private void withPlayerContext(CommandSender sender, String[] args, int playerIndex, AdminContextConsumer consumer) {
         if (args.length <= playerIndex) {
             sender.sendMessage("Player is required.");
@@ -385,10 +446,10 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (args.length == 1) {
-            return filter(List.of("help", "main", "status", "machines", "storage", "deposit", "withdraw", "contracts", "market", "research", "emergency", "node", "sell", "admin"), args[0]);
+            return filter(List.of("help", "main", "status", "machines", "storage", "deposit", "withdraw", "contracts", "market", "research", "emergency", "node", "sell", "repair", "admin"), args[0]);
         }
         if (args.length == 2 && args[0].equalsIgnoreCase("admin")) {
-            return filter(List.of("reload", "give", "giveitem", "addresearch", "setdebt", "charge", "gennodes", "debug", "removehere"), args[1]);
+            return filter(List.of("reload", "give", "giveitem", "addresearch", "setdebt", "charge", "gennodes", "debug", "removehere", "repairhere"), args[1]);
         }
         if (args.length == 3 && args[0].equalsIgnoreCase("research") && args[1].equalsIgnoreCase("unlock")) {
             return filter(research.all().keySet().stream().toList(), args[2]);

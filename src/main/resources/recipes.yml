@@ -27,6 +27,13 @@ recipes:
     output:
       iron_plate: 1
     power: 8.0
+  assemble_machine_parts:
+    machine: assembler_t1
+    input:
+      iron_plate: 2
+    output:
+      machine_parts: 1
+    power: 8.0
   package_bread:
     machine: packager_t1
     input:
