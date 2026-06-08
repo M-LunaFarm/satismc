@@ -95,6 +95,7 @@ machines:
     factory-score: 14
     maintenance-score: 12
     wear-per-cycle: 0.03
+    allowed-recipes: [grind_wheat, grind_iron, scrap_to_biofuel, fish_waste_fertilizer, animal_waste_fertilizer]
   furnace_t1:
     display: "Furnace T1"
     material: FURNACE
@@ -107,6 +108,7 @@ machines:
     factory-score: 18
     maintenance-score: 16
     wear-per-cycle: 0.035
+    allowed-recipes: [smelt_crushed_iron]
   assembler_t1:
     display: "Assembler T1"
     material: CRAFTING_TABLE
@@ -119,6 +121,7 @@ machines:
     factory-score: 22
     maintenance-score: 22
     wear-per-cycle: 0.04
+    allowed-recipes: [assemble_plate, assemble_machine_parts]
     required-unlocks: [advanced_processing]
   packager_t1:
     display: "Packager T1"
@@ -132,6 +135,7 @@ machines:
     factory-score: 18
     maintenance-score: 16
     wear-per-cycle: 0.025
+    allowed-recipes: [package_bread]
     required-unlocks: [advanced_processing]
   bio_generator_t1:
     display: "Bio Generator T1"
@@ -240,6 +244,7 @@ machines:
     factory-score: 18
     maintenance-score: 16
     wear-per-cycle: 0.035
+    allowed-recipes: [saw_logs]
     required-unlocks: [advanced_processing]
   charcoal_kiln_t1:
     display: "Charcoal Kiln T1"
@@ -253,6 +258,7 @@ machines:
     factory-score: 18
     maintenance-score: 16
     wear-per-cycle: 0.035
+    allowed-recipes: [burn_charcoal]
     required-unlocks: [advanced_processing]
   fish_processor_t1:
     display: "Fish Processor T1"
@@ -266,4 +272,5 @@ machines:
     factory-score: 18
     maintenance-score: 16
     wear-per-cycle: 0.03
+    allowed-recipes: [process_fish, press_fish_oil]
     required-unlocks: [advanced_processing]

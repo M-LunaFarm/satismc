@@ -22,7 +22,7 @@ public final class MachineDefinitionService {
         }
         for (String typeId : section.getKeys(false)) {
             String path = "machines." + typeId + ".";
-            Material material = Material.matchMaterial(config.getString(path + "material", "STONE"));
+            Material material = Material.matchMaterial(string(config, path, "material", "item-material", "STONE"));
             if (material == null) {
                 material = Material.STONE;
             }
@@ -33,23 +33,27 @@ public final class MachineDefinitionService {
             }
             definitions.put(typeId, new MachineDefinition(
                     typeId,
-                    config.getString(path + "display", typeId),
+                    string(config, path, "display", "display-name", typeId),
                     material,
                     placedMaterial,
                     config.getInt(path + "custom-model-data", 0),
                     config.getInt(path + "tier", 1),
+                    config.getString(path + "industry", ""),
+                    config.getString(path + "role", config.getString(path + "machine-role", "")),
                     config.getInt(path + "input-capacity", 128),
                     config.getInt(path + "output-capacity", 512),
                     config.getDouble(path + "power-consumption", 0.0),
                     config.getDouble(path + "power-generation", 0.0),
                     config.getDouble(path + "battery-capacity", 0.0),
-                    config.getInt(path + "cycle-ticks", 80),
+                    cycleTicks(config, path),
                     config.getInt(path + "range", 0),
                     config.getInt(path + "amount-per-cycle", 1),
-                    config.getInt(path + "logistics-throughput", 0),
+                    config.getInt(path + "logistics-throughput",
+                            config.getInt(path + "logistics-throughput-per-minute", 0)),
                     config.getLong(path + "factory-score", Math.max(1, config.getInt(path + "tier", 1))),
                     config.getLong(path + "maintenance-score", config.getLong(path + "factory-score", Math.max(1, config.getInt(path + "tier", 1)))),
                     config.getDouble(path + "wear-per-cycle", 0.02),
+                    config.getStringList(path + "allowed-recipes"),
                     config.getStringList(path + "required-unlocks"),
                     nodeType(config.getString(path + "node-type", "")),
                     harvestDrops(config.getConfigurationSection(path + "harvest-drops")),
@@ -60,6 +64,21 @@ public final class MachineDefinitionService {
                     config.getString(path + "fertilizer.quality-item", "")
             ));
         }
+    }
+
+    private String string(FileConfiguration config, String path, String firstKey, String secondKey, String fallback) {
+        String value = config.getString(path + firstKey);
+        if (value != null && !value.isBlank()) {
+            return value;
+        }
+        return config.getString(path + secondKey, fallback);
+    }
+
+    private int cycleTicks(FileConfiguration config, String path) {
+        if (config.contains(path + "cycle-ms")) {
+            return Math.max(1, (int) Math.round(config.getLong(path + "cycle-ms") / 50.0));
+        }
+        return config.getInt(path + "cycle-ticks", 80);
     }
 
     public Optional<MachineDefinition> get(String typeId) {

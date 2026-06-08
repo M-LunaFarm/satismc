@@ -410,6 +410,9 @@ public final class MachineTickService {
         VirtualInventory input = inputInventory(machine);
         VirtualInventory output = outputInventory(machine);
         for (RecipeDefinition recipe : recipes.recipesFor(machine.typeId())) {
+            if (!definition.allowedRecipes().isEmpty() && !definition.allowedRecipes().contains(recipe.id())) {
+                continue;
+            }
             if (recipe.minTier() > definition.tier()) {
                 continue;
             }
@@ -572,6 +575,9 @@ public final class MachineTickService {
             return desired;
         }
         for (RecipeDefinition recipe : recipes.recipesFor(definition.typeId())) {
+            if (!definition.allowedRecipes().isEmpty() && !definition.allowedRecipes().contains(recipe.id())) {
+                continue;
+            }
             recipe.input().forEach((item, amount) -> desired.merge(item, Math.max(amount * 4, amount), Math::max));
         }
         return desired;
