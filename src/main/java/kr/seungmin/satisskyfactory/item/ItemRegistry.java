@@ -5,7 +5,7 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -15,7 +15,7 @@ public final class ItemRegistry {
                               boolean virtualOnly, long basePrice, List<String> tags) {
     }
 
-    private final Map<String, FactoryItem> items = new HashMap<>();
+    private final Map<String, FactoryItem> items = new LinkedHashMap<>();
 
     public void load(FileConfiguration config) {
         items.clear();
@@ -42,6 +42,14 @@ public final class ItemRegistry {
 
     public Optional<FactoryItem> get(String id) {
         return Optional.ofNullable(items.get(id));
+    }
+
+    public Optional<String> itemIdForMaterial(Material material) {
+        return items.values().stream()
+                .filter(item -> !item.virtualOnly())
+                .filter(item -> item.material() == material)
+                .map(FactoryItem::id)
+                .findFirst();
     }
 
     public Map<String, FactoryItem> all() {

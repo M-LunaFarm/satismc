@@ -209,7 +209,7 @@ public final class FactoryGuiListener implements Listener {
             player.sendMessage("Hold an item first.");
             return;
         }
-        String itemId = itemFactory.factoryItemId(hand).orElseGet(() -> hand.getType().name().toLowerCase(Locale.ROOT));
+        String itemId = itemIdForHand(hand);
         long amount = hand.getAmount();
         var inventory = storage.islandStorage(island.islandUuid());
         if (!inventory.add(itemId, amount)) {
@@ -251,7 +251,7 @@ public final class FactoryGuiListener implements Listener {
             player.sendMessage("Machine input is missing.");
             return;
         }
-        String itemId = itemFactory.factoryItemId(hand).orElseGet(() -> hand.getType().name().toLowerCase(Locale.ROOT));
+        String itemId = itemIdForHand(hand);
         long amount = hand.getAmount();
         if (!inventory.add(itemId, amount)) {
             player.sendMessage("Machine input is full.");
@@ -307,6 +307,15 @@ public final class FactoryGuiListener implements Listener {
             remaining -= stackAmount;
         }
         return 0;
+    }
+
+    private String itemIdForHand(ItemStack stack) {
+        Optional<String> pdcItemId = itemFactory.factoryItemId(stack);
+        if (pdcItemId.isPresent()) {
+            return pdcItemId.get();
+        }
+        return items.itemIdForMaterial(stack.getType())
+                .orElseGet(() -> stack.getType().name().toLowerCase(Locale.ROOT));
     }
 
     private long withdrawAmount(InventoryClickEvent event) {

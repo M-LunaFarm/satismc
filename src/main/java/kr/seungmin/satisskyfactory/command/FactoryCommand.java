@@ -217,7 +217,7 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
             player.sendMessage("Hold an item first.");
             return;
         }
-        String itemId = itemFactory.factoryItemId(hand).orElseGet(() -> hand.getType().name().toLowerCase(Locale.ROOT));
+        String itemId = itemIdForHand(hand);
         int amount = hand.getAmount();
         market.sellDirect(island, player, itemId, amount).ifPresentOrElse(result -> {
             hand.setAmount(0);
@@ -234,7 +234,7 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
             player.sendMessage("Hold an item first.");
             return;
         }
-        String itemId = itemFactory.factoryItemId(hand).orElseGet(() -> hand.getType().name().toLowerCase(Locale.ROOT));
+        String itemId = itemIdForHand(hand);
         long amount = hand.getAmount();
         var inventory = storage.islandStorage(island.islandUuid());
         if (!inventory.add(itemId, amount)) {
@@ -244,6 +244,15 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
         hand.setAmount(0);
         storage.save(inventory);
         messages.send(player, "deposited", Map.of("item", itemId, "amount", String.valueOf(amount)));
+    }
+
+    private String itemIdForHand(ItemStack stack) {
+        Optional<String> pdcItemId = itemFactory.factoryItemId(stack);
+        if (pdcItemId.isPresent()) {
+            return pdcItemId.get();
+        }
+        return items.itemIdForMaterial(stack.getType())
+                .orElseGet(() -> stack.getType().name().toLowerCase(Locale.ROOT));
     }
 
     private void withdraw(Player player, FactoryIsland island, String[] args) {
