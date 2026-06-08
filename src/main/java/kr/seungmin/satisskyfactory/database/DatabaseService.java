@@ -461,7 +461,8 @@ public final class DatabaseService {
                             rs.getLong("max_remaining"),
                             rs.getLong("regen_per_hour"),
                             rs.getInt("required_machine_tier"),
-                            new BlockKey(rs.getString("world"), rs.getInt("x"), rs.getInt("y"), rs.getInt("z"))
+                            new BlockKey(rs.getString("world"), rs.getInt("x"), rs.getInt("y"), rs.getInt("z")),
+                            rs.getLong("updated_at")
                     ));
                 }
             }

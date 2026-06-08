@@ -29,7 +29,7 @@ public final class ResourceNodeService {
     }
 
     public List<ResourceNode> nodes(UUID islandUuid) {
-        return database.loadNodes(islandUuid);
+        return database.loadNodes(islandUuid).stream().map(this::regenerate).toList();
     }
 
     public List<ResourceNode> generateIfMissing(UUID islandUuid, Location origin) {
@@ -46,6 +46,7 @@ public final class ResourceNodeService {
         for (int i = 0; i < count; i++) {
             String nodeKey = nodeKeys.get(i);
             Location location = origin.clone().add(6 + i * 4, 0, 4 + i * 3);
+            long now = System.currentTimeMillis();
             ResourceNode node = new ResourceNode(
                     UUID.randomUUID(),
                     islandUuid,
@@ -56,7 +57,8 @@ public final class ResourceNodeService {
                     config.getLong("nodes." + nodeKey + ".remaining", 100000),
                     config.getLong("nodes." + nodeKey + ".regen-per-hour", 100),
                     config.getInt("nodes." + nodeKey + ".required-machine-tier", 1),
-                    BlockKey.from(location)
+                    BlockKey.from(location),
+                    now
             );
             database.saveNode(node);
         }
@@ -76,6 +78,7 @@ public final class ResourceNodeService {
     }
 
     public void save(ResourceNode node) {
+        node.updatedAt(System.currentTimeMillis());
         if (dirtySaves != null) {
             dirtySaves.markNode(node);
             return;
@@ -85,6 +88,25 @@ public final class ResourceNodeService {
 
     public void dirtySaves(DirtySaveService dirtySaves) {
         this.dirtySaves = dirtySaves;
+    }
+
+    private ResourceNode regenerate(ResourceNode node) {
+        long now = System.currentTimeMillis();
+        long elapsed = Math.max(0, now - node.updatedAt());
+        if (node.remaining() >= node.maxRemaining() || node.regenPerHour() <= 0 || elapsed < 1000L) {
+            return node;
+        }
+        long restored = Math.floorDiv(node.regenPerHour() * elapsed, 60L * 60L * 1000L);
+        if (restored <= 0) {
+            return node;
+        }
+        long before = node.remaining();
+        node.remaining(before + restored);
+        node.updatedAt(now);
+        if (node.remaining() != before) {
+            save(node);
+        }
+        return node;
     }
 
     private int distanceSquared(BlockKey a, BlockKey b) {

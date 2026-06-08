@@ -13,9 +13,10 @@ public final class ResourceNode {
     private final long regenPerHour;
     private final int requiredMachineTier;
     private final BlockKey location;
+    private long updatedAt;
 
     public ResourceNode(UUID nodeId, UUID islandUuid, String nodeType, String resourceId, double purity, long remaining,
-                        long maxRemaining, long regenPerHour, int requiredMachineTier, BlockKey location) {
+                        long maxRemaining, long regenPerHour, int requiredMachineTier, BlockKey location, long updatedAt) {
         this.nodeId = nodeId;
         this.islandUuid = islandUuid;
         this.nodeType = nodeType;
@@ -26,6 +27,7 @@ public final class ResourceNode {
         this.regenPerHour = regenPerHour;
         this.requiredMachineTier = requiredMachineTier;
         this.location = location;
+        this.updatedAt = updatedAt;
     }
 
     public UUID nodeId() { return nodeId; }
@@ -39,4 +41,6 @@ public final class ResourceNode {
     public long regenPerHour() { return regenPerHour; }
     public int requiredMachineTier() { return requiredMachineTier; }
     public BlockKey location() { return location; }
+    public long updatedAt() { return updatedAt; }
+    public void updatedAt(long updatedAt) { this.updatedAt = updatedAt; }
 }
