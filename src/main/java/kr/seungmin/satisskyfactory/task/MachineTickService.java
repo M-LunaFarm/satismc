@@ -176,7 +176,7 @@ public final class MachineTickService {
         if (definition.nodeType() != null || machine.typeId().equals("miner_drill_t1")) {
             return processNodeProducer(machine, definition);
         }
-        return processRecipe(machine);
+        return processRecipe(machine, definition);
     }
 
     private boolean isCoolingDown(MachineInstance machine, MachineDefinition definition) {
@@ -403,14 +403,18 @@ public final class MachineTickService {
         return true;
     }
 
-    private boolean processRecipe(MachineInstance machine) {
+    private boolean processRecipe(MachineInstance machine, MachineDefinition definition) {
         VirtualInventory input = inputInventory(machine);
         VirtualInventory output = outputInventory(machine);
         for (RecipeDefinition recipe : recipes.recipesFor(machine.typeId())) {
+            if (recipe.minTier() > definition.tier()) {
+                continue;
+            }
+            Map<String, Long> produced = recipeOutput(recipe);
             if (recipe.input().entrySet().stream().allMatch(entry -> input.amount(entry.getKey()) >= entry.getValue())
-                    && recipe.output().entrySet().stream().allMatch(entry -> output.canAdd(entry.getKey(), entry.getValue()))) {
+                    && canAddAll(output, produced)) {
                 recipe.input().forEach(input::remove);
-                recipe.output().forEach(output::add);
+                produced.forEach(output::add);
                 storage.save(input);
                 storage.save(output);
                 setStatus(machine, MachineStatus.RUNNING);
@@ -419,6 +423,20 @@ public final class MachineTickService {
         }
         setStatus(machine, MachineStatus.INPUT_MISSING);
         return false;
+    }
+
+    private boolean canAddAll(VirtualInventory inventory, Map<String, Long> items) {
+        long amount = items.values().stream().mapToLong(Long::longValue).sum();
+        return amount >= 0 && inventory.used() + amount <= inventory.capacity();
+    }
+
+    private Map<String, Long> recipeOutput(RecipeDefinition recipe) {
+        Map<String, Long> produced = new HashMap<>(recipe.output());
+        recipe.byproducts().forEach((item, amount) -> produced.merge(item, amount, Long::sum));
+        if (recipe.qualityChance() > 0.0 && ThreadLocalRandom.current().nextDouble() < Math.min(1.0, recipe.qualityChance())) {
+            recipe.output().forEach((item, amount) -> produced.merge("quality_" + item, Math.max(1L, amount), Long::sum));
+        }
+        return produced;
     }
 
     private boolean processLogistics(MachineInstance machine, MachineDefinition definition) {

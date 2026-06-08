@@ -24,6 +24,9 @@ market:
     bread_box:
       base-price: 18
       target-daily-amount: 256
+    quality_bread_box:
+      base-price: 28
+      target-daily-amount: 128
     iron_ore:
       base-price: 3
       target-daily-amount: 2048
@@ -39,6 +42,9 @@ market:
     machine_parts:
       base-price: 72
       target-daily-amount: 160
+    quality_machine_parts:
+      base-price: 120
+      target-daily-amount: 80
     biofuel:
       base-price: 10
       target-daily-amount: 768

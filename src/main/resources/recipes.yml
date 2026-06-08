@@ -1,20 +1,24 @@
 recipes:
   grind_wheat:
-    machine: grinder_t1
-    input:
+    machines: [grinder_t1]
+    min-tier: 1
+    inputs:
       wheat: 2
-    output:
+    outputs:
       flour: 1
-    power: 5.0
+    byproducts:
+      wheat_seeds: 1
+    power-cost: 5.0
   grind_iron:
-    machine: grinder_t1
-    input:
+    machines: [grinder_t1]
+    min-tier: 1
+    inputs:
       iron_ore: 2
-    output:
+    outputs:
       crushed_iron: 1
-    power: 5.0
+    power-cost: 5.0
   smelt_crushed_iron:
-    machine: furnace_t1
+    machines: [furnace_t1]
     input:
       crushed_iron: 1
     output:
@@ -28,19 +32,23 @@ recipes:
       iron_plate: 1
     power: 8.0
   assemble_machine_parts:
-    machine: assembler_t1
-    input:
+    machines: [assembler_t1]
+    min-tier: 2
+    inputs:
       iron_plate: 2
-    output:
+    outputs:
       machine_parts: 1
-    power: 8.0
+    quality-chance: 0.03
+    power-cost: 8.0
   package_bread:
-    machine: packager_t1
-    input:
+    machines: [packager_t1]
+    min-tier: 2
+    inputs:
       flour: 3
-    output:
+    outputs:
       bread_box: 1
-    power: 4.0
+    quality-chance: 0.05
+    power-cost: 4.0
   saw_logs:
     machine: sawmill_t1
     input:

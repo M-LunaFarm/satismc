@@ -36,6 +36,12 @@ items:
     custom-model-data: 1001
     base-price: 18
     tags: [packaged, food]
+  quality_bread_box:
+    material: CHEST
+    display: "Quality Bread Box"
+    custom-model-data: 1003
+    base-price: 28
+    tags: [quality, packaged, food]
   iron_ore:
     material: RAW_IRON
     display: "Iron Ore"
@@ -51,6 +57,12 @@ items:
   machine_parts:
     material: IRON_NUGGET
     display: "Machine Parts"
+  quality_machine_parts:
+    material: IRON_NUGGET
+    display: "Quality Machine Parts"
+    custom-model-data: 1004
+    base-price: 120
+    tags: [quality, manufacturing]
   biofuel:
     material: DRIED_KELP
     display: "Biofuel"
