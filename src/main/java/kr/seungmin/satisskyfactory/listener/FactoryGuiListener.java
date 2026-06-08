@@ -8,6 +8,7 @@ import kr.seungmin.satisskyfactory.item.ItemRegistry;
 import kr.seungmin.satisskyfactory.machine.FactoryIslandService;
 import kr.seungmin.satisskyfactory.machine.MachineDefinitionService;
 import kr.seungmin.satisskyfactory.machine.MachineService;
+import kr.seungmin.satisskyfactory.machine.MaintenanceService;
 import kr.seungmin.satisskyfactory.market.MarketService;
 import kr.seungmin.satisskyfactory.model.BlockKey;
 import kr.seungmin.satisskyfactory.model.FactoryIsland;
@@ -43,10 +44,11 @@ public final class FactoryGuiListener implements Listener {
     private final CustomItemFactory itemFactory;
     private final MarketService market;
     private final MachineDefinitionService definitions;
+    private final MaintenanceService maintenance;
 
     public FactoryGuiListener(FactoryIslandService islands, ContractService contracts, ResearchService research, FactoryGuiService gui,
                               MachineService machines, StorageService storage, ItemRegistry items, CustomItemFactory itemFactory,
-                              MarketService market, MachineDefinitionService definitions) {
+                              MarketService market, MachineDefinitionService definitions, MaintenanceService maintenance) {
         this.islands = islands;
         this.contracts = contracts;
         this.research = research;
@@ -57,6 +59,7 @@ public final class FactoryGuiListener implements Listener {
         this.itemFactory = itemFactory;
         this.market = market;
         this.definitions = definitions;
+        this.maintenance = maintenance;
     }
 
     @EventHandler
@@ -140,6 +143,17 @@ public final class FactoryGuiListener implements Listener {
             } catch (IllegalArgumentException exception) {
                 player.sendMessage("Invalid contract.");
             }
+            return;
+        }
+        if (action.type().equals("complete_emergency")) {
+            if (contracts.completeEmergency(island, player)) {
+                maintenance.updateStatus(island);
+                islands.save(island);
+                player.sendMessage("Emergency contract completed.");
+            } else {
+                player.sendMessage("Emergency contract requirements are missing or the daily limit was reached.");
+            }
+            gui.openContracts(player, island, contracts);
             return;
         }
         if (action.type().equals("withdraw_storage")) {

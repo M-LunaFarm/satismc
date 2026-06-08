@@ -257,7 +257,8 @@ public final class SatisSkyFactoryPlugin extends JavaPlugin {
                 itemRegistry,
                 itemFactory,
                 market,
-                machineDefinitions
+                machineDefinitions,
+                maintenance
         ), this);
         getServer().getPluginManager().registerEvents(new FactoryLifecycleListener(
                 islands,

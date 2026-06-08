@@ -241,6 +241,20 @@ public final class FactoryGuiService {
                             ChatColor.GRAY + "Items: " + template.itemRewards(),
                             ChatColor.GRAY + "Expires: " + Math.max(0, (active.expiresAt() - System.currentTimeMillis()) / 60000) + "m")));
         }
+        contracts.emergencyTemplate().ifPresent(template -> {
+            int used = contracts.emergencyUsedToday(island);
+            boolean available = island.maintenanceDebt() > 0 && used < contracts.emergencyDailyLimit();
+            if (available) {
+                holder.action(22, "complete_emergency", "");
+            }
+            inventory.setItem(22, icon(available ? Material.FIREWORK_STAR : Material.GRAY_DYE,
+                    (available ? ChatColor.RED : ChatColor.GRAY) + "Emergency Contract",
+                    List.of(ChatColor.GRAY + "Debt: " + island.maintenanceDebt(),
+                            ChatColor.GRAY + "Used today: " + used + "/" + contracts.emergencyDailyLimit(),
+                            ChatColor.GRAY + "Required: " + template.required(),
+                            ChatColor.GRAY + "Debt relief: " + template.debtRelief(),
+                            ChatColor.GRAY + (available ? "Click to deliver from island storage." : "No emergency delivery is available."))));
+        });
         player.openInventory(inventory);
     }
 
