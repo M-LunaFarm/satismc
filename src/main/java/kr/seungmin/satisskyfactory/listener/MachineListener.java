@@ -82,19 +82,20 @@ public final class MachineListener implements Listener {
         Player player = event.getPlayer();
         itemFactory.machineType(event.getItemInHand()).ifPresent(typeId -> {
             event.setCancelled(true);
-            if (installMachine(player, typeId, event.getBlockPlaced(), player.getFacing(), false)) {
+            if (installMachine(player, typeId, event.getBlockPlaced(), player.getFacing(), false, true)) {
                 event.setCancelled(false);
             }
         });
     }
 
-    private boolean installMachine(Player player, String typeId, Block targetBlock, BlockFace direction, boolean consumeItem) {
+    private boolean installMachine(Player player, String typeId, Block targetBlock, BlockFace direction,
+                                   boolean consumeItem, boolean replacePlacedBlock) {
         MachineDefinition definition = definitions.get(typeId).orElse(null);
         if (definition == null) {
             messages.send(player, "unknown-machine");
             return false;
         }
-        if (!targetBlock.getType().isAir() && targetBlock.getType() != definition.placedMaterial()) {
+        if (!replacePlacedBlock && !targetBlock.getType().isAir()) {
             messages.send(player, "place-denied");
             return false;
         }
@@ -200,7 +201,7 @@ public final class MachineListener implements Listener {
             itemFactory.machineType(event.getItem()).ifPresent(typeId -> {
                 event.setCancelled(true);
                 Block target = event.getClickedBlock().getRelative(event.getBlockFace());
-                installMachine(event.getPlayer(), typeId, target, event.getBlockFace(), true);
+                installMachine(event.getPlayer(), typeId, target, event.getBlockFace(), true, false);
             });
             if (event.isCancelled()) {
                 return;
