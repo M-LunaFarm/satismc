@@ -109,6 +109,19 @@ public final class FactoryGuiListener implements Listener {
             gui.openMarket(player, island, market);
             return;
         }
+        if (action.type().equals("contracts_back")) {
+            gui.openContracts(player, island, contracts);
+            return;
+        }
+        if (action.type().equals("contract_detail")) {
+            try {
+                gui.openContractDetail(player, island, contracts, UUID.fromString(action.value()));
+            } catch (IllegalArgumentException exception) {
+                player.sendMessage("Invalid contract.");
+                gui.openContracts(player, island, contracts);
+            }
+            return;
+        }
         if (action.type().equals("unlock_research")) {
             ResearchService.UnlockResult result = research.unlock(island, player, action.value());
             islands.save(island);

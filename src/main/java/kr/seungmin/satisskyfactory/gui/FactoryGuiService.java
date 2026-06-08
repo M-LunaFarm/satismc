@@ -225,7 +225,7 @@ public final class FactoryGuiService {
                 break;
             }
             ContractService.ContractTemplate template = active.template();
-            holder.action(slot, "complete_contract", active.contractId().toString());
+            holder.action(slot, "contract_detail", active.contractId().toString());
             inventory.setItem(slot++, icon(Material.WRITABLE_BOOK, ChatColor.GOLD + template.id(),
                     List.of(ChatColor.GRAY + "Type: " + template.type(),
                             ChatColor.GRAY + "Tier: " + template.tier(),
@@ -237,6 +237,67 @@ public final class FactoryGuiService {
                             ChatColor.GRAY + "Expires: " + Math.max(0, (active.expiresAt() - System.currentTimeMillis()) / 60000) + "m")));
         }
         player.openInventory(inventory);
+    }
+
+    public void openContractDetail(Player player, FactoryIsland island, ContractService contracts, java.util.UUID contractId) {
+        ContractService.ActiveContract active = contracts.activeContracts(island).stream()
+                .filter(contract -> contract.contractId().equals(contractId))
+                .findFirst()
+                .orElse(null);
+        if (active == null) {
+            openContracts(player, island, contracts);
+            return;
+        }
+        ContractService.ContractTemplate template = active.template();
+        FactoryGuiHolder holder = new FactoryGuiHolder("contract-detail", island.islandUuid(), null);
+        Inventory inventory = Bukkit.createInventory(holder, 27, "Contract Detail");
+        holder.inventory(inventory);
+        inventory.setItem(4, icon(Material.WRITABLE_BOOK, ChatColor.GOLD + template.id(),
+                List.of(ChatColor.GRAY + "Type: " + template.type(),
+                        ChatColor.GRAY + "Tier: " + template.tier(),
+                        ChatColor.GRAY + "Expires: " + Math.max(0, (active.expiresAt() - System.currentTimeMillis()) / 60000) + "m")));
+        inventory.setItem(11, icon(Material.CHEST, ChatColor.YELLOW + "Required Items",
+                contractLines(template.required(), "No items required.")));
+        inventory.setItem(15, icon(Material.EMERALD, ChatColor.GREEN + "Rewards",
+                rewardLines(template)));
+        holder.action(18, "contracts_back", "");
+        inventory.setItem(18, icon(Material.ARROW, ChatColor.YELLOW + "Back",
+                List.of(ChatColor.GRAY + "Return to contract list.")));
+        holder.action(22, "complete_contract", active.contractId().toString());
+        inventory.setItem(22, icon(Material.LIME_DYE, ChatColor.GREEN + "Deliver Contract",
+                List.of(ChatColor.GRAY + "Submit required items from island storage.")));
+        player.openInventory(inventory);
+    }
+
+    private List<String> contractLines(Map<String, Long> values, String emptyText) {
+        if (values.isEmpty()) {
+            return List.of(ChatColor.GRAY + emptyText);
+        }
+        return values.entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .map(entry -> ChatColor.GRAY + entry.getKey() + " x" + entry.getValue())
+                .toList();
+    }
+
+    private List<String> rewardLines(ContractService.ContractTemplate template) {
+        List<String> lore = new ArrayList<>();
+        if (template.money() > 0) {
+            lore.add(ChatColor.GRAY + "Money: " + template.money());
+        }
+        if (template.research() > 0) {
+            lore.add(ChatColor.GRAY + "Research: " + template.research());
+        }
+        if (template.reputation() > 0) {
+            lore.add(ChatColor.GRAY + "Reputation: " + template.reputation());
+        }
+        if (template.debtRelief() > 0) {
+            lore.add(ChatColor.GRAY + "Debt relief: " + template.debtRelief());
+        }
+        template.itemRewards().entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .map(entry -> ChatColor.GRAY + entry.getKey() + " x" + entry.getValue())
+                .forEach(lore::add);
+        return lore.isEmpty() ? List.of(ChatColor.GRAY + "No rewards.") : lore;
     }
 
     public void openMarket(Player player, FactoryIsland island, MarketService market) {
