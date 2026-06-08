@@ -1,6 +1,6 @@
-package kr.example.satisskyfactory.item;
+package kr.seungmin.satisskyfactory.item;
 
-import kr.example.satisskyfactory.model.MachineDefinition;
+import kr.seungmin.satisskyfactory.model.MachineDefinition;
 import org.bukkit.ChatColor;
 import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.ItemStack;

@@ -1,6 +1,6 @@
-package kr.example.satisskyfactory.machine;
+package kr.seungmin.satisskyfactory.machine;
 
-import kr.example.satisskyfactory.model.MachineDefinition;
+import kr.seungmin.satisskyfactory.model.MachineDefinition;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;

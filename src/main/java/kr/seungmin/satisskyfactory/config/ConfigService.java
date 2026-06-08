@@ -1,4 +1,4 @@
-package kr.example.satisskyfactory.config;
+package kr.seungmin.satisskyfactory.config;
 
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;

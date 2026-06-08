@@ -1,14 +1,14 @@
-package kr.example.satisskyfactory.database;
+package kr.seungmin.satisskyfactory.database;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
-import kr.example.satisskyfactory.model.BlockKey;
-import kr.example.satisskyfactory.model.FactoryIsland;
-import kr.example.satisskyfactory.model.MachineInstance;
-import kr.example.satisskyfactory.model.MachineStatus;
-import kr.example.satisskyfactory.model.MaintenanceStatus;
-import kr.example.satisskyfactory.model.ResourceNode;
-import kr.example.satisskyfactory.storage.VirtualInventory;
+import kr.seungmin.satisskyfactory.model.BlockKey;
+import kr.seungmin.satisskyfactory.model.FactoryIsland;
+import kr.seungmin.satisskyfactory.model.MachineInstance;
+import kr.seungmin.satisskyfactory.model.MachineStatus;
+import kr.seungmin.satisskyfactory.model.MaintenanceStatus;
+import kr.seungmin.satisskyfactory.model.ResourceNode;
+import kr.seungmin.satisskyfactory.storage.VirtualInventory;
 import org.bukkit.block.BlockFace;
 import org.bukkit.plugin.java.JavaPlugin;
 

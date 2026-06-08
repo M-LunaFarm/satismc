@@ -2,7 +2,7 @@ plugins {
     java
 }
 
-group = "kr.example"
+group = "kr.seungmin"
 version = "1.0.0"
 
 val paperApiVersion = providers.gradleProperty("paperApiVersion").orElse("1.21.1-R0.1-SNAPSHOT")

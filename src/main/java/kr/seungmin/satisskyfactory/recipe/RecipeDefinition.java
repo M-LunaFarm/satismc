@@ -1,4 +1,4 @@
-package kr.example.satisskyfactory.recipe;
+package kr.seungmin.satisskyfactory.recipe;
 
 import java.util.Map;
 

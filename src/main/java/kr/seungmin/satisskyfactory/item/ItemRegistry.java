@@ -1,4 +1,4 @@
-package kr.example.satisskyfactory.item;
+package kr.seungmin.satisskyfactory.item;
 
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;

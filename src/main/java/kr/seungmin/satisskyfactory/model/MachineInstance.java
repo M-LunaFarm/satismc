@@ -1,4 +1,4 @@
-package kr.example.satisskyfactory.model;
+package kr.seungmin.satisskyfactory.model;
 
 import org.bukkit.block.BlockFace;
 

@@ -1,4 +1,4 @@
-package kr.example.satisskyfactory.storage;
+package kr.seungmin.satisskyfactory.storage;
 
 import java.util.Collections;
 import java.util.HashMap;
