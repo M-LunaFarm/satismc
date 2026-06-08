@@ -176,6 +176,9 @@ public final class FactoryGuiService {
         holder.action(24, "withdraw_machine_output", "");
         inventory.setItem(24, icon(Material.CHEST, ChatColor.AQUA + "Take Output",
                 List.of(ChatColor.GRAY + "Withdraw up to one stack from this machine output.")));
+        holder.action(26, "reclaim_machine", "");
+        inventory.setItem(26, icon(Material.BARRIER, ChatColor.RED + "Reclaim Machine",
+                List.of(ChatColor.GRAY + "Return buffers to island storage and pick up this machine.")));
         player.openInventory(inventory);
     }
 

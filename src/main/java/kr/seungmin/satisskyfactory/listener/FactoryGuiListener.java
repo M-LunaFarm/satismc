@@ -6,14 +6,20 @@ import kr.seungmin.satisskyfactory.gui.FactoryGuiService;
 import kr.seungmin.satisskyfactory.item.CustomItemFactory;
 import kr.seungmin.satisskyfactory.item.ItemRegistry;
 import kr.seungmin.satisskyfactory.machine.FactoryIslandService;
+import kr.seungmin.satisskyfactory.machine.MachineDefinitionService;
 import kr.seungmin.satisskyfactory.machine.MachineService;
 import kr.seungmin.satisskyfactory.market.MarketService;
+import kr.seungmin.satisskyfactory.model.BlockKey;
 import kr.seungmin.satisskyfactory.model.FactoryIsland;
+import kr.seungmin.satisskyfactory.model.MachineDefinition;
 import kr.seungmin.satisskyfactory.model.MachineInstance;
 import kr.seungmin.satisskyfactory.research.ResearchService;
 import kr.seungmin.satisskyfactory.storage.StorageService;
 import kr.seungmin.satisskyfactory.storage.VirtualInventory;
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -36,10 +42,11 @@ public final class FactoryGuiListener implements Listener {
     private final ItemRegistry items;
     private final CustomItemFactory itemFactory;
     private final MarketService market;
+    private final MachineDefinitionService definitions;
 
     public FactoryGuiListener(FactoryIslandService islands, ContractService contracts, ResearchService research, FactoryGuiService gui,
                               MachineService machines, StorageService storage, ItemRegistry items, CustomItemFactory itemFactory,
-                              MarketService market) {
+                              MarketService market, MachineDefinitionService definitions) {
         this.islands = islands;
         this.contracts = contracts;
         this.research = research;
@@ -49,6 +56,7 @@ public final class FactoryGuiListener implements Listener {
         this.items = items;
         this.itemFactory = itemFactory;
         this.market = market;
+        this.definitions = definitions;
     }
 
     @EventHandler
@@ -150,6 +158,11 @@ public final class FactoryGuiListener implements Listener {
         }
         if (action.type().equals("select_recipe")) {
             machine(holder).ifPresentOrElse(machine -> selectRecipe(player, machine, action.value()),
+                    () -> player.sendMessage("Machine is no longer available."));
+            return;
+        }
+        if (action.type().equals("reclaim_machine")) {
+            machine(holder).ifPresentOrElse(machine -> reclaimMachine(player, island, machine),
                     () -> player.sendMessage("Machine is no longer available."));
         }
     }
@@ -303,6 +316,33 @@ public final class FactoryGuiListener implements Listener {
         machines.save(machine);
         player.sendMessage(machine.selectedRecipeId() == null ? "Recipe selection cleared." : "Selected recipe: " + machine.selectedRecipeId());
         gui.openMachine(player, machine);
+    }
+
+    private void reclaimMachine(Player player, FactoryIsland island, MachineInstance machine) {
+        if (!machine.islandUuid().equals(island.islandUuid())) {
+            player.sendMessage("That machine belongs to another island.");
+            return;
+        }
+        MachineDefinition definition = definitions.get(machine.typeId()).orElse(null);
+        if (definition == null) {
+            player.sendMessage("Machine definition is missing.");
+            return;
+        }
+        if (!machines.remove(machine)) {
+            player.sendMessage("Factory storage is full. Empty some space before reclaiming this machine.");
+            gui.openMachine(player, machine);
+            return;
+        }
+        location(machine.location()).ifPresent(location -> location.getBlock().setType(Material.AIR, false));
+        Map<Integer, ItemStack> overflow = player.getInventory().addItem(itemFactory.machineItem(definition, 1));
+        overflow.values().forEach(item -> player.getWorld().dropItemNaturally(player.getLocation(), item));
+        player.closeInventory();
+        player.sendMessage("Machine reclaimed: " + definition.displayName());
+    }
+
+    private Optional<Location> location(BlockKey key) {
+        World world = Bukkit.getWorld(key.world());
+        return world == null ? Optional.empty() : Optional.of(new Location(world, key.x(), key.y(), key.z()));
     }
 
     private Material material(String itemId) {
