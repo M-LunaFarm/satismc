@@ -16,6 +16,7 @@ public final class MachineInstance {
     private UUID inputInventoryId;
     private UUID outputInventoryId;
     private UUID linkedResourceNodeId;
+    private String selectedRecipeId;
     private long lastProcessAt;
     private double wear;
 
@@ -46,6 +47,8 @@ public final class MachineInstance {
     public void outputInventoryId(UUID outputInventoryId) { this.outputInventoryId = outputInventoryId; }
     public UUID linkedResourceNodeId() { return linkedResourceNodeId; }
     public void linkedResourceNodeId(UUID linkedResourceNodeId) { this.linkedResourceNodeId = linkedResourceNodeId; }
+    public String selectedRecipeId() { return selectedRecipeId; }
+    public void selectedRecipeId(String selectedRecipeId) { this.selectedRecipeId = selectedRecipeId; }
     public long lastProcessAt() { return lastProcessAt; }
     public void lastProcessAt(long lastProcessAt) { this.lastProcessAt = lastProcessAt; }
     public double wear() { return wear; }

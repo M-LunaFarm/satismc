@@ -415,7 +415,7 @@ public final class MachineTickService {
             return false;
         }
         for (RecipeDefinition recipe : recipes.recipesFor(machine.typeId())) {
-            if (!definition.allowedRecipes().isEmpty() && !definition.allowedRecipes().contains(recipe.id())) {
+            if (!supportsRecipe(machine, definition, recipe)) {
                 continue;
             }
             if (recipe.minTier() > definition.tier()) {
@@ -517,7 +517,7 @@ public final class MachineTickService {
                     continue;
                 }
                 VirtualInventory input = inputInventory(target);
-                long transfer = fillInput(buffer, input, targetDefinition, remaining);
+                long transfer = fillInput(buffer, input, target, targetDefinition, remaining);
                 if (transfer > 0) {
                     storage.save(input);
                     moved += transfer;
@@ -541,7 +541,7 @@ public final class MachineTickService {
                         continue;
                     }
                     VirtualInventory input = inputInventory(target);
-                    long transfer = fillInput(storageInventory, input, targetDefinition, remaining);
+                    long transfer = fillInput(storageInventory, input, target, targetDefinition, remaining);
                     if (transfer > 0) {
                         storage.save(input);
                         moved += transfer;
@@ -581,8 +581,8 @@ public final class MachineTickService {
                 .orElse(false);
     }
 
-    private long fillInput(VirtualInventory source, VirtualInventory target, MachineDefinition definition, long limit) {
-        Map<String, Long> desired = desiredInputs(definition);
+    private long fillInput(VirtualInventory source, VirtualInventory target, MachineInstance machine, MachineDefinition definition, long limit) {
+        Map<String, Long> desired = desiredInputs(machine, definition);
         long moved = 0;
         for (Map.Entry<String, Long> entry : desired.entrySet()) {
             if (moved >= limit) {
@@ -598,19 +598,27 @@ public final class MachineTickService {
         return moved;
     }
 
-    private Map<String, Long> desiredInputs(MachineDefinition definition) {
+    private Map<String, Long> desiredInputs(MachineInstance machine, MachineDefinition definition) {
         Map<String, Long> desired = new HashMap<>();
         if (definition.isGenerator()) {
             desired.put("biofuel", 16L);
             return desired;
         }
         for (RecipeDefinition recipe : recipes.recipesFor(definition.typeId())) {
-            if (!definition.allowedRecipes().isEmpty() && !definition.allowedRecipes().contains(recipe.id())) {
+            if (!supportsRecipe(machine, definition, recipe)) {
                 continue;
             }
             recipe.input().forEach((item, amount) -> desired.merge(item, Math.max(amount * 4, amount), Math::max));
         }
         return desired;
+    }
+
+    private boolean supportsRecipe(MachineInstance machine, MachineDefinition definition, RecipeDefinition recipe) {
+        if (!definition.allowedRecipes().isEmpty() && !definition.allowedRecipes().contains(recipe.id())) {
+            return false;
+        }
+        String selectedRecipeId = machine.selectedRecipeId();
+        return selectedRecipeId == null || selectedRecipeId.isBlank() || selectedRecipeId.equals(recipe.id());
     }
 
     private long moveAny(VirtualInventory source, VirtualInventory target, long limit) {

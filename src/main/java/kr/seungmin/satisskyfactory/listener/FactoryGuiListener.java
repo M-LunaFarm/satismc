@@ -114,6 +114,11 @@ public final class FactoryGuiListener implements Listener {
         if (action.type().equals("withdraw_machine_output")) {
             machine(holder).ifPresentOrElse(machine -> withdrawMachineInventory(player, machine, false),
                     () -> player.sendMessage("Machine is no longer available."));
+            return;
+        }
+        if (action.type().equals("select_recipe")) {
+            machine(holder).ifPresentOrElse(machine -> selectRecipe(player, machine, action.value()),
+                    () -> player.sendMessage("Machine is no longer available."));
         }
     }
 
@@ -213,6 +218,13 @@ public final class FactoryGuiListener implements Listener {
         }
         storage.save(inventory);
         player.sendMessage("Withdrew " + (amount - returned) + " " + itemId + ".");
+        gui.openMachine(player, machine);
+    }
+
+    private void selectRecipe(Player player, MachineInstance machine, String recipeId) {
+        machine.selectedRecipeId(recipeId == null || recipeId.isBlank() ? null : recipeId);
+        machines.save(machine);
+        player.sendMessage(machine.selectedRecipeId() == null ? "Recipe selection cleared." : "Selected recipe: " + machine.selectedRecipeId());
         gui.openMachine(player, machine);
     }
 

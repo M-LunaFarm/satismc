@@ -326,6 +326,7 @@ public final class DatabaseService {
                 machine.inputInventoryId(uuidOrNull(rs.getString("input_inventory_id")));
                 machine.outputInventoryId(uuidOrNull(rs.getString("output_inventory_id")));
                 machine.linkedResourceNodeId(uuidOrNull(rs.getString("linked_resource_node_id")));
+                machine.selectedRecipeId(selectedRecipeId(rs.getString("config_json")));
                 machine.lastProcessAt(rs.getLong("last_process_at"));
                 machine.wear(rs.getDouble("wear"));
                 machines.add(machine);
@@ -341,11 +342,11 @@ public final class DatabaseService {
         try (Connection connection = connection();
              PreparedStatement statement = connection.prepareStatement("""
                      INSERT INTO machines(machine_id, island_uuid, owner_uuid, type_id, tier, world, x, y, z, direction, status,
-                       input_inventory_id, output_inventory_id, linked_resource_node_id, last_process_at, wear, created_at, updated_at)
-                     VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                       input_inventory_id, output_inventory_id, linked_resource_node_id, last_process_at, wear, config_json, created_at, updated_at)
+                     VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                      ON CONFLICT(machine_id) DO UPDATE SET status=excluded.status, input_inventory_id=excluded.input_inventory_id,
                        output_inventory_id=excluded.output_inventory_id, linked_resource_node_id=excluded.linked_resource_node_id,
-                       last_process_at=excluded.last_process_at, wear=excluded.wear, updated_at=excluded.updated_at
+                       last_process_at=excluded.last_process_at, wear=excluded.wear, config_json=excluded.config_json, updated_at=excluded.updated_at
                      """)) {
             statement.setString(1, machine.machineId().toString());
             statement.setString(2, machine.islandUuid().toString());
@@ -363,12 +364,57 @@ public final class DatabaseService {
             statement.setString(14, stringOrNull(machine.linkedResourceNodeId()));
             statement.setLong(15, machine.lastProcessAt());
             statement.setDouble(16, machine.wear());
-            statement.setLong(17, now);
+            statement.setString(17, machineConfigJson(machine));
             statement.setLong(18, now);
+            statement.setLong(19, now);
             statement.executeUpdate();
         } catch (SQLException exception) {
             throw new IllegalStateException("Failed to save machine", exception);
         }
+    }
+
+    private String selectedRecipeId(String json) {
+        if (json == null || json.isBlank()) {
+            return null;
+        }
+        String key = "\"selectedRecipe\"";
+        int keyIndex = json.indexOf(key);
+        if (keyIndex < 0) {
+            return null;
+        }
+        int colon = json.indexOf(':', keyIndex + key.length());
+        if (colon < 0) {
+            return null;
+        }
+        int start = json.indexOf('"', colon + 1);
+        if (start < 0) {
+            return null;
+        }
+        StringBuilder value = new StringBuilder();
+        boolean escaped = false;
+        for (int index = start + 1; index < json.length(); index++) {
+            char current = json.charAt(index);
+            if (escaped) {
+                value.append(current);
+                escaped = false;
+            } else if (current == '\\') {
+                escaped = true;
+            } else if (current == '"') {
+                String parsed = value.toString();
+                return parsed.isBlank() ? null : parsed;
+            } else {
+                value.append(current);
+            }
+        }
+        return null;
+    }
+
+    private String machineConfigJson(MachineInstance machine) {
+        String selectedRecipe = machine.selectedRecipeId();
+        if (selectedRecipe == null || selectedRecipe.isBlank()) {
+            return "{}";
+        }
+        return "{\"selectedRecipe\":\"" + selectedRecipe.replace("\\", "\\\\").replace("\"", "\\\"") + "\"}";
     }
 
     public void deleteMachine(UUID machineId) {

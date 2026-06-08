@@ -8,6 +8,8 @@ import kr.seungmin.satisskyfactory.model.FactoryIsland;
 import kr.seungmin.satisskyfactory.model.MachineDefinition;
 import kr.seungmin.satisskyfactory.model.MachineInstance;
 import kr.seungmin.satisskyfactory.power.PowerNetworkService;
+import kr.seungmin.satisskyfactory.recipe.RecipeDefinition;
+import kr.seungmin.satisskyfactory.recipe.RecipeService;
 import kr.seungmin.satisskyfactory.research.ResearchService;
 import kr.seungmin.satisskyfactory.storage.StorageService;
 import kr.seungmin.satisskyfactory.storage.VirtualInventory;
@@ -27,11 +29,13 @@ public final class FactoryGuiService {
     private final StorageService storage;
     private final ItemRegistry items;
     private final MachineDefinitionService definitions;
+    private final RecipeService recipes;
 
-    public FactoryGuiService(StorageService storage, ItemRegistry items, MachineDefinitionService definitions) {
+    public FactoryGuiService(StorageService storage, ItemRegistry items, MachineDefinitionService definitions, RecipeService recipes) {
         this.storage = storage;
         this.items = items;
         this.definitions = definitions;
+        this.recipes = recipes;
     }
 
     public void openMain(Player player, FactoryIsland island, int machineCount, PowerNetworkService.NetworkState powerState,
@@ -127,6 +131,7 @@ public final class FactoryGuiService {
         meta.setLore(lore);
         info.setItemMeta(meta);
         inventory.setItem(13, info);
+        addRecipeSelectors(holder, inventory, machine, definition);
         holder.action(20, "deposit_machine_input", "");
         inventory.setItem(20, icon(Material.HOPPER, ChatColor.GREEN + "Deposit Input",
                 List.of(ChatColor.GRAY + "Move the item stack in your hand into this machine input.")));
@@ -137,6 +142,36 @@ public final class FactoryGuiService {
         inventory.setItem(24, icon(Material.CHEST, ChatColor.AQUA + "Take Output",
                 List.of(ChatColor.GRAY + "Withdraw up to one stack from this machine output.")));
         player.openInventory(inventory);
+    }
+
+    private void addRecipeSelectors(FactoryGuiHolder holder, Inventory inventory, MachineInstance machine, MachineDefinition definition) {
+        if (definition == null) {
+            return;
+        }
+        List<RecipeDefinition> availableRecipes = recipes.recipesFor(machine.typeId()).stream()
+                .filter(recipe -> definition.allowedRecipes().isEmpty() || definition.allowedRecipes().contains(recipe.id()))
+                .toList();
+        if (availableRecipes.isEmpty()) {
+            return;
+        }
+        String selectedRecipeId = machine.selectedRecipeId();
+        holder.action(0, "select_recipe", "");
+        inventory.setItem(0, icon(selectedRecipeId == null || selectedRecipeId.isBlank() ? Material.LIME_DYE : Material.GRAY_DYE,
+                ChatColor.AQUA + "Auto Recipe",
+                List.of(ChatColor.GRAY + "Machine chooses the first runnable recipe.")));
+        int slot = 1;
+        for (RecipeDefinition recipe : availableRecipes) {
+            if (slot >= 9) {
+                break;
+            }
+            boolean selected = recipe.id().equals(selectedRecipeId);
+            holder.action(slot, "select_recipe", recipe.id());
+            inventory.setItem(slot++, icon(selected ? Material.LIME_DYE : Material.PAPER,
+                    (selected ? ChatColor.GREEN : ChatColor.YELLOW) + recipe.id(),
+                    List.of(ChatColor.GRAY + "Input: " + recipe.input(),
+                            ChatColor.GRAY + "Output: " + recipe.output(),
+                            ChatColor.GRAY + "Byproducts: " + recipe.byproducts())));
+        }
     }
 
     public void openContracts(Player player, FactoryIsland island, ContractService contracts) {
