@@ -126,6 +126,15 @@ public final class FactoryGuiService {
         meta.setLore(lore);
         info.setItemMeta(meta);
         inventory.setItem(13, info);
+        holder.action(20, "deposit_machine_input", "");
+        inventory.setItem(20, icon(Material.HOPPER, ChatColor.GREEN + "Deposit Input",
+                List.of(ChatColor.GRAY + "Move the item stack in your hand into this machine input.")));
+        holder.action(22, "withdraw_machine_input", "");
+        inventory.setItem(22, icon(Material.DROPPER, ChatColor.YELLOW + "Take Input",
+                List.of(ChatColor.GRAY + "Withdraw up to one stack from this machine input.")));
+        holder.action(24, "withdraw_machine_output", "");
+        inventory.setItem(24, icon(Material.CHEST, ChatColor.AQUA + "Take Output",
+                List.of(ChatColor.GRAY + "Withdraw up to one stack from this machine output.")));
         player.openInventory(inventory);
     }
 

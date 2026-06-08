@@ -52,6 +52,10 @@ public final class MachineService {
         return id == null ? Optional.empty() : Optional.ofNullable(machines.get(id));
     }
 
+    public Optional<MachineInstance> find(UUID machineId) {
+        return Optional.ofNullable(machines.get(machineId));
+    }
+
     public MachineInstance create(UUID islandUuid, UUID ownerUuid, String typeId, Location location, BlockFace direction) {
         MachineDefinition definition = definitions.get(typeId).orElseThrow();
         MachineInstance machine = new MachineInstance(UUID.randomUUID(), islandUuid, ownerUuid, typeId, definition.tier(), BlockKey.from(location));

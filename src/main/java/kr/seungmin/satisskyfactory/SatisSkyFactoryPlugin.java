@@ -198,6 +198,7 @@ public final class SatisSkyFactoryPlugin extends JavaPlugin {
                 contracts,
                 research,
                 gui,
+                machines,
                 storage,
                 itemRegistry,
                 itemFactory
