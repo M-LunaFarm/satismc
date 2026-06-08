@@ -74,7 +74,7 @@ public final class FactoryGuiListener implements Listener {
             return;
         }
         if (action.type().equals("unlock_research")) {
-            ResearchService.UnlockResult result = research.unlock(island, action.value());
+            ResearchService.UnlockResult result = research.unlock(island, player, action.value());
             islands.save(island);
             player.sendMessage("Research unlock result: " + result.name());
             gui.openResearch(player, island, research);

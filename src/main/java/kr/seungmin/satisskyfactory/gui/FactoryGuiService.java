@@ -179,7 +179,10 @@ public final class FactoryGuiService {
             inventory.setItem(slot++, icon(unlocked ? Material.LIME_DYE : Material.GRAY_DYE,
                     (unlocked ? ChatColor.GREEN : ChatColor.YELLOW) + unlock.id(),
                     List.of(ChatColor.GRAY + "Cost: " + unlock.cost(),
+                            ChatColor.GRAY + "Money: " + unlock.moneyCost(),
+                            ChatColor.GRAY + "Reputation: " + unlock.requiredReputation(),
                             ChatColor.GRAY + "Requires: " + unlock.requires(),
+                            ChatColor.GRAY + "Unlocks: " + unlock.grants(),
                             ChatColor.GRAY + "Factory tier: " + (unlock.factoryTier() > 0 ? unlock.factoryTier() : "-"),
                             ChatColor.GRAY + "Status: " + (unlocked ? "Unlocked" : "Locked"))));
         }

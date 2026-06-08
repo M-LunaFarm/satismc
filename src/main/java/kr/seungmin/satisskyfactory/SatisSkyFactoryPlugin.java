@@ -94,7 +94,7 @@ public final class SatisSkyFactoryPlugin extends JavaPlugin {
         market = new MarketService(storage, economy, database);
         contracts = new ContractService(storage, economy, database, boosts);
         maintenance = new MaintenanceService(machines, economy, database);
-        research = new ResearchService(database);
+        research = new ResearchService(database, economy);
         gui = new FactoryGuiService(storage, itemRegistry, machineDefinitions);
 
         loadDefinitions();

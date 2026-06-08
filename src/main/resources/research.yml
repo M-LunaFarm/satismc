@@ -1,10 +1,23 @@
 research:
   unlocks:
     tier_2_logistics:
-      cost: 100
-      requires: []
+      cost-research-points: 100
+      cost-money: 100000
+      required-reputation: 0
+      required-unlocks: []
       factory-tier: 2
+      unlocks:
+        - battery_t1
+        - conveyor_t1
     advanced_processing:
-      cost: 160
-      requires: [tier_2_logistics]
+      cost-research-points: 160
+      cost-money: 50000
+      required-reputation: 5
+      required-unlocks: [tier_2_logistics]
       factory-tier: 2
+      unlocks:
+        - assembler_t1
+        - packager_t1
+        - sawmill_t1
+        - charcoal_kiln_t1
+        - fish_processor_t1

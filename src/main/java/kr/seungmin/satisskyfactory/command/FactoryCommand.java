@@ -290,7 +290,7 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
 
     private void research(Player player, FactoryIsland island, String[] args) {
         if (args.length >= 3 && args[1].equalsIgnoreCase("unlock")) {
-            ResearchService.UnlockResult result = research.unlock(island, args[2]);
+            ResearchService.UnlockResult result = research.unlock(island, player, args[2]);
             islands.save(island);
             player.sendMessage("Research unlock result: " + result.name());
             return;
