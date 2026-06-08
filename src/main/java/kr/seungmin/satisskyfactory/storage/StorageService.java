@@ -20,6 +20,14 @@ public final class StorageService {
     }
 
     public VirtualInventory islandStorage(UUID islandUuid) {
+        Optional<VirtualInventory> cached = cache.values().stream()
+                .filter(inventory -> inventory.islandUuid().equals(islandUuid))
+                .filter(inventory -> inventory.holderType().equals("ISLAND"))
+                .filter(inventory -> inventory.holderId().equals(islandUuid.toString()))
+                .findFirst();
+        if (cached.isPresent()) {
+            return cached.get();
+        }
         Optional<VirtualInventory> existing = database.findInventoryByHolder(islandUuid, "ISLAND", islandUuid.toString());
         if (existing.isPresent()) {
             cache.put(existing.get().inventoryId(), existing.get());
