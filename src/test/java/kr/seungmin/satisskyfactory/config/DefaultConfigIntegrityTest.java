@@ -31,6 +31,7 @@ class DefaultConfigIntegrityTest {
         YamlConfiguration machinesConfig = load("machines.yml");
         YamlConfiguration recipesConfig = load("recipes.yml");
         YamlConfiguration nodesConfig = load("resource-nodes.yml");
+        YamlConfiguration marketConfig = load("market.yml");
         YamlConfiguration contractsConfig = load("contracts.yml");
         YamlConfiguration researchConfig = load("research.yml");
 
@@ -103,6 +104,21 @@ class DefaultConfigIntegrityTest {
                     nodesConfig.getString("nodes." + nodeId + ".resource", ""));
             if (!itemId.isBlank() && !items.contains(itemId)) {
                 issues.add("node " + nodeId + " unknown item " + itemId);
+            }
+        }
+
+        for (String itemId : keys(marketConfig, "market.items")) {
+            if (!items.contains(itemId)) {
+                issues.add("market unknown item " + itemId);
+                continue;
+            }
+            long marketPrice = marketConfig.getLong("market.items." + itemId + ".base-price", 0);
+            long itemPrice = itemsConfig.getLong("items." + itemId + ".base-price", 0);
+            if (marketPrice <= 0 && itemPrice <= 0) {
+                issues.add("market item " + itemId + " has no positive base price");
+            }
+            if (marketConfig.getLong("market.items." + itemId + ".target-daily-amount", 0) <= 0) {
+                issues.add("market item " + itemId + " has no positive target daily amount");
             }
         }
 
