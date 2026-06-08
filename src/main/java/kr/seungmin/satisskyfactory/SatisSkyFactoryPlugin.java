@@ -81,7 +81,7 @@ public final class SatisSkyFactoryPlugin extends JavaPlugin {
         itemFactory = new CustomItemFactory(this);
         machineDefinitions = new MachineDefinitionService();
         recipes = new RecipeService();
-        storage = new StorageService(database, configs.main().getInt("storage.default-capacity", 10000));
+        storage = new StorageService(database, configInt("storage.default-capacity", "limits.default-storage-capacity", 10000));
         islands = new FactoryIslandService(skyblock, database);
         machines = new MachineService(database, machineDefinitions, storage);
         boosts = new IslandBoostService(skyblock);
@@ -113,17 +113,17 @@ public final class SatisSkyFactoryPlugin extends JavaPlugin {
                 power,
                 boosts,
                 islands,
-                configs.main().getInt("settings.max-machines-per-cycle", 200),
+                configInt("settings.max-machines-per-tick", "settings.max-machines-per-cycle", 200),
                 configs.main().getInt("settings.max-backfill-cycles", 60),
-                configs.main().getInt("settings.resource-node-link-radius", 3),
+                configInt("resource-nodes.link-radius", "settings.resource-node-link-radius", 3),
                 Set.copyOf(configs.main().getStringList("limits.recovery-machine-types")),
                 configs.file("maintenance.yml").getDouble("maintenance.limited-efficiency", 0.5),
                 configs.file("maintenance.yml").getDouble("maintenance.break-wear", 100.0)
         );
-        ticker.start(configs.main().getLong("settings.tick-interval", 40));
+        ticker.start(configLong("settings.tick-period-ticks", "settings.tick-interval", 40));
         maintenanceTicker = new MaintenanceTickService(this, islands, skyblock, maintenance);
-        maintenanceTicker.start(configs.main().getLong("settings.maintenance-check-interval", 1200));
-        dirtySaves.start(configs.main().getLong("settings.dirty-save-interval", 200));
+        maintenanceTicker.start(configLong("settings.maintenance-check-period-ticks", "settings.maintenance-check-interval", 1200));
+        dirtySaves.start(configLong("settings.dirty-save-period-ticks", "settings.dirty-save-interval", 200));
 
         registerCommands();
         registerListeners();
@@ -157,10 +157,29 @@ public final class SatisSkyFactoryPlugin extends JavaPlugin {
     }
 
     private void configureSkyblockHook() {
+        boolean allowSpawnIsland = configBoolean("superior-skyblock.allow-spawn-island", "settings.allow-spawn-island", false);
         skyblock.configure(
-                configs.main().getBoolean("settings.allow-coop-build", false),
-                configs.main().getBoolean("settings.protect-spawn-island", true)
+                configBoolean("superior-skyblock.allow-coop-build", "settings.allow-coop-build", false),
+                !allowSpawnIsland && configBoolean("superior-skyblock.protect-spawn-island", "settings.protect-spawn-island", true)
         );
+    }
+
+    private int configInt(String primaryPath, String aliasPath, int fallback) {
+        return configs.main().contains(primaryPath)
+                ? configs.main().getInt(primaryPath, fallback)
+                : configs.main().getInt(aliasPath, fallback);
+    }
+
+    private long configLong(String primaryPath, String aliasPath, long fallback) {
+        return configs.main().contains(primaryPath)
+                ? configs.main().getLong(primaryPath, fallback)
+                : configs.main().getLong(aliasPath, fallback);
+    }
+
+    private boolean configBoolean(String primaryPath, String aliasPath, boolean fallback) {
+        return configs.main().contains(primaryPath)
+                ? configs.main().getBoolean(primaryPath, fallback)
+                : configs.main().getBoolean(aliasPath, fallback);
     }
 
     private void loadDefinitions() {

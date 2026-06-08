@@ -2,19 +2,31 @@ settings:
   language: ko_kr
   debug: false
   tick-interval: 40
+  tick-period-ticks: 40
   maintenance-check-interval: 1200
+  maintenance-check-period-ticks: 1200
   dirty-save-interval: 200
+  dirty-save-period-ticks: 200
   max-machines-per-cycle: 200
+  max-machines-per-tick: 200
   max-backfill-cycles: 60
   resource-node-link-radius: 3
   allow-coop-build: false
+  allow-spawn-island: false
   protect-spawn-island: true
+superior-skyblock:
+  allow-coop-build: false
+  allow-spawn-island: false
+  protect-spawn-island: true
+resource-nodes:
+  link-radius: 3
 economy:
   mode: VAULT_PLAYER
 storage:
   default-capacity: 10000
 limits:
   base-machines-per-island: 128
+  base-machine-limit: 128
   recovery-machine-types:
     - harvester_t1
     - planter_t1

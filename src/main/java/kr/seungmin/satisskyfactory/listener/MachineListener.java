@@ -57,8 +57,12 @@ public final class MachineListener implements Listener {
         this.nodes = nodes;
         this.recoveryTypes = Set.copyOf(config.getStringList("limits.recovery-machine-types"));
         this.boosts = boosts;
-        this.baseMachineLimit = config.getInt("limits.base-machines-per-island", 128);
-        this.nodeLinkRadius = Math.max(1, config.getInt("settings.resource-node-link-radius", 3));
+        this.baseMachineLimit = config.contains("limits.base-machine-limit")
+                ? config.getInt("limits.base-machine-limit", 128)
+                : config.getInt("limits.base-machines-per-island", 128);
+        this.nodeLinkRadius = Math.max(1, config.contains("resource-nodes.link-radius")
+                ? config.getInt("resource-nodes.link-radius", 3)
+                : config.getInt("settings.resource-node-link-radius", 3));
     }
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
