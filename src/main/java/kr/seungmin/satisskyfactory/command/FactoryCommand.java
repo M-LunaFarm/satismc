@@ -210,16 +210,16 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
                 .ifPresentOrElse(result -> {
                             messages.send(player, "sold", Map.of("item", itemId, "amount", String.valueOf(amount), "money", String.valueOf(result.paidToPlayer())));
                             if (result.debtRepaid() > 0) {
-                                player.sendMessage("Debt repaid from sale: " + result.debtRepaid());
+                                messages.send(player, "debt-repaid", Map.of("amount", String.valueOf(result.debtRepaid())));
                             }
                         },
-                        () -> player.sendMessage("Cannot sell that item or amount."));
+                        () -> messages.send(player, "cannot-sell"));
     }
 
     private void sellHand(Player player, FactoryIsland island) {
         ItemStack hand = player.getInventory().getItemInMainHand();
         if (hand.getType() == Material.AIR || hand.getAmount() <= 0) {
-            player.sendMessage("Hold an item first.");
+            messages.send(player, "hold-item-first");
             return;
         }
         String itemId = itemIdForHand(hand);
@@ -228,22 +228,22 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
             hand.setAmount(0);
             messages.send(player, "sold", Map.of("item", itemId, "amount", String.valueOf(amount), "money", String.valueOf(result.paidToPlayer())));
             if (result.debtRepaid() > 0) {
-                player.sendMessage("Debt repaid from sale: " + result.debtRepaid());
+                messages.send(player, "debt-repaid", Map.of("amount", String.valueOf(result.debtRepaid())));
             }
-        }, () -> player.sendMessage("The item in your hand cannot be sold."));
+        }, () -> messages.send(player, "hand-item-cannot-sell"));
     }
 
     private void depositHand(Player player, FactoryIsland island) {
         ItemStack hand = player.getInventory().getItemInMainHand();
         if (hand.getType() == Material.AIR || hand.getAmount() <= 0) {
-            player.sendMessage("Hold an item first.");
+            messages.send(player, "hold-item-first");
             return;
         }
         String itemId = itemIdForHand(hand);
         long amount = hand.getAmount();
         var inventory = storage.islandStorage(island.islandUuid());
         if (!inventory.add(itemId, amount)) {
-            player.sendMessage("Factory storage is full.");
+            messages.send(player, "storage-full");
             return;
         }
         hand.setAmount(0);
@@ -268,22 +268,22 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
         String itemId = args[1];
         long amount = parseLong(args, 2, 0);
         if (amount <= 0 || amount > Integer.MAX_VALUE) {
-            player.sendMessage("Invalid amount.");
+            messages.send(player, "invalid-amount");
             return;
         }
         if (items.get(itemId).map(ItemRegistry.FactoryItem::virtualOnly).orElse(false)) {
-            player.sendMessage("That item is virtual-only and cannot be withdrawn.");
+            messages.send(player, "virtual-only-withdraw");
             return;
         }
         var inventory = storage.islandStorage(island.islandUuid());
         if (!inventory.remove(itemId, amount)) {
-            player.sendMessage("Not enough items in storage.");
+            messages.send(player, "not-enough-storage");
             return;
         }
         long returned = giveVirtualItem(player, itemId, amount);
         if (returned > 0) {
             inventory.add(itemId, returned);
-            player.sendMessage("Your inventory is full.");
+            messages.send(player, "inventory-full");
         }
         storage.save(inventory);
         messages.send(player, "withdrew", Map.of("item", itemId, "amount", String.valueOf(amount - returned)));
@@ -415,18 +415,18 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
         }
         Player target = Bukkit.getPlayerExact(args[2]);
         if (target == null) {
-            sender.sendMessage("Player not found.");
+            messages.send(sender, "player-not-found");
             return;
         }
         definitions.get(args[3]).ifPresentOrElse(definition -> {
             long amount = parseLong(args, 4, 1);
             if (amount <= 0) {
-                sender.sendMessage("Invalid amount.");
+                messages.send(sender, "invalid-amount");
                 return;
             }
             long returned = giveMachineItem(target, definition, amount);
             if (returned > 0) {
-                sender.sendMessage("Target inventory is full. Not given: " + returned);
+                messages.send(sender, "target-inventory-full", Map.of("amount", String.valueOf(returned)));
             }
             messages.send(sender, "given");
         }, () -> messages.send(sender, "unknown-machine"));
@@ -439,13 +439,13 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
         }
         Player target = Bukkit.getPlayerExact(args[2]);
         if (target == null) {
-            sender.sendMessage("Player not found.");
+            messages.send(sender, "player-not-found");
             return;
         }
         items.get(args[3]).ifPresentOrElse(item -> {
             long amount = parseLong(args, 4, 0);
             if (amount <= 0) {
-                sender.sendMessage("Invalid amount.");
+                messages.send(sender, "invalid-amount");
                 return;
             }
             if (item.virtualOnly()) {
@@ -455,7 +455,7 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
             } else {
                 long returned = giveVirtualItem(target, item.id(), amount);
                 if (returned > 0) {
-                    sender.sendMessage("Target inventory is full. Not given: " + returned);
+                    messages.send(sender, "target-inventory-full", Map.of("amount", String.valueOf(returned)));
                 }
             }
             messages.send(sender, "given");
@@ -481,7 +481,7 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
         return islands.context(target).map(context -> {
             var inventory = storage.islandStorage(context.factoryIsland().islandUuid());
             if (!inventory.add(itemId, amount)) {
-                sender.sendMessage("Factory storage is full.");
+                messages.send(sender, "storage-full");
                 return false;
             }
             storage.save(inventory);
