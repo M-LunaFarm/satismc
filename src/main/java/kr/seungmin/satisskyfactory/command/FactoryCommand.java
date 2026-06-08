@@ -555,12 +555,9 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
             return;
         }
         machines.at(block.getLocation()).ifPresentOrElse(machine -> {
-            if (machines.remove(machine)) {
-                block.setType(Material.AIR, false);
-                messages.send(sender, "machine-removed-admin");
-            } else {
-                messages.send(sender, "machine-remove-storage-full");
-            }
+            machines.forceRemove(machine);
+            block.setType(Material.AIR, false);
+            messages.send(sender, "machine-removed-admin");
         }, () -> messages.send(sender, "no-machine-here"));
     }
 

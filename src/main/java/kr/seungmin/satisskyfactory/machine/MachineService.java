@@ -90,9 +90,21 @@ public final class MachineService {
     }
 
     public boolean remove(MachineInstance machine) {
-        if (!flushInventories(machine)) {
+        if (hasBufferedItems(machine)) {
             return false;
         }
+        delete(machine);
+        return true;
+    }
+
+    public void forceRemove(MachineInstance machine) {
+        if (!flushInventories(machine)) {
+            clearInventories(machine);
+        }
+        delete(machine);
+    }
+
+    private void delete(MachineInstance machine) {
         machine.status(MachineStatus.IDLE);
         machines.remove(machine.machineId());
         byLocation.remove(machine.location());
@@ -101,7 +113,10 @@ public final class MachineService {
         }
         database.deleteMachine(machine.machineId());
         revision.incrementAndGet();
-        return true;
+    }
+
+    private boolean hasBufferedItems(MachineInstance machine) {
+        return machineInventories(machine).stream().anyMatch(inventory -> inventory.used() > 0);
     }
 
     private boolean flushInventories(MachineInstance machine) {
@@ -122,6 +137,13 @@ public final class MachineService {
         }
         storage.save(islandStorage);
         return true;
+    }
+
+    private void clearInventories(MachineInstance machine) {
+        for (VirtualInventory buffer : machineInventories(machine)) {
+            new ArrayList<>(buffer.items().keySet()).forEach(itemId -> buffer.set(itemId, 0));
+            storage.save(buffer);
+        }
     }
 
     private List<VirtualInventory> machineInventories(MachineInstance machine) {
