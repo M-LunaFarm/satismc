@@ -1,0 +1,7 @@
+maintenance:
+  interval-hours: 24
+  base-cost: 100
+  per-machine-cost: 8
+  limited-threshold: 500
+  locked-threshold: 1500
+  debt-cap: 5000

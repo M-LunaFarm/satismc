@@ -1,0 +1,36 @@
+recipes:
+  grind_wheat:
+    machine: grinder_t1
+    input:
+      wheat: 2
+    output:
+      flour: 1
+    power: 5.0
+  grind_iron:
+    machine: grinder_t1
+    input:
+      iron_ore: 2
+    output:
+      crushed_iron: 1
+    power: 5.0
+  smelt_crushed_iron:
+    machine: furnace_t1
+    input:
+      crushed_iron: 1
+    output:
+      iron_ingot: 1
+    power: 7.0
+  assemble_plate:
+    machine: assembler_t1
+    input:
+      iron_ingot: 2
+    output:
+      iron_plate: 1
+    power: 8.0
+  package_bread:
+    machine: packager_t1
+    input:
+      flour: 3
+    output:
+      bread_box: 1
+    power: 4.0

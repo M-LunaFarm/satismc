@@ -1,0 +1,10 @@
+defaults:
+  nodes-per-island: 3
+nodes:
+  iron_basic:
+    type: MINERAL
+    resource-id: iron_ore
+    purity: 1.0
+    remaining: 100000
+    regen-per-hour: 100
+    required-machine-tier: 1

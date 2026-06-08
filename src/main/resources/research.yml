@@ -1,0 +1,8 @@
+research:
+  unlocks:
+    tier_2_logistics:
+      cost: 100
+      requires: []
+    advanced_processing:
+      cost: 160
+      requires: [tier_2_logistics]

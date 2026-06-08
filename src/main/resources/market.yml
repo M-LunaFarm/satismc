@@ -1,0 +1,18 @@
+market:
+  demand-floor: 0.35
+  personal-soft-cap: 256
+  items:
+    wheat:
+      base-price: 1
+    flour:
+      base-price: 4
+    bread_box:
+      base-price: 18
+    iron_ore:
+      base-price: 3
+    crushed_iron:
+      base-price: 7
+    iron_ingot:
+      base-price: 12
+    iron_plate:
+      base-price: 28

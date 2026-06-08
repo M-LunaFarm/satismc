@@ -1,0 +1,26 @@
+package kr.example.satisskyfactory.model;
+
+import org.bukkit.Material;
+
+public record MachineDefinition(
+        String typeId,
+        String displayName,
+        Material material,
+        int tier,
+        int inputCapacity,
+        int outputCapacity,
+        double powerConsumption,
+        double powerGeneration,
+        double batteryCapacity,
+        int cycleTicks,
+        int range,
+        int amountPerCycle
+) {
+    public boolean isGenerator() {
+        return powerGeneration > 0;
+    }
+
+    public boolean isBattery() {
+        return batteryCapacity > 0;
+    }
+}

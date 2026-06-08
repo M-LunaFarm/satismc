@@ -1,0 +1,29 @@
+contracts:
+  daily_slots: 3
+  templates:
+    bread_supply:
+      type: DAILY
+      tier: 1
+      required:
+        bread_box: 8
+      rewards:
+        money: 200
+        research: 4
+        reputation: 2
+    iron_parts:
+      type: DAILY
+      tier: 1
+      required:
+        iron_plate: 8
+      rewards:
+        money: 350
+        research: 6
+        reputation: 3
+  emergency:
+    type: EMERGENCY
+    tier: 1
+    required:
+      wheat: 16
+    rewards:
+      debt-relief: 150
+      money: 25

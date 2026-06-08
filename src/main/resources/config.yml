@@ -1,0 +1,16 @@
+settings:
+  language: ko_kr
+  debug: false
+  tick-interval: 40
+  max-machines-per-cycle: 200
+  allow-coop-build: false
+economy:
+  mode: VAULT_PLAYER
+storage:
+  default-capacity: 10000
+limits:
+  base-machines-per-island: 128
+  recovery-machine-types:
+    - harvester_t1
+    - miner_drill_t1
+    - bio_generator_t1

@@ -1,0 +1,20 @@
+name: SatisSkyFactory
+main: kr.example.satisskyfactory.SatisSkyFactoryPlugin
+version: ${version}
+api-version: "1.21"
+depend: [SuperiorSkyblock2]
+softdepend: [Vault, PlaceholderAPI]
+author: LeeSeungmin
+commands:
+  factory:
+    description: SatisSkyFactory command
+    usage: /factory help
+    permission: satisskyfactory.use
+    aliases: [sfactory]
+permissions:
+  satisskyfactory.use:
+    default: true
+  satisskyfactory.admin:
+    default: op
+  satisskyfactory.debug:
+    default: op

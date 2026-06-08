@@ -1,0 +1,25 @@
+items:
+  wheat:
+    material: WHEAT
+    display: "Wheat"
+  flour:
+    material: SUGAR
+    display: "Flour"
+  bread_box:
+    material: CHEST
+    display: "Bread Box"
+  iron_ore:
+    material: RAW_IRON
+    display: "Iron Ore"
+  crushed_iron:
+    material: GUNPOWDER
+    display: "Crushed Iron"
+  iron_ingot:
+    material: IRON_INGOT
+    display: "Iron Ingot"
+  iron_plate:
+    material: HEAVY_WEIGHTED_PRESSURE_PLATE
+    display: "Iron Plate"
+  biofuel:
+    material: DRIED_KELP
+    display: "Biofuel"

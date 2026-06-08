@@ -1,0 +1,67 @@
+machines:
+  harvester_t1:
+    display: "Harvester T1"
+    material: IRON_HOE
+    tier: 1
+    input-capacity: 128
+    output-capacity: 512
+    power-consumption: 4.0
+    cycle-ticks: 80
+    range: 4
+  miner_drill_t1:
+    display: "Miner Drill T1"
+    material: IRON_PICKAXE
+    tier: 1
+    input-capacity: 64
+    output-capacity: 512
+    power-consumption: 6.0
+    cycle-ticks: 80
+    amount-per-cycle: 2
+  grinder_t1:
+    display: "Grinder T1"
+    material: STONECUTTER
+    tier: 1
+    input-capacity: 256
+    output-capacity: 512
+    power-consumption: 5.0
+    cycle-ticks: 60
+  furnace_t1:
+    display: "Furnace T1"
+    material: FURNACE
+    tier: 1
+    input-capacity: 256
+    output-capacity: 512
+    power-consumption: 7.0
+    cycle-ticks: 80
+  assembler_t1:
+    display: "Assembler T1"
+    material: CRAFTING_TABLE
+    tier: 1
+    input-capacity: 256
+    output-capacity: 512
+    power-consumption: 8.0
+    cycle-ticks: 80
+  packager_t1:
+    display: "Packager T1"
+    material: BARREL
+    tier: 1
+    input-capacity: 256
+    output-capacity: 512
+    power-consumption: 4.0
+    cycle-ticks: 60
+  bio_generator_t1:
+    display: "Bio Generator T1"
+    material: COMPOSTER
+    tier: 1
+    input-capacity: 256
+    output-capacity: 64
+    power-generation: 24.0
+    cycle-ticks: 60
+  battery_t1:
+    display: "Battery T1"
+    material: COPPER_BLOCK
+    tier: 1
+    input-capacity: 64
+    output-capacity: 64
+    battery-capacity: 2000.0
+    cycle-ticks: 100
