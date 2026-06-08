@@ -51,8 +51,7 @@ recipes:
     power: 8.0
   assemble_machine_parts:
     machines: [assembler_t1]
-    min-tier: 2
-    research-required: [advanced_processing]
+    min-tier: 1
     cycle-ms: 8000
     inputs:
       iron_plate: 2
@@ -63,8 +62,7 @@ recipes:
     power-cost: 8.0
   package_bread:
     machines: [packager_t1]
-    min-tier: 2
-    research-required: [advanced_processing]
+    min-tier: 1
     cycle-ms: 5000
     inputs:
       flour: 3

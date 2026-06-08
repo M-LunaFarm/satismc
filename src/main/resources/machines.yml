@@ -113,7 +113,7 @@ machines:
     display: "Assembler T1"
     material: CRAFTING_TABLE
     placed-block: CRAFTING_TABLE
-    tier: 2
+    tier: 1
     input-capacity: 256
     output-capacity: 512
     power-consumption: 8.0
@@ -122,12 +122,11 @@ machines:
     maintenance-score: 22
     wear-per-cycle: 0.04
     allowed-recipes: [assemble_plate, assemble_machine_parts]
-    required-unlocks: [advanced_processing]
   packager_t1:
     display: "Packager T1"
     material: BARREL
     placed-block: BARREL
-    tier: 2
+    tier: 1
     input-capacity: 256
     output-capacity: 512
     power-consumption: 4.0
@@ -136,7 +135,6 @@ machines:
     maintenance-score: 16
     wear-per-cycle: 0.025
     allowed-recipes: [package_bread]
-    required-unlocks: [advanced_processing]
   bio_generator_t1:
     display: "Bio Generator T1"
     material: COMPOSTER
@@ -155,7 +153,7 @@ machines:
     display: "Battery T1"
     material: COPPER_BLOCK
     placed-block: COPPER_BLOCK
-    tier: 2
+    tier: 1
     input-capacity: 64
     output-capacity: 64
     battery-capacity: 2000.0
@@ -163,13 +161,12 @@ machines:
     factory-score: 12
     maintenance-score: 10
     wear-per-cycle: 0.01
-    required-unlocks: [tier_2_logistics]
   conveyor_t1:
     display: "Conveyor T1"
     material: CHAIN
     placed-block: CHAIN
     custom-model-data: 2301
-    tier: 2
+    tier: 1
     input-capacity: 64
     output-capacity: 64
     power-consumption: 2.0
@@ -178,7 +175,6 @@ machines:
     factory-score: 3
     maintenance-score: 2
     wear-per-cycle: 0.015
-    required-unlocks: [tier_2_logistics]
   filter_distributor_t1:
     display: "Filter Distributor T1"
     material: COMPARATOR

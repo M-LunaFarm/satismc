@@ -8,8 +8,6 @@ research:
       required-unlocks: []
       factory-tier: 2
       unlocks:
-        - battery_t1
-        - conveyor_t1
         - filter_distributor_t1
     advanced_processing:
       display-name: "Advanced Processing"
@@ -19,8 +17,6 @@ research:
       required-unlocks: [tier_2_logistics]
       factory-tier: 2
       unlocks:
-        - assembler_t1
-        - packager_t1
         - sawmill_t1
         - charcoal_kiln_t1
         - auto_fisher_t1
