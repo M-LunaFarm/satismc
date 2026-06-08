@@ -24,6 +24,8 @@ maintenance:
     allow-basic-recovery-machines: true
     recovery-efficiency: 0.30
     max-operating-tier: 1
+    block-market-sales: false
+    auto-pay-debt-from-sales-percent: 70
   debt-cap-days: 5
   debt-cap: 5000
   dormant:

@@ -39,7 +39,7 @@ class EconomyFlowServiceTest {
             items.load(load("items.yml"));
             TrackingEconomy economy = new TrackingEconomy();
             MarketService market = new MarketService(storage, economy, database, items);
-            market.load(load("market.yml"));
+            market.load(load("market.yml"), load("maintenance.yml"));
 
             UUID islandUuid = UUID.fromString("00000000-0000-0000-0000-000000001001");
             FactoryIsland island = new FactoryIsland(islandUuid, UUID.fromString("00000000-0000-0000-0000-000000001002"));
@@ -92,6 +92,33 @@ class EconomyFlowServiceTest {
             assertEquals(15, result.paidToPlayer());
             assertEquals(65, island.maintenanceDebt());
             assertEquals(15.0, economy.deposited());
+        }
+    }
+
+    @Test
+    void lockedMaintenanceCanBlockMarketSalesAndKeepsStorage() {
+        try (DatabaseHandle handle = openDatabase("locked-market-blocked")) {
+            DatabaseService database = handle.database();
+            StorageService storage = new StorageService(database, 1000);
+            ItemRegistry items = new ItemRegistry();
+            items.load(load("items.yml"));
+            TrackingEconomy economy = new TrackingEconomy();
+            MarketService market = new MarketService(storage, economy, database, items);
+            YamlConfiguration maintenanceConfig = load("maintenance.yml");
+            maintenanceConfig.set("maintenance.locked.block-market-sales", true);
+            market.load(load("market.yml"), maintenanceConfig);
+
+            UUID islandUuid = UUID.fromString("00000000-0000-0000-0000-000000001801");
+            FactoryIsland island = new FactoryIsland(islandUuid, UUID.fromString("00000000-0000-0000-0000-000000001802"));
+            island.maintenanceStatus(MaintenanceStatus.LOCKED);
+            database.saveIsland(island);
+            VirtualInventory inventory = storage.islandStorage(islandUuid);
+            assertTrue(inventory.add("flour", 10));
+            storage.save(inventory);
+
+            assertTrue(market.sell(island, null, "flour", 10).isEmpty());
+            assertEquals(10, storage.islandStorage(islandUuid).amount("flour"));
+            assertEquals(0.0, economy.deposited());
         }
     }
 

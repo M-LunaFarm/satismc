@@ -220,7 +220,7 @@ public final class SatisSkyFactoryPlugin extends JavaPlugin {
         machineDefinitions.load(configs.file("machines.yml"));
         recipes.load(configs.file("recipes.yml"));
         nodes.load(configs.file("resource-nodes.yml"));
-        market.load(configs.file("market.yml"));
+        market.load(configs.file("market.yml"), configs.file("maintenance.yml"));
         contracts.load(configs.file("contracts.yml"));
         maintenance.load(configs.file("maintenance.yml"));
         research.load(configs.file("research.yml"));

@@ -30,6 +30,8 @@ class DefaultConfigIntegrityTest {
         assertEquals(1, maintenance.getInt("maintenance.status-thresholds.warning-days"));
         assertEquals(3, maintenance.getInt("maintenance.status-thresholds.limited-days"));
         assertEquals(5, maintenance.getInt("maintenance.status-thresholds.locked-days"));
+        assertFalse(maintenance.getBoolean("maintenance.locked.block-market-sales"));
+        assertEquals(70, maintenance.getInt("maintenance.locked.auto-pay-debt-from-sales-percent"));
     }
 
     @Test

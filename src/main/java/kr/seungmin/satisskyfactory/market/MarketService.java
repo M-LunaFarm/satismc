@@ -42,6 +42,7 @@ public final class MarketService {
     private double demandExponent = 0.35;
     private double debtRepayRate = 0.35;
     private double lockedDebtRepayRate = 0.70;
+    private boolean lockedMarketSalesBlocked;
 
     public MarketService(StorageService storage, EconomyService economy, DatabaseService database, ItemRegistry items) {
         this.storage = storage;
@@ -51,11 +52,16 @@ public final class MarketService {
     }
 
     public void load(FileConfiguration config) {
+        load(config, null);
+    }
+
+    public void load(FileConfiguration config, FileConfiguration maintenanceConfig) {
         prices.clear();
         targetDailyAmounts.clear();
         itemQualityFactors.clear();
         tagQualityFactors.clear();
         personalTiers.clear();
+        lockedMarketSalesBlocked = false;
         personalSoftCapEnabled = config.getBoolean("market.personal-soft-cap.enabled", true);
         personalSoftCap = config.isInt("market.personal-soft-cap") ? config.getInt("market.personal-soft-cap", 256) : 256;
         demandFloor = config.getDouble("market.factor-min", config.getDouble("market.demand-floor", 0.35));
@@ -63,6 +69,12 @@ public final class MarketService {
         demandExponent = config.getDouble("market.demand-exponent", 0.35);
         debtRepayRate = config.getDouble("market.debt-repay-rate", 0.35);
         lockedDebtRepayRate = config.getDouble("market.locked-debt-repay-rate", 0.70);
+        if (maintenanceConfig != null) {
+            lockedMarketSalesBlocked = maintenanceConfig.getBoolean("maintenance.locked.block-market-sales", false);
+            if (maintenanceConfig.contains("maintenance.locked.auto-pay-debt-from-sales-percent")) {
+                lockedDebtRepayRate = maintenanceConfig.getDouble("maintenance.locked.auto-pay-debt-from-sales-percent", 70.0) / 100.0;
+            }
+        }
         loadPersonalTiers(config);
         loadQualityFactors(config);
         ConfigurationSection marketItems = config.getConfigurationSection("market.items");
@@ -91,7 +103,7 @@ public final class MarketService {
     }
 
     public Optional<SellResult> sell(FactoryIsland island, OfflinePlayer owner, String itemId, long amount) {
-        if (amount <= 0 || !prices.containsKey(itemId)) {
+        if (amount <= 0 || !prices.containsKey(itemId) || marketBlocked(island)) {
             return Optional.empty();
         }
         VirtualInventory inventory = storage.islandStorage(island.islandUuid());
@@ -110,7 +122,7 @@ public final class MarketService {
     }
 
     public Optional<SellResult> sellDirect(FactoryIsland island, OfflinePlayer owner, String itemId, long amount) {
-        if (amount <= 0 || !prices.containsKey(itemId)) {
+        if (amount <= 0 || !prices.containsKey(itemId) || marketBlocked(island)) {
             return Optional.empty();
         }
         Optional<SellResult> result = payout(island, owner, itemId, amount);
@@ -127,6 +139,10 @@ public final class MarketService {
                 .map(ItemRegistry.FactoryItem::basePrice)
                 .filter(price -> price > 0)
                 .orElse(1L);
+    }
+
+    private boolean marketBlocked(FactoryIsland island) {
+        return lockedMarketSalesBlocked && island.maintenanceStatus() == MaintenanceStatus.LOCKED;
     }
 
     private Optional<SellResult> payout(FactoryIsland island, OfflinePlayer owner, String itemId, long amount) {
