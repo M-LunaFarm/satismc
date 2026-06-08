@@ -49,8 +49,10 @@ public final class ContractService {
 
     public void load(FileConfiguration config) {
         templates.clear();
-        dailySlots = Math.max(1, config.getInt("contracts.daily_slots", 3));
-        weeklySlots = Math.max(0, config.getInt("contracts.weekly_slots", 1));
+        dailySlots = Math.max(1, config.getInt("contracts.daily_slots",
+                config.getInt("contracts.daily-slots-base", 3)));
+        weeklySlots = Math.max(0, config.getInt("contracts.weekly_slots",
+                config.getInt("contracts.weekly-slots-base", 1)));
         emergencyDailyLimit = Math.max(1, config.getInt("contracts.emergency-daily-limit",
                 config.getInt("contracts.emergency_daily_limit", 5)));
         ConfigurationSection section = config.getConfigurationSection("contracts.templates");
@@ -210,12 +212,14 @@ public final class ContractService {
         return new ContractTemplate(
                 id,
                 config.getString(base + "type", "DAILY"),
-                config.getInt(base + "tier", 1),
+                config.getInt(base + "tier", config.getInt(base + "min-tier", 1)),
                 map(config.getConfigurationSection(base + "required")),
                 config.getLong(base + "rewards.money", 0),
-                config.getLong(base + "rewards.research", 0),
+                config.getLong(base + "rewards.research",
+                        config.getLong(base + "rewards.research-points", 0)),
                 config.getLong(base + "rewards.reputation", 0),
-                config.getLong(base + "rewards.debt-relief", 0),
+                config.getLong(base + "rewards.debt-relief",
+                        config.getLong(base + "rewards.debt-payment", 0)),
                 map(config.getConfigurationSection(base + "rewards.items")),
                 config.getLong(base + "expires-hours", defaultExpiresHours(config.getString(base + "type", "DAILY")))
         );
