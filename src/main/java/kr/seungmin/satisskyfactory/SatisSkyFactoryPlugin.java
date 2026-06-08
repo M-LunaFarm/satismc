@@ -170,6 +170,7 @@ public final class SatisSkyFactoryPlugin extends JavaPlugin {
                 machineDefinitions,
                 storage,
                 nodes,
+                skyblock,
                 market,
                 contracts,
                 maintenance,

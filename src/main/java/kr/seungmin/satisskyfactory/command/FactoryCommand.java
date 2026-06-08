@@ -21,6 +21,7 @@ import kr.seungmin.satisskyfactory.power.PowerNetworkService;
 import kr.seungmin.satisskyfactory.research.ResearchService;
 import kr.seungmin.satisskyfactory.storage.StorageService;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.command.Command;
@@ -42,6 +43,7 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
     private final MachineDefinitionService definitions;
     private final StorageService storage;
     private final ResourceNodeService nodes;
+    private final SuperiorSkyblockHook skyblock;
     private final MarketService market;
     private final ContractService contracts;
     private final MaintenanceService maintenance;
@@ -55,7 +57,8 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
     private final Runnable reload;
 
     public FactoryCommand(FactoryIslandService islands, MachineService machines, MachineDefinitionService definitions,
-                          StorageService storage, ResourceNodeService nodes, MarketService market, ContractService contracts,
+                          StorageService storage, ResourceNodeService nodes, SuperiorSkyblockHook skyblock,
+                          MarketService market, ContractService contracts,
                           MaintenanceService maintenance, ResearchService research, IslandBoostService boosts,
                           PowerNetworkService power, FactoryGuiService gui, CustomItemFactory itemFactory,
                           ItemRegistry items, MessageService messages, Runnable reload) {
@@ -64,6 +67,7 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
         this.definitions = definitions;
         this.storage = storage;
         this.nodes = nodes;
+        this.skyblock = skyblock;
         this.market = market;
         this.contracts = contracts;
         this.maintenance = maintenance;
@@ -128,7 +132,7 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
             }
             case "node" -> {
                 if (args.length > 1 && args[1].equalsIgnoreCase("scan")) {
-                    nodes.generateIfMissing(island.islandUuid(), player.getLocation())
+                    nodes.generateIfMissing(island.islandUuid(), player.getLocation(), location -> isInsideIsland(location, island))
                             .forEach(node -> player.sendMessage(node.resourceId() + " node at " + node.location().databaseKey()));
                 }
             }
@@ -171,7 +175,7 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
                 sender.sendMessage("Maintenance charged if due.");
             });
             case "gennodes" -> withPlayerContext(sender, args, 2, (target, island) -> {
-                nodes.generateIfMissing(island.islandUuid(), target.getLocation());
+                nodes.generateIfMissing(island.islandUuid(), target.getLocation(), location -> isInsideIsland(location, island));
                 sender.sendMessage("Resource nodes generated.");
             });
             case "debug" -> debug(sender, args);
@@ -180,6 +184,12 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
             default -> sender.sendMessage("Unknown admin command.");
         }
         return true;
+    }
+
+    private boolean isInsideIsland(Location location, FactoryIsland island) {
+        return skyblock.getIslandAt(location)
+                .map(ref -> ref.islandUuid().equals(island.islandUuid()))
+                .orElse(false);
     }
 
     private void sell(Player player, FactoryIsland island, String[] args) {

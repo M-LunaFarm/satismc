@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Predicate;
 
 public final class ResourceNodeService {
     private final DatabaseService database;
@@ -34,6 +35,10 @@ public final class ResourceNodeService {
     }
 
     public List<ResourceNode> generateIfMissing(UUID islandUuid, Location origin) {
+        return generateIfMissing(islandUuid, origin, location -> true);
+    }
+
+    public List<ResourceNode> generateIfMissing(UUID islandUuid, Location origin, Predicate<Location> insideIsland) {
         List<ResourceNode> existing = nodes(islandUuid);
         if (!existing.isEmpty()) {
             return existing;
@@ -52,6 +57,12 @@ public final class ResourceNodeService {
                     config.getInt(path + "offset-y", 0),
                     config.getInt(path + "offset-z", 4 + i * 3)
             );
+            if (!insideIsland.test(location)) {
+                if (!insideIsland.test(origin)) {
+                    continue;
+                }
+                location = origin.clone();
+            }
             double purity = purity(path);
             long maxRemaining = config.getLong(path + "max-remaining", config.getLong(path + "remaining", 100000));
             long now = System.currentTimeMillis();
