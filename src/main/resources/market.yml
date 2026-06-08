@@ -14,6 +14,7 @@ market:
       - amount: 999999999
         factor: 0.55
   debt-repay-rate: 0.35
+  locked-debt-repay-rate: 0.70
   items:
     wheat:
       base-price: 1

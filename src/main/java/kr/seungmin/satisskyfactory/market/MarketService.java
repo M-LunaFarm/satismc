@@ -3,6 +3,7 @@ package kr.seungmin.satisskyfactory.market;
 import kr.seungmin.satisskyfactory.database.DatabaseService;
 import kr.seungmin.satisskyfactory.economy.EconomyService;
 import kr.seungmin.satisskyfactory.model.FactoryIsland;
+import kr.seungmin.satisskyfactory.model.MaintenanceStatus;
 import kr.seungmin.satisskyfactory.storage.StorageService;
 import kr.seungmin.satisskyfactory.storage.VirtualInventory;
 import org.bukkit.OfflinePlayer;
@@ -35,6 +36,7 @@ public final class MarketService {
     private double demandCeiling = 1.25;
     private double demandExponent = 0.35;
     private double debtRepayRate = 0.35;
+    private double lockedDebtRepayRate = 0.70;
 
     public MarketService(StorageService storage, EconomyService economy, DatabaseService database) {
         this.storage = storage;
@@ -52,6 +54,7 @@ public final class MarketService {
         demandCeiling = config.getDouble("market.factor-max", config.getDouble("market.demand-ceiling", 1.25));
         demandExponent = config.getDouble("market.demand-exponent", 0.35);
         debtRepayRate = config.getDouble("market.debt-repay-rate", 0.35);
+        lockedDebtRepayRate = config.getDouble("market.locked-debt-repay-rate", 0.70);
         loadPersonalTiers(config);
         ConfigurationSection items = config.getConfigurationSection("market.items");
         if (items == null) {
@@ -104,7 +107,8 @@ public final class MarketService {
         long gross = Math.max(0, Math.round(prices.getOrDefault(itemId, 0L) * amount * factors.serverDemandFactor() * factors.personalFactor()));
         long debtRepaid = 0;
         if (island.maintenanceDebt() > 0) {
-            debtRepaid = Math.min(island.maintenanceDebt(), Math.round(gross * debtRepayRate));
+            double repayRate = island.maintenanceStatus() == MaintenanceStatus.LOCKED ? lockedDebtRepayRate : debtRepayRate;
+            debtRepaid = Math.min(island.maintenanceDebt(), Math.round(gross * clamp(repayRate, 0.0, 1.0)));
             island.maintenanceDebt(island.maintenanceDebt() - debtRepaid);
             database.saveIsland(island);
         }
