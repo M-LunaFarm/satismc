@@ -27,6 +27,7 @@ storage:
 limits:
   base-machines-per-island: 128
   base-machine-limit: 128
+  machine-limit-per-island-tier: 25
   recovery-machine-types:
     - harvester_t1
     - planter_t1

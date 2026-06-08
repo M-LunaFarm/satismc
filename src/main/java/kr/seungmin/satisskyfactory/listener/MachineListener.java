@@ -40,6 +40,7 @@ public final class MachineListener implements Listener {
     private final Set<String> recoveryTypes;
     private final IslandBoostService boosts;
     private final int baseMachineLimit;
+    private final int machineLimitPerIslandTier;
     private final int nodeLinkRadius;
     private final boolean limitedBlocksNewMachines;
     private final boolean lockedAllowsRecoveryMachines;
@@ -62,6 +63,7 @@ public final class MachineListener implements Listener {
         this.baseMachineLimit = config.contains("limits.base-machine-limit")
                 ? config.getInt("limits.base-machine-limit", 128)
                 : config.getInt("limits.base-machines-per-island", 128);
+        this.machineLimitPerIslandTier = Math.max(0, config.getInt("limits.machine-limit-per-island-tier", 0));
         this.nodeLinkRadius = Math.max(1, config.contains("resource-nodes.link-radius")
                 ? config.getInt("resource-nodes.link-radius", 3)
                 : config.getInt("settings.resource-node-link-radius", 3));
@@ -102,7 +104,8 @@ public final class MachineListener implements Listener {
                 messages.send(player, "place-denied");
                 return;
             }
-            int machineLimit = boosts.boosts(islandRef.raw()).machineLimit(baseMachineLimit);
+            int machineLimit = boosts.boosts(islandRef.raw()).machineLimit(baseMachineLimit
+                    + Math.max(0, island.tier() - 1) * machineLimitPerIslandTier);
             if (machines.byIsland(island.islandUuid()).size() >= machineLimit) {
                 messages.send(player, "place-denied");
                 return;
