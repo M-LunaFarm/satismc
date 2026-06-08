@@ -230,6 +230,11 @@ public final class SatisSkyFactoryPlugin extends JavaPlugin {
             factory.setExecutor(command);
             factory.setTabCompleter(command);
         }
+        PluginCommand sfactory = getCommand("sfactory");
+        if (sfactory != null) {
+            sfactory.setExecutor(command);
+            sfactory.setTabCompleter(command);
+        }
     }
 
     private void registerListeners() {

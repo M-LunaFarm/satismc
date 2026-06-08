@@ -10,7 +10,10 @@ commands:
     description: SatisSkyFactory command
     usage: /factory help
     permission: satisskyfactory.use
-    aliases: [sfactory]
+  sfactory:
+    description: SatisSkyFactory command
+    usage: /sfactory help
+    permission: satisskyfactory.use
 permissions:
   satisskyfactory.use:
     default: true
