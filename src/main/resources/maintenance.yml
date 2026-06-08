@@ -9,7 +9,11 @@ maintenance:
   warning-threshold: 1
   limited-threshold: 500
   limited-efficiency: 0.45
+  limited:
+    block-new-machine-placement: true
   locked-threshold: 1500
+  locked:
+    allow-basic-recovery-machines: true
   debt-cap-days: 5
   debt-cap: 5000
   dormant:

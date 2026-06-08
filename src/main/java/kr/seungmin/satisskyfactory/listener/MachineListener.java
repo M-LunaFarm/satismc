@@ -41,11 +41,13 @@ public final class MachineListener implements Listener {
     private final IslandBoostService boosts;
     private final int baseMachineLimit;
     private final int nodeLinkRadius;
+    private final boolean limitedBlocksNewMachines;
+    private final boolean lockedAllowsRecoveryMachines;
 
     public MachineListener(CustomItemFactory itemFactory, MachineDefinitionService definitions, MachineService machines,
                            SuperiorSkyblockHook skyblock, FactoryIslandService islands, FactoryGuiService gui,
                            MessageService messages, ResearchService research, ResourceNodeService nodes,
-                           FileConfiguration config, IslandBoostService boosts) {
+                           FileConfiguration config, FileConfiguration maintenanceConfig, IslandBoostService boosts) {
         this.itemFactory = itemFactory;
         this.definitions = definitions;
         this.machines = machines;
@@ -63,6 +65,8 @@ public final class MachineListener implements Listener {
         this.nodeLinkRadius = Math.max(1, config.contains("resource-nodes.link-radius")
                 ? config.getInt("resource-nodes.link-radius", 3)
                 : config.getInt("settings.resource-node-link-radius", 3));
+        this.limitedBlocksNewMachines = maintenanceConfig.getBoolean("maintenance.limited.block-new-machine-placement", true);
+        this.lockedAllowsRecoveryMachines = maintenanceConfig.getBoolean("maintenance.locked.allow-basic-recovery-machines", true);
     }
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
@@ -89,7 +93,12 @@ public final class MachineListener implements Listener {
                 messages.send(player, "place-denied");
                 return;
             }
-            if (island.maintenanceStatus() == MaintenanceStatus.LOCKED && !recoveryTypes.contains(typeId)) {
+            if (island.maintenanceStatus() == MaintenanceStatus.LIMITED && limitedBlocksNewMachines) {
+                messages.send(player, "place-denied");
+                return;
+            }
+            if (island.maintenanceStatus() == MaintenanceStatus.LOCKED
+                    && (!lockedAllowsRecoveryMachines || !recoveryTypes.contains(typeId))) {
                 messages.send(player, "place-denied");
                 return;
             }

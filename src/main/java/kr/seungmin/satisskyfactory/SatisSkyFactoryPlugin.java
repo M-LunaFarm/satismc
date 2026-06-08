@@ -232,6 +232,7 @@ public final class SatisSkyFactoryPlugin extends JavaPlugin {
                 research,
                 nodes,
                 configs.main(),
+                configs.file("maintenance.yml"),
                 boosts
         ), this);
         getServer().getPluginManager().registerEvents(new FactoryGuiListener(
