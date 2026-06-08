@@ -1,6 +1,7 @@
 package kr.seungmin.satisskyfactory.gui;
 
 import kr.seungmin.satisskyfactory.contract.ContractService;
+import kr.seungmin.satisskyfactory.economy.EconomyService;
 import kr.seungmin.satisskyfactory.item.ItemRegistry;
 import kr.seungmin.satisskyfactory.machine.IslandBoostService;
 import kr.seungmin.satisskyfactory.machine.MachineDefinitionService;
@@ -26,18 +27,22 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public final class FactoryGuiService {
     private final StorageService storage;
     private final ItemRegistry items;
     private final MachineDefinitionService definitions;
     private final RecipeService recipes;
+    private final EconomyService economy;
 
-    public FactoryGuiService(StorageService storage, ItemRegistry items, MachineDefinitionService definitions, RecipeService recipes) {
+    public FactoryGuiService(StorageService storage, ItemRegistry items, MachineDefinitionService definitions,
+                             RecipeService recipes, EconomyService economy) {
         this.storage = storage;
         this.items = items;
         this.definitions = definitions;
         this.recipes = recipes;
+        this.economy = economy;
     }
 
     public void openMain(Player player, FactoryIsland island, int machineCount, PowerNetworkService.NetworkState powerState,
@@ -352,21 +357,29 @@ public final class FactoryGuiService {
         Inventory inventory = Bukkit.createInventory(holder, 27, "Factory Research");
         holder.inventory(inventory);
         int slot = 10;
+        Set<String> unlockedIds = research.unlocked(island);
+        double balance = economy.balance(player);
         for (ResearchService.ResearchUnlock unlock : research.all().values()) {
             if (slot >= 17) {
                 break;
             }
-            boolean unlocked = research.unlocked(island).contains(unlock.id());
+            boolean unlocked = unlockedIds.contains(unlock.id());
+            boolean hasRequiredUnlocks = unlockedIds.containsAll(unlock.requires());
+            boolean hasPoints = island.researchPoints() >= unlock.cost();
+            boolean hasReputation = island.reputation() >= unlock.requiredReputation();
+            boolean hasMoney = balance >= unlock.moneyCost();
+            boolean ready = !unlocked && hasRequiredUnlocks && hasPoints && hasReputation && hasMoney;
             holder.action(slot, "unlock_research", unlock.id());
-            inventory.setItem(slot++, icon(unlocked ? Material.LIME_DYE : Material.GRAY_DYE,
+            inventory.setItem(slot++, icon(unlocked ? Material.LIME_DYE : (ready ? Material.YELLOW_DYE : Material.GRAY_DYE),
                     (unlocked ? ChatColor.GREEN : ChatColor.YELLOW) + unlock.id(),
-                    List.of(ChatColor.GRAY + "Cost: " + unlock.cost(),
-                            ChatColor.GRAY + "Money: " + unlock.moneyCost(),
-                            ChatColor.GRAY + "Reputation: " + unlock.requiredReputation(),
+                    List.of(ChatColor.GRAY + "Research: " + island.researchPoints() + "/" + unlock.cost(),
+                            ChatColor.GRAY + "Money: " + String.format(java.util.Locale.US, "%.0f", balance) + "/" + unlock.moneyCost(),
+                            ChatColor.GRAY + "Reputation: " + island.reputation() + "/" + unlock.requiredReputation(),
                             ChatColor.GRAY + "Requires: " + unlock.requires(),
                             ChatColor.GRAY + "Unlocks: " + unlock.grants(),
                             ChatColor.GRAY + "Factory tier: " + (unlock.factoryTier() > 0 ? unlock.factoryTier() : "-"),
-                            ChatColor.GRAY + "Status: " + (unlocked ? "Unlocked" : "Locked"))));
+                            ChatColor.GRAY + "Prerequisites: " + (hasRequiredUnlocks ? "Ready" : "Missing"),
+                            ChatColor.GRAY + "Status: " + (unlocked ? "Unlocked" : (ready ? "Ready" : "Locked")))));
         }
         inventory.setItem(22, icon(Material.EXPERIENCE_BOTTLE, ChatColor.AQUA + "Research Points",
                 List.of(ChatColor.GRAY + String.valueOf(island.researchPoints()))));
