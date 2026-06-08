@@ -14,6 +14,7 @@ import kr.seungmin.satisskyfactory.machine.MaintenanceService;
 import kr.seungmin.satisskyfactory.market.MarketService;
 import kr.seungmin.satisskyfactory.model.FactoryContext;
 import kr.seungmin.satisskyfactory.model.FactoryIsland;
+import kr.seungmin.satisskyfactory.model.MachineDefinition;
 import kr.seungmin.satisskyfactory.model.MachineInstance;
 import kr.seungmin.satisskyfactory.model.MachineStatus;
 import kr.seungmin.satisskyfactory.node.ResourceNodeService;
@@ -418,7 +419,15 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
             return;
         }
         definitions.get(args[3]).ifPresentOrElse(definition -> {
-            target.getInventory().addItem(itemFactory.machineItem(definition, (int) parseLong(args, 4, 1)));
+            long amount = parseLong(args, 4, 1);
+            if (amount <= 0) {
+                sender.sendMessage("Invalid amount.");
+                return;
+            }
+            long returned = giveMachineItem(target, definition, amount);
+            if (returned > 0) {
+                sender.sendMessage("Target inventory is full. Not given: " + returned);
+            }
             messages.send(sender, "given");
         }, () -> messages.send(sender, "unknown-machine"));
     }
@@ -434,14 +443,53 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
             return;
         }
         items.get(args[3]).ifPresentOrElse(item -> {
-            ItemStack stack = itemFactory.factoryItem(item, (int) parseLong(args, 4, 1));
-            target.getInventory().addItem(stack);
-            islands.context(target).ifPresent(context -> {
-                storage.islandStorage(context.factoryIsland().islandUuid()).add(item.id(), parseLong(args, 4, 1));
-                storage.save(storage.islandStorage(context.factoryIsland().islandUuid()));
-            });
+            long amount = parseLong(args, 4, 0);
+            if (amount <= 0) {
+                sender.sendMessage("Invalid amount.");
+                return;
+            }
+            if (item.virtualOnly()) {
+                if (!giveVirtualOnlyItem(sender, target, item.id(), amount)) {
+                    return;
+                }
+            } else {
+                long returned = giveVirtualItem(target, item.id(), amount);
+                if (returned > 0) {
+                    sender.sendMessage("Target inventory is full. Not given: " + returned);
+                }
+            }
             messages.send(sender, "given");
         }, () -> messages.send(sender, "unknown-item"));
+    }
+
+    private long giveMachineItem(Player target, MachineDefinition definition, long amount) {
+        long remaining = amount;
+        while (remaining > 0) {
+            ItemStack stack = itemFactory.machineItem(definition, stackAmount(definition.material(), remaining));
+            int stackAmount = stack.getAmount();
+            Map<Integer, ItemStack> overflow = target.getInventory().addItem(stack);
+            if (!overflow.isEmpty()) {
+                return overflow.values().stream().mapToLong(ItemStack::getAmount).sum()
+                        + Math.max(0, remaining - stackAmount);
+            }
+            remaining -= stackAmount;
+        }
+        return 0;
+    }
+
+    private boolean giveVirtualOnlyItem(CommandSender sender, Player target, String itemId, long amount) {
+        return islands.context(target).map(context -> {
+            var inventory = storage.islandStorage(context.factoryIsland().islandUuid());
+            if (!inventory.add(itemId, amount)) {
+                sender.sendMessage("Factory storage is full.");
+                return false;
+            }
+            storage.save(inventory);
+            return true;
+        }).orElseGet(() -> {
+            messages.send(sender, "no-island");
+            return false;
+        });
     }
 
     private void debug(CommandSender sender, String[] args) {
