@@ -13,4 +13,8 @@ public record BlockKey(String world, int x, int y, int z) {
     public String databaseKey() {
         return world + ":" + x + ":" + y + ":" + z;
     }
+
+    public BlockKey relative(int dx, int dy, int dz) {
+        return new BlockKey(world, x + dx, y + dy, z + dz);
+    }
 }

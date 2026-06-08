@@ -12,11 +12,13 @@ import org.bukkit.Location;
 import org.bukkit.block.BlockFace;
 
 import java.util.ArrayList;
+import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Queue;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -128,6 +130,47 @@ public final class MachineService {
 
     public Collection<MachineInstance> byIsland(UUID islandUuid) {
         return machines.values().stream().filter(machine -> machine.islandUuid().equals(islandUuid)).toList();
+    }
+
+    public Collection<MachineInstance> connectedTo(MachineInstance start) {
+        Set<UUID> visitedMachines = new HashSet<>();
+        Set<BlockKey> visitedLocations = new HashSet<>();
+        Queue<BlockKey> queue = new ArrayDeque<>();
+        queue.add(start.location());
+        visitedLocations.add(start.location());
+
+        while (!queue.isEmpty()) {
+            BlockKey location = queue.poll();
+            UUID machineId = byLocation.get(location);
+            if (machineId == null || !visitedMachines.add(machineId)) {
+                continue;
+            }
+            MachineInstance machine = machines.get(machineId);
+            if (machine == null || !machine.islandUuid().equals(start.islandUuid())) {
+                continue;
+            }
+            for (BlockKey neighbor : neighbors(location)) {
+                if (visitedLocations.add(neighbor) && byLocation.containsKey(neighbor)) {
+                    queue.add(neighbor);
+                }
+            }
+        }
+
+        return visitedMachines.stream()
+                .map(machines::get)
+                .filter(machine -> machine != null && machine.islandUuid().equals(start.islandUuid()))
+                .toList();
+    }
+
+    private List<BlockKey> neighbors(BlockKey location) {
+        return List.of(
+                location.relative(1, 0, 0),
+                location.relative(-1, 0, 0),
+                location.relative(0, 1, 0),
+                location.relative(0, -1, 0),
+                location.relative(0, 0, 1),
+                location.relative(0, 0, -1)
+        );
     }
 
     public void dirtySaves(DirtySaveService dirtySaves) {

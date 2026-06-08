@@ -382,7 +382,7 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
                 sender.sendMessage(context.factoryIsland().islandUuid().toString());
             } else if (args[2].equalsIgnoreCase("networks")) {
                 var state = power.state(context.factoryIsland().islandUuid());
-                sender.sendMessage("Island-wide MVP network, machines=" + machines.byIsland(context.factoryIsland().islandUuid()).size()
+                sender.sendMessage("Power and adjacency logistics, machines=" + machines.byIsland(context.factoryIsland().islandUuid()).size()
                         + ", ratio=" + String.format(Locale.US, "%.2f", state.ratio())
                         + ", generation=" + String.format(Locale.US, "%.1f", state.generation())
                         + ", consumption=" + String.format(Locale.US, "%.1f", state.consumption())

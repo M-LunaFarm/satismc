@@ -281,15 +281,16 @@ public final class MachineTickService {
     }
 
     private boolean processLogistics(MachineInstance machine, MachineDefinition definition) {
-        VirtualInventory islandStorage = storage.islandStorage(machine.islandUuid());
+        VirtualInventory buffer = inputInventory(machine);
         long remaining = definition.logisticsThroughput();
         long moved = 0;
-        for (MachineInstance target : machines.byIsland(machine.islandUuid())) {
+        List<MachineInstance> network = machines.connectedTo(machine).stream().toList();
+        for (MachineInstance target : network) {
             if (target.machineId().equals(machine.machineId()) || remaining <= 0) {
                 continue;
             }
             VirtualInventory output = outputInventory(target);
-            long transfer = moveAny(output, islandStorage, remaining);
+            long transfer = moveAny(output, buffer, remaining);
             if (transfer > 0) {
                 storage.save(output);
                 moved += transfer;
@@ -297,7 +298,7 @@ public final class MachineTickService {
             }
         }
         if (remaining > 0) {
-            for (MachineInstance target : machines.byIsland(machine.islandUuid())) {
+            for (MachineInstance target : network) {
                 if (target.machineId().equals(machine.machineId()) || remaining <= 0) {
                     continue;
                 }
@@ -306,7 +307,7 @@ public final class MachineTickService {
                     continue;
                 }
                 VirtualInventory input = inputInventory(target);
-                long transfer = fillInput(islandStorage, input, targetDefinition, remaining);
+                long transfer = fillInput(buffer, input, targetDefinition, remaining);
                 if (transfer > 0) {
                     storage.save(input);
                     moved += transfer;
@@ -315,7 +316,7 @@ public final class MachineTickService {
             }
         }
         if (moved > 0) {
-            storage.save(islandStorage);
+            storage.save(buffer);
         }
         setStatus(machine, moved > 0 ? MachineStatus.RUNNING : MachineStatus.IDLE);
         return moved > 0;
