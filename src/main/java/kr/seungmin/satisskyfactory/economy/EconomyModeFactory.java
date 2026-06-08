@@ -10,12 +10,19 @@ public final class EconomyModeFactory {
     }
 
     public static EconomyService create(JavaPlugin plugin, FileConfiguration config) {
-        EconomyService playerEconomy = VaultEconomyService.createOrFallback(plugin);
+        EconomyService playerEconomy = playerEconomy(plugin);
         String mode = config.getString("economy.mode", "VAULT_PLAYER").toUpperCase(Locale.ROOT);
         return switch (mode) {
             case "ISLAND_BANK" -> new IslandBankEconomyService(playerEconomy);
             case "HYBRID" -> new HybridEconomyService(new IslandBankEconomyService(playerEconomy), playerEconomy);
             default -> playerEconomy;
         };
+    }
+
+    private static EconomyService playerEconomy(JavaPlugin plugin) {
+        if (plugin.getServer().getPluginManager().getPlugin("Vault") == null) {
+            return new FallbackEconomyService();
+        }
+        return VaultEconomyService.createOrFallback(plugin);
     }
 }
