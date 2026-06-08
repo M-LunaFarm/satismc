@@ -1,6 +1,5 @@
 package kr.seungmin.satisskyfactory.storage;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -26,21 +25,21 @@ public final class VirtualInventory {
     public String holderType() { return holderType; }
     public String holderId() { return holderId; }
     public int capacity() { return capacity; }
-    public Map<String, Long> items() { return Collections.unmodifiableMap(items); }
+    public synchronized Map<String, Long> items() { return Map.copyOf(items); }
 
-    public long used() {
+    public synchronized long used() {
         return items.values().stream().mapToLong(Long::longValue).sum();
     }
 
-    public long amount(String itemId) {
+    public synchronized long amount(String itemId) {
         return items.getOrDefault(itemId, 0L);
     }
 
-    public boolean canAdd(String itemId, long amount) {
+    public synchronized boolean canAdd(String itemId, long amount) {
         return amount >= 0 && used() + amount <= capacity;
     }
 
-    public boolean add(String itemId, long amount) {
+    public synchronized boolean add(String itemId, long amount) {
         if (amount <= 0 || !canAdd(itemId, amount)) {
             return false;
         }
@@ -48,7 +47,7 @@ public final class VirtualInventory {
         return true;
     }
 
-    public boolean remove(String itemId, long amount) {
+    public synchronized boolean remove(String itemId, long amount) {
         if (amount <= 0 || amount(itemId) < amount) {
             return false;
         }
@@ -61,7 +60,7 @@ public final class VirtualInventory {
         return true;
     }
 
-    public void set(String itemId, long amount) {
+    public synchronized void set(String itemId, long amount) {
         if (amount <= 0) {
             items.remove(itemId);
         } else {
