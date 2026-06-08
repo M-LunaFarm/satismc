@@ -13,6 +13,7 @@ public final class FactoryIsland {
     private long factoryScore;
     private long lastMaintenanceAt;
     private long lastTickAt;
+    private long createdAt;
     private int emergencyContractsUsedToday;
 
     public FactoryIsland(UUID islandUuid, UUID ownerUuid) {
@@ -20,6 +21,7 @@ public final class FactoryIsland {
         this.ownerUuid = ownerUuid;
         this.tier = 1;
         this.maintenanceStatus = MaintenanceStatus.NORMAL;
+        this.createdAt = System.currentTimeMillis();
     }
 
     public UUID islandUuid() {
@@ -96,6 +98,14 @@ public final class FactoryIsland {
 
     public void lastTickAt(long lastTickAt) {
         this.lastTickAt = lastTickAt;
+    }
+
+    public long createdAt() {
+        return createdAt;
+    }
+
+    public void createdAt(long createdAt) {
+        this.createdAt = createdAt;
     }
 
     public int emergencyContractsUsedToday() {

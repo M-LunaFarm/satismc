@@ -22,6 +22,7 @@ public final class MaintenanceService {
     private long minFee;
     private double exponent;
     private boolean exponentialFormula;
+    private long newIslandFreeMillis;
     private long debtCapDays;
     private long dormantAfterMillis;
     private long warningThreshold;
@@ -44,6 +45,8 @@ public final class MaintenanceService {
         minFee = config.getLong("maintenance.min-fee", 0);
         exponent = Math.max(0.1, config.getDouble("maintenance.exponent", 1.0));
         exponentialFormula = config.getString("maintenance.formula", "LINEAR_SCORE").equalsIgnoreCase("EXPONENTIAL_SCORE");
+        newIslandFreeMillis = Math.max(0, config.getLong("maintenance.new-island-free-days", 0))
+                * 24L * 60L * 60L * 1000L;
         debtCapDays = Math.max(0, config.getLong("maintenance.debt-cap-days", 0));
         dormantAfterMillis = Math.max(0, config.getLong("maintenance.dormant.stop-debt-growth-after-days-offline",
                 config.getLong("maintenance.dormant-days", 0))) * 24L * 60L * 60L * 1000L;
@@ -63,6 +66,10 @@ public final class MaintenanceService {
             return 0;
         }
         island.factoryScore(machines.factoryScore(island.islandUuid(), island.tier()));
+        if (isNewIslandGracePeriod(island, now)) {
+            updateStatus(island);
+            return 0;
+        }
         if (shouldDormant(island, now)) {
             island.maintenanceStatus(MaintenanceStatus.DORMANT);
             return 0;
@@ -143,5 +150,12 @@ public final class MaintenanceService {
                 && island.maintenanceDebt() > 0
                 && island.lastTickAt() > 0
                 && now - island.lastTickAt() >= dormantAfterMillis;
+    }
+
+    private boolean isNewIslandGracePeriod(FactoryIsland island, long now) {
+        return newIslandFreeMillis > 0
+                && island.maintenanceDebt() <= 0
+                && island.createdAt() > 0
+                && now - island.createdAt() < newIslandFreeMillis;
     }
 }

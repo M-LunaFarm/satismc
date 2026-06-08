@@ -86,6 +86,7 @@ class DatabaseServiceTest {
             island.factoryScore(88);
             island.lastMaintenanceAt(1000);
             island.lastTickAt(2000);
+            island.createdAt(500);
             island.emergencyContractsUsedToday(1);
             database.saveIsland(island);
 
@@ -135,6 +136,7 @@ class DatabaseServiceTest {
             assertEquals(300, island.maintenanceDebt());
             assertEquals(MaintenanceStatus.LIMITED, island.maintenanceStatus());
             assertEquals(88, island.factoryScore());
+            assertEquals(500, island.createdAt());
             assertEquals(1, island.emergencyContractsUsedToday());
 
             VirtualInventory input = database.loadInventory(inputInventoryId).orElseThrow();

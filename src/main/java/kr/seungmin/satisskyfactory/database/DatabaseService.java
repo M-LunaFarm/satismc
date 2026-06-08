@@ -307,12 +307,16 @@ public final class DatabaseService {
         island.factoryScore(rs.getLong("factory_score"));
         island.lastMaintenanceAt(rs.getLong("last_maintenance_at"));
         island.lastTickAt(rs.getLong("last_tick_at"));
+        island.createdAt(rs.getLong("created_at"));
         island.emergencyContractsUsedToday(rs.getInt("emergency_contracts_used_today"));
         return island;
     }
 
     public void saveIsland(FactoryIsland island) {
         long now = Instant.now().toEpochMilli();
+        if (island.createdAt() <= 0) {
+            island.createdAt(now);
+        }
         try (Connection connection = connection();
              PreparedStatement statement = connection.prepareStatement("""
                      INSERT INTO factory_islands(island_uuid, owner_uuid, tier, research_points, reputation, maintenance_debt,
@@ -336,7 +340,7 @@ public final class DatabaseService {
             statement.setLong(9, island.lastMaintenanceAt());
             statement.setLong(10, island.lastTickAt());
             statement.setInt(11, island.emergencyContractsUsedToday());
-            statement.setLong(12, now);
+            statement.setLong(12, island.createdAt());
             statement.setLong(13, now);
             statement.executeUpdate();
         } catch (SQLException exception) {

@@ -6,6 +6,7 @@ maintenance:
   per-machine-cost: 8
   exponent: 1.08
   min-fee: 0
+  new-island-free-days: 3
   warning-threshold: 1
   limited-threshold: 500
   limited-efficiency: 0.45

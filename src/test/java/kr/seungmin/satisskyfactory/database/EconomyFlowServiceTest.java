@@ -164,6 +164,7 @@ class EconomyFlowServiceTest {
 
             UUID islandUuid = UUID.fromString("00000000-0000-0000-0000-000000001201");
             FactoryIsland island = new FactoryIsland(islandUuid, UUID.fromString("00000000-0000-0000-0000-000000001202"));
+            island.createdAt(Instant.now().minus(java.time.Duration.ofDays(4)).toEpochMilli());
 
             long due = maintenance.chargeIfDue(island, null, null);
 
@@ -178,6 +179,28 @@ class EconomyFlowServiceTest {
     }
 
     @Test
+    void newIslandGracePeriodSkipsInitialMaintenanceDebt() {
+        try (DatabaseHandle handle = openDatabase("maintenance-grace")) {
+            DatabaseService database = handle.database();
+            MachineDefinitionService definitions = new MachineDefinitionService();
+            MachineService machines = new MachineService(database, definitions, new StorageService(database, 1000));
+            MaintenanceService maintenance = new MaintenanceService(machines, new TrackingEconomy(), database);
+            maintenance.load(load("maintenance.yml"));
+
+            FactoryIsland island = new FactoryIsland(
+                    UUID.fromString("00000000-0000-0000-0000-000000001601"),
+                    UUID.fromString("00000000-0000-0000-0000-000000001602")
+            );
+
+            long due = maintenance.chargeIfDue(island, null, null);
+
+            assertEquals(0, due);
+            assertEquals(0, island.maintenanceDebt());
+            assertEquals(MaintenanceStatus.NORMAL, island.maintenanceStatus());
+        }
+    }
+
+    @Test
     void dormantMaintenanceStopsDebtGrowthUntilIslandReturns() {
         try (DatabaseHandle handle = openDatabase("dormant-maintenance")) {
             DatabaseService database = handle.database();
@@ -188,6 +211,7 @@ class EconomyFlowServiceTest {
 
             UUID islandUuid = UUID.fromString("00000000-0000-0000-0000-000000001301");
             FactoryIsland island = new FactoryIsland(islandUuid, UUID.fromString("00000000-0000-0000-0000-000000001302"));
+            island.createdAt(Instant.now().minus(java.time.Duration.ofDays(10)).toEpochMilli());
             island.maintenanceDebt(600);
             island.lastTickAt(Instant.now().minus(java.time.Duration.ofDays(8)).toEpochMilli());
 

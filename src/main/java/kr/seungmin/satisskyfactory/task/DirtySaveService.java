@@ -156,6 +156,7 @@ public final class DirtySaveService {
         copy.factoryScore(island.factoryScore());
         copy.lastMaintenanceAt(island.lastMaintenanceAt());
         copy.lastTickAt(island.lastTickAt());
+        copy.createdAt(island.createdAt());
         copy.emergencyContractsUsedToday(island.emergencyContractsUsedToday());
         return copy;
     }
