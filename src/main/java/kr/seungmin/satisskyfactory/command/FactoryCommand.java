@@ -87,7 +87,16 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
             case "machines" -> player.sendMessage("Machines: " + machines.byIsland(island.islandUuid()).size());
             case "storage" -> gui.openStorage(player, island);
             case "market" -> market.prices().forEach((item, price) -> player.sendMessage(item + ": " + price));
-            case "contracts" -> contracts.templates().values().forEach(template -> player.sendMessage(template.id() + " requires " + template.required()));
+            case "contracts" -> {
+                if (args.length > 1 && args[1].equalsIgnoreCase("complete")) {
+                    contracts.completeAny(island, player).ifPresentOrElse(template -> {
+                        islands.save(island);
+                        player.sendMessage("Contract completed: " + template.id());
+                    }, () -> player.sendMessage("No contract requirements are ready."));
+                } else {
+                    contracts.templates().values().forEach(template -> player.sendMessage(template.id() + " requires " + template.required()));
+                }
+            }
             case "research" -> player.sendMessage("Research points: " + island.researchPoints());
             case "emergency" -> {
                 if (contracts.completeEmergency(island, player)) {
@@ -153,6 +162,10 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
     }
 
     private void sell(Player player, FactoryIsland island, String[] args) {
+        if (args.length >= 2 && args[1].equalsIgnoreCase("hand")) {
+            sellHand(player, island);
+            return;
+        }
         if (args.length < 3) {
             player.sendMessage("/factory sell <itemId> <amount>");
             return;
@@ -162,6 +175,16 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
         market.sell(island.islandUuid(), player, itemId, amount)
                 .ifPresentOrElse(money -> messages.send(player, "sold", Map.of("item", itemId, "amount", String.valueOf(amount), "money", String.valueOf(money))),
                         () -> player.sendMessage("Cannot sell that item or amount."));
+    }
+
+    private void sellHand(Player player, FactoryIsland island) {
+        ItemStack hand = player.getInventory().getItemInMainHand();
+        String itemId = itemFactory.factoryItemId(hand).orElseGet(() -> hand.getType().name().toLowerCase(Locale.ROOT));
+        int amount = hand.getAmount();
+        market.sellDirect(island.islandUuid(), player, itemId, amount).ifPresentOrElse(money -> {
+            hand.setAmount(0);
+            messages.send(player, "sold", Map.of("item", itemId, "amount", String.valueOf(amount), "money", String.valueOf(money)));
+        }, () -> player.sendMessage("The item in your hand cannot be sold."));
     }
 
     private void status(Player player, FactoryIsland island) {
@@ -275,8 +298,8 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
         if (args.length == 2 && args[0].equalsIgnoreCase("admin")) {
             return filter(List.of("reload", "give", "giveitem", "addresearch", "setdebt", "charge", "gennodes", "debug", "removehere"), args[1]);
         }
-        if (args.length == 3 && args[0].equalsIgnoreCase("admin") && args[1].equalsIgnoreCase("give")) {
-            return filter(definitions.all().stream().map(machine -> machine.typeId()).toList(), args[2]);
+        if (args.length == 4 && args[0].equalsIgnoreCase("admin") && args[1].equalsIgnoreCase("give")) {
+            return filter(definitions.all().stream().map(machine -> machine.typeId()).toList(), args[3]);
         }
         return new ArrayList<>();
     }

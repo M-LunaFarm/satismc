@@ -31,7 +31,9 @@ public final class FactoryGuiService {
     }
 
     public void openStorage(Player player, FactoryIsland island) {
-        Inventory inventory = Bukkit.createInventory(new FactoryGuiHolder("storage", island.islandUuid(), null), 54, "Factory Storage");
+        FactoryGuiHolder holder = new FactoryGuiHolder("storage", island.islandUuid(), null);
+        Inventory inventory = Bukkit.createInventory(holder, 54, "Factory Storage");
+        holder.inventory(inventory);
         VirtualInventory virtual = storage.islandStorage(island.islandUuid());
         int slot = 0;
         for (Map.Entry<String, Long> entry : virtual.items().entrySet()) {
@@ -50,7 +52,9 @@ public final class FactoryGuiService {
     }
 
     public void openMachine(Player player, MachineInstance machine) {
-        Inventory inventory = Bukkit.createInventory(new FactoryGuiHolder("machine", machine.islandUuid(), machine.machineId()), 27, "Machine");
+        FactoryGuiHolder holder = new FactoryGuiHolder("machine", machine.islandUuid(), machine.machineId());
+        Inventory inventory = Bukkit.createInventory(holder, 27, "Machine");
+        holder.inventory(inventory);
         MachineDefinition definition = definitions.get(machine.typeId()).orElse(null);
         List<String> lore = new ArrayList<>();
         lore.add(ChatColor.GRAY + "Type: " + machine.typeId());

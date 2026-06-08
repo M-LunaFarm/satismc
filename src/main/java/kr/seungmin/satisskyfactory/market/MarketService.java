@@ -61,6 +61,16 @@ public final class MarketService {
         return Optional.of(money);
     }
 
+    public Optional<Long> sellDirect(UUID islandUuid, OfflinePlayer owner, String itemId, long amount) {
+        if (amount <= 0 || !prices.containsKey(itemId)) {
+            return Optional.empty();
+        }
+        long money = price(itemId, amount);
+        economy.deposit(owner, money);
+        database.addLedger(islandUuid, "MARKET_SELL_HAND", money, itemId + " x" + amount);
+        return Optional.of(money);
+    }
+
     public Map<String, Long> prices() {
         return Map.copyOf(prices);
     }
