@@ -17,10 +17,12 @@ settings:
   resource-node-link-radius: 3
   allow-coop-build: false
   allow-spawn-island: false
+  require-island-member: true
   protect-spawn-island: true
 superior-skyblock:
   allow-coop-build: false
   allow-spawn-island: false
+  require-island-member: true
   protect-spawn-island: true
   boosts:
     agriculture-min: 1.0

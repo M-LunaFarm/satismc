@@ -38,6 +38,9 @@ class DefaultConfigIntegrityTest {
         assertEquals("SQLITE", config.getString("database.type"));
         assertEquals("data.db", config.getString("database.sqlite-file"));
         assertEquals(60, config.getInt("database.save-interval-seconds"));
+        assertFalse(config.getBoolean("superior-skyblock.allow-coop-build"));
+        assertFalse(config.getBoolean("superior-skyblock.allow-spawn-island"));
+        assertTrue(config.getBoolean("superior-skyblock.require-island-member"));
         assertTrue(config.getBoolean("visuals.particles"));
         assertFalse(config.getBoolean("visuals.display-entities"));
         assertEquals(30, config.getInt("visuals.max-display-entities-per-island"));

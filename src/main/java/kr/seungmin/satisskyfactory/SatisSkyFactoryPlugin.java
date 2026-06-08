@@ -187,7 +187,8 @@ public final class SatisSkyFactoryPlugin extends JavaPlugin {
         boolean allowSpawnIsland = configBoolean("superior-skyblock.allow-spawn-island", "settings.allow-spawn-island", false);
         skyblock.configure(
                 configBoolean("superior-skyblock.allow-coop-build", "settings.allow-coop-build", false),
-                !allowSpawnIsland && configBoolean("superior-skyblock.protect-spawn-island", "settings.protect-spawn-island", true)
+                !allowSpawnIsland && configBoolean("superior-skyblock.protect-spawn-island", "settings.protect-spawn-island", true),
+                configBoolean("superior-skyblock.require-island-member", "settings.require-island-member", true)
         );
     }
 

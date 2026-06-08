@@ -19,6 +19,7 @@ public final class SuperiorSkyblockHook {
     private Class<?> apiClass;
     private boolean allowCoopBuild;
     private boolean protectSpawnIsland = true;
+    private boolean requireIslandMember = true;
 
     public SuperiorSkyblockHook(JavaPlugin plugin) {
         this.plugin = plugin;
@@ -40,9 +41,10 @@ public final class SuperiorSkyblockHook {
         }
     }
 
-    public void configure(boolean allowCoopBuild, boolean protectSpawnIsland) {
+    public void configure(boolean allowCoopBuild, boolean protectSpawnIsland, boolean requireIslandMember) {
         this.allowCoopBuild = allowCoopBuild;
         this.protectSpawnIsland = protectSpawnIsland;
+        this.requireIslandMember = requireIslandMember;
     }
 
     public Optional<IslandRef> getIslandAt(Location location) {
@@ -84,7 +86,9 @@ public final class SuperiorSkyblockHook {
         if (!isInsideIsland(locationIsland.get(), location)) {
             return false;
         }
-        return player.hasPermission("satisskyfactory.admin") || isPlayerIslandMember(player, locationIsland.get());
+        return player.hasPermission("satisskyfactory.admin")
+                || !requireIslandMember
+                || isStrictIslandMember(player, locationIsland.get());
     }
 
     public boolean isLocationInsidePlayerIsland(Player player, Location location) {
@@ -101,6 +105,12 @@ public final class SuperiorSkyblockHook {
     }
 
     public boolean isPlayerIslandMember(Player player, IslandRef island) {
+        return player.hasPermission("satisskyfactory.admin")
+                || !requireIslandMember
+                || isStrictIslandMember(player, island);
+    }
+
+    private boolean isStrictIslandMember(Player player, IslandRef island) {
         if (player.hasPermission("satisskyfactory.admin")) {
             return true;
         }
