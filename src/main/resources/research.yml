@@ -20,4 +20,6 @@ research:
         - packager_t1
         - sawmill_t1
         - charcoal_kiln_t1
+        - auto_fisher_t1
+        - milker_t1
         - fish_processor_t1

@@ -409,6 +409,11 @@ public final class MachineTickService {
     private boolean processRecipe(MachineInstance machine, MachineDefinition definition) {
         VirtualInventory input = inputInventory(machine);
         VirtualInventory output = outputInventory(machine);
+        Optional<ResourceNode> recipeNode = recipeNode(machine, definition);
+        if (definition.recipeNodeType() != null && recipeNode.isEmpty()) {
+            setStatus(machine, MachineStatus.INPUT_MISSING);
+            return false;
+        }
         for (RecipeDefinition recipe : recipes.recipesFor(machine.typeId())) {
             if (!definition.allowedRecipes().isEmpty() && !definition.allowedRecipes().contains(recipe.id())) {
                 continue;
@@ -426,6 +431,7 @@ public final class MachineTickService {
                     && canAddAll(output, produced)) {
                 recipe.input().forEach(input::remove);
                 produced.forEach(output::add);
+                recipeNode.ifPresent(node -> consumeRecipeNode(machine, definition, node));
                 storage.save(input);
                 storage.save(output);
                 setStatus(machine, MachineStatus.RUNNING);
@@ -434,6 +440,30 @@ public final class MachineTickService {
         }
         setStatus(machine, MachineStatus.INPUT_MISSING);
         return false;
+    }
+
+    private Optional<ResourceNode> recipeNode(MachineInstance machine, MachineDefinition definition) {
+        if (definition.recipeNodeType() == null) {
+            return Optional.empty();
+        }
+        Optional<ResourceNode> node = machine.linkedResourceNodeId() == null
+                ? nodes.nearest(machine.islandUuid(), machine.location(), nodeLinkRadius, definition.recipeNodeType())
+                : nodes.nodes(machine.islandUuid()).stream()
+                .filter(candidate -> candidate.nodeId().equals(machine.linkedResourceNodeId()))
+                .filter(candidate -> definition.recipeNodeType().matches(candidate.nodeType()))
+                .findFirst();
+        long required = Math.max(0, definition.recipeNodeUse());
+        return node.filter(candidate -> candidate.remaining() >= required && candidate.requiredMachineTier() <= definition.tier());
+    }
+
+    private void consumeRecipeNode(MachineInstance machine, MachineDefinition definition, ResourceNode node) {
+        machine.linkedResourceNodeId(node.nodeId());
+        long required = Math.max(0, definition.recipeNodeUse());
+        if (required <= 0) {
+            return;
+        }
+        node.remaining(Math.max(0, node.remaining() - required));
+        nodes.save(node);
     }
 
     private boolean canAddAll(VirtualInventory inventory, Map<String, Long> items) {

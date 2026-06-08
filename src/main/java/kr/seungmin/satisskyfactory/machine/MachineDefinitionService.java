@@ -54,6 +54,8 @@ public final class MachineDefinitionService {
                     config.getLong(path + "maintenance-score", config.getLong(path + "factory-score", Math.max(1, config.getInt(path + "tier", 1)))),
                     config.getDouble(path + "wear-per-cycle", 0.02),
                     config.getStringList(path + "allowed-recipes"),
+                    nodeType(config.getString(path + "recipe-node-type", "")),
+                    config.getLong(path + "recipe-node-use", config.getLong(path + "recipe-node-use-per-cycle", 0)),
                     config.getStringList(path + "required-unlocks"),
                     nodeType(config.getString(path + "node-type", "")),
                     harvestDrops(config.getConfigurationSection(path + "harvest-drops")),

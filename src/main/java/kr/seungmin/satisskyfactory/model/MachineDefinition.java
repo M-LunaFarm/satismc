@@ -27,6 +27,8 @@ public record MachineDefinition(
         long maintenanceScore,
         double wearPerCycle,
         List<String> allowedRecipes,
+        ResourceNodeType recipeNodeType,
+        long recipeNodeUse,
         List<String> requiredUnlocks,
         ResourceNodeType nodeType,
         Map<Material, String> harvestDrops,

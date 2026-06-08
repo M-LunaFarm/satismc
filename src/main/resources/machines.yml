@@ -95,7 +95,7 @@ machines:
     factory-score: 14
     maintenance-score: 12
     wear-per-cycle: 0.03
-    allowed-recipes: [grind_wheat, grind_iron, scrap_to_biofuel, fish_waste_fertilizer, animal_waste_fertilizer]
+    allowed-recipes: [grind_wheat, grind_iron, make_feed, scrap_to_biofuel, fish_waste_fertilizer, animal_waste_fertilizer]
   furnace_t1:
     display: "Furnace T1"
     material: FURNACE
@@ -218,6 +218,37 @@ machines:
     maintenance-score: 8
     wear-per-cycle: 0.025
     node-type: FISHING
+  auto_fisher_t1:
+    display: "Auto Fisher T1"
+    material: FISHING_ROD
+    placed-block: BARREL
+    tier: 2
+    input-capacity: 64
+    output-capacity: 512
+    power-consumption: 5.0
+    cycle-ticks: 100
+    factory-score: 14
+    maintenance-score: 12
+    wear-per-cycle: 0.03
+    recipe-node-type: FISHING
+    recipe-node-use: 1
+    allowed-recipes: [auto_fish]
+    required-unlocks: [advanced_processing]
+  feeder_t1:
+    display: "Pasture Feeder T1"
+    material: WHEAT
+    placed-block: HAY_BLOCK
+    tier: 1
+    input-capacity: 128
+    output-capacity: 512
+    power-consumption: 3.0
+    cycle-ticks: 120
+    factory-score: 10
+    maintenance-score: 8
+    wear-per-cycle: 0.025
+    recipe-node-type: PASTURE
+    recipe-node-use: 1
+    allowed-recipes: [feed_pasture]
   collector_t1:
     display: "Pasture Collector T1"
     material: HAY_BLOCK
@@ -232,6 +263,22 @@ machines:
     maintenance-score: 8
     wear-per-cycle: 0.025
     node-type: PASTURE
+  milker_t1:
+    display: "Milker T1"
+    material: BUCKET
+    placed-block: CAULDRON
+    tier: 2
+    input-capacity: 128
+    output-capacity: 512
+    power-consumption: 4.0
+    cycle-ticks: 140
+    factory-score: 14
+    maintenance-score: 12
+    wear-per-cycle: 0.03
+    recipe-node-type: PASTURE
+    recipe-node-use: 1
+    allowed-recipes: [collect_milk, collect_eggs_wool]
+    required-unlocks: [advanced_processing]
   sawmill_t1:
     display: "Sawmill T1"
     material: STONECUTTER

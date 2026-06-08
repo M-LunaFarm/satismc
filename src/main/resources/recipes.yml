@@ -17,6 +17,13 @@ recipes:
     outputs:
       crushed_iron: 1
     power-cost: 5.0
+  make_feed:
+    machine: grinder_t1
+    input:
+      wheat: 2
+    output:
+      feed: 3
+    power: 5.0
   smelt_crushed_iron:
     machines: [furnace_t1]
     input:
@@ -96,6 +103,36 @@ recipes:
     output:
       fertilizer: 1
     power: 5.0
+  auto_fish:
+    machine: auto_fisher_t1
+    output:
+      raw_fish: 2
+      fish_waste: 1
+    power: 5.0
+  feed_pasture:
+    machine: feeder_t1
+    input:
+      feed: 2
+    output:
+      animal_waste: 2
+      egg: 1
+    power: 3.0
+  collect_milk:
+    machine: milker_t1
+    input:
+      feed: 1
+    output:
+      milk: 1
+      animal_waste: 1
+    power: 4.0
+  collect_eggs_wool:
+    machine: milker_t1
+    input:
+      feed: 1
+    output:
+      egg: 1
+      wool: 1
+    power: 4.0
   animal_waste_fertilizer:
     machine: grinder_t1
     input:
