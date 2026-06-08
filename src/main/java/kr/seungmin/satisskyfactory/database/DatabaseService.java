@@ -239,21 +239,39 @@ public final class DatabaseService {
                 if (!rs.next()) {
                     return Optional.empty();
                 }
-                FactoryIsland island = new FactoryIsland(islandUuid, UUID.fromString(rs.getString("owner_uuid")));
-                island.tier(rs.getInt("tier"));
-                island.researchPoints(rs.getLong("research_points"));
-                island.reputation(rs.getLong("reputation"));
-                island.maintenanceDebt(rs.getLong("maintenance_debt"));
-                island.maintenanceStatus(MaintenanceStatus.valueOf(rs.getString("maintenance_status")));
-                island.factoryScore(rs.getLong("factory_score"));
-                island.lastMaintenanceAt(rs.getLong("last_maintenance_at"));
-                island.lastTickAt(rs.getLong("last_tick_at"));
-                island.emergencyContractsUsedToday(rs.getInt("emergency_contracts_used_today"));
-                return Optional.of(island);
+                return Optional.of(mapIsland(rs));
             }
         } catch (SQLException exception) {
             throw new IllegalStateException("Failed to load factory island", exception);
         }
+    }
+
+    public List<FactoryIsland> loadIslands() {
+        List<FactoryIsland> islands = new ArrayList<>();
+        try (Connection connection = connection();
+             PreparedStatement statement = connection.prepareStatement("SELECT * FROM factory_islands");
+             ResultSet rs = statement.executeQuery()) {
+            while (rs.next()) {
+                islands.add(mapIsland(rs));
+            }
+            return islands;
+        } catch (SQLException exception) {
+            throw new IllegalStateException("Failed to load factory islands", exception);
+        }
+    }
+
+    private FactoryIsland mapIsland(ResultSet rs) throws SQLException {
+        FactoryIsland island = new FactoryIsland(UUID.fromString(rs.getString("island_uuid")), UUID.fromString(rs.getString("owner_uuid")));
+        island.tier(rs.getInt("tier"));
+        island.researchPoints(rs.getLong("research_points"));
+        island.reputation(rs.getLong("reputation"));
+        island.maintenanceDebt(rs.getLong("maintenance_debt"));
+        island.maintenanceStatus(MaintenanceStatus.valueOf(rs.getString("maintenance_status")));
+        island.factoryScore(rs.getLong("factory_score"));
+        island.lastMaintenanceAt(rs.getLong("last_maintenance_at"));
+        island.lastTickAt(rs.getLong("last_tick_at"));
+        island.emergencyContractsUsedToday(rs.getInt("emergency_contracts_used_today"));
+        return island;
     }
 
     public void saveIsland(FactoryIsland island) {

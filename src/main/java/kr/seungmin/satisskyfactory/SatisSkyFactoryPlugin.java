@@ -27,6 +27,7 @@ import kr.seungmin.satisskyfactory.research.ResearchService;
 import kr.seungmin.satisskyfactory.storage.StorageService;
 import kr.seungmin.satisskyfactory.task.DirtySaveService;
 import kr.seungmin.satisskyfactory.task.MachineTickService;
+import kr.seungmin.satisskyfactory.task.MaintenanceTickService;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -55,6 +56,7 @@ public final class SatisSkyFactoryPlugin extends JavaPlugin {
     private FactoryGuiService gui;
     private DirtySaveService dirtySaves;
     private MachineTickService ticker;
+    private MaintenanceTickService maintenanceTicker;
     private PlaceholderHook placeholderHook;
 
     @Override
@@ -95,6 +97,7 @@ public final class SatisSkyFactoryPlugin extends JavaPlugin {
         gui = new FactoryGuiService(storage, itemRegistry, machineDefinitions);
 
         loadDefinitions();
+        islands.load();
         machines.load();
 
         ticker = new MachineTickService(
@@ -114,6 +117,8 @@ public final class SatisSkyFactoryPlugin extends JavaPlugin {
                 configs.file("maintenance.yml").getDouble("maintenance.break-wear", 100.0)
         );
         ticker.start(configs.main().getLong("settings.tick-interval", 40));
+        maintenanceTicker = new MaintenanceTickService(this, islands, skyblock, maintenance);
+        maintenanceTicker.start(configs.main().getLong("settings.maintenance-check-interval", 1200));
         dirtySaves.start(configs.main().getLong("settings.dirty-save-interval", 200));
 
         registerCommands();
@@ -126,6 +131,9 @@ public final class SatisSkyFactoryPlugin extends JavaPlugin {
     public void onDisable() {
         if (ticker != null) {
             ticker.stop();
+        }
+        if (maintenanceTicker != null) {
+            maintenanceTicker.stop();
         }
         if (dirtySaves != null) {
             dirtySaves.stop();

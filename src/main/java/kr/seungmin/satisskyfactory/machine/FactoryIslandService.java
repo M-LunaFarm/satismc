@@ -7,6 +7,8 @@ import kr.seungmin.satisskyfactory.model.FactoryIsland;
 import kr.seungmin.satisskyfactory.task.DirtySaveService;
 import org.bukkit.entity.Player;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -31,6 +33,13 @@ public final class FactoryIslandService {
         return Optional.of(new FactoryContext(island.get(), getOrCreate(island.get())));
     }
 
+    public void load() {
+        cache.clear();
+        for (FactoryIsland island : database.loadIslands()) {
+            cache.put(island.islandUuid(), island);
+        }
+    }
+
     public FactoryIsland getOrCreate(SuperiorSkyblockHook.IslandRef island) {
         return cache.computeIfAbsent(island.islandUuid(), uuid -> {
             FactoryIsland loaded = database.findIsland(uuid).orElseGet(() -> new FactoryIsland(uuid, island.ownerUuid()));
@@ -48,6 +57,10 @@ public final class FactoryIslandService {
         Optional<FactoryIsland> loaded = database.findIsland(islandUuid);
         loaded.ifPresent(island -> cache.put(island.islandUuid(), island));
         return loaded;
+    }
+
+    public Collection<FactoryIsland> cached() {
+        return new ArrayList<>(cache.values());
     }
 
     public void save(FactoryIsland island) {
