@@ -268,6 +268,7 @@ public final class SatisSkyFactoryPlugin extends JavaPlugin {
         ), this);
         getServer().getPluginManager().registerEvents(new FactoryGuiListener(
                 islands,
+                skyblock,
                 contracts,
                 research,
                 gui,

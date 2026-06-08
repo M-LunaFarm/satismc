@@ -4,6 +4,7 @@ import kr.seungmin.satisskyfactory.config.MessageService;
 import kr.seungmin.satisskyfactory.contract.ContractService;
 import kr.seungmin.satisskyfactory.gui.FactoryGuiHolder;
 import kr.seungmin.satisskyfactory.gui.FactoryGuiService;
+import kr.seungmin.satisskyfactory.hook.SuperiorSkyblockHook;
 import kr.seungmin.satisskyfactory.item.CustomItemFactory;
 import kr.seungmin.satisskyfactory.item.ItemRegistry;
 import kr.seungmin.satisskyfactory.machine.FactoryIslandService;
@@ -38,6 +39,7 @@ import java.util.UUID;
 
 public final class FactoryGuiListener implements Listener {
     private final FactoryIslandService islands;
+    private final SuperiorSkyblockHook skyblock;
     private final ContractService contracts;
     private final ResearchService research;
     private final FactoryGuiService gui;
@@ -51,11 +53,12 @@ public final class FactoryGuiListener implements Listener {
     private final MaintenanceService maintenance;
     private final MessageService messages;
 
-    public FactoryGuiListener(FactoryIslandService islands, ContractService contracts, ResearchService research, FactoryGuiService gui,
+    public FactoryGuiListener(FactoryIslandService islands, SuperiorSkyblockHook skyblock, ContractService contracts, ResearchService research, FactoryGuiService gui,
                               MachineService machines, RecipeService recipes, StorageService storage, ItemRegistry items, CustomItemFactory itemFactory,
                               MarketService market, MachineDefinitionService definitions, MaintenanceService maintenance,
                               MessageService messages) {
         this.islands = islands;
+        this.skyblock = skyblock;
         this.contracts = contracts;
         this.research = research;
         this.gui = gui;
@@ -94,6 +97,11 @@ public final class FactoryGuiListener implements Listener {
         FactoryIsland island = islands.find(holder.islandUuid()).orElse(null);
         if (island == null) {
             messages.send(player, "island-not-loaded");
+            return;
+        }
+        if (!canUseIslandGui(player, island)) {
+            messages.send(player, "not-member");
+            player.closeInventory();
             return;
         }
         if (action.type().equals("storage_page")) {
@@ -205,6 +213,15 @@ public final class FactoryGuiListener implements Listener {
     private Optional<MachineInstance> machine(FactoryGuiHolder holder) {
         UUID machineId = holder.machineId();
         return machineId == null ? Optional.empty() : machines.find(machineId);
+    }
+
+    private boolean canUseIslandGui(Player player, FactoryIsland island) {
+        return skyblock.getIslandByUuid(island.islandUuid())
+                .map(ref -> skyblock.isPlayerIslandMember(player, ref))
+                .orElseGet(() -> skyblock.getIslandOf(player)
+                        .filter(ref -> ref.islandUuid().equals(island.islandUuid()))
+                        .map(ref -> skyblock.isPlayerIslandMember(player, ref))
+                        .orElse(false));
     }
 
     private void withdrawStorageItem(Player player, FactoryIsland island, String itemId, int page, long requested) {
