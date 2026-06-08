@@ -14,6 +14,7 @@ import kr.seungmin.satisskyfactory.market.MarketService;
 import kr.seungmin.satisskyfactory.model.FactoryContext;
 import kr.seungmin.satisskyfactory.model.FactoryIsland;
 import kr.seungmin.satisskyfactory.node.ResourceNodeService;
+import kr.seungmin.satisskyfactory.research.ResearchService;
 import kr.seungmin.satisskyfactory.storage.StorageService;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -40,6 +41,7 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
     private final MarketService market;
     private final ContractService contracts;
     private final MaintenanceService maintenance;
+    private final ResearchService research;
     private final FactoryGuiService gui;
     private final CustomItemFactory itemFactory;
     private final ItemRegistry items;
@@ -48,7 +50,7 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
 
     public FactoryCommand(FactoryIslandService islands, MachineService machines, MachineDefinitionService definitions,
                           StorageService storage, ResourceNodeService nodes, MarketService market, ContractService contracts,
-                          MaintenanceService maintenance, FactoryGuiService gui, CustomItemFactory itemFactory,
+                          MaintenanceService maintenance, ResearchService research, FactoryGuiService gui, CustomItemFactory itemFactory,
                           ItemRegistry items, MessageService messages, Runnable reload) {
         this.islands = islands;
         this.machines = machines;
@@ -58,6 +60,7 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
         this.market = market;
         this.contracts = contracts;
         this.maintenance = maintenance;
+        this.research = research;
         this.gui = gui;
         this.itemFactory = itemFactory;
         this.items = items;
@@ -101,7 +104,7 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
                     contracts.templates().values().forEach(template -> player.sendMessage(template.id() + " requires " + template.required()));
                 }
             }
-            case "research" -> player.sendMessage("Research points: " + island.researchPoints());
+            case "research" -> research(player, island, args);
             case "emergency" -> {
                 if (contracts.completeEmergency(island, player)) {
                     maintenance.updateStatus(island);
@@ -140,7 +143,7 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
             case "give" -> giveMachine(sender, args);
             case "giveitem" -> giveItem(sender, args);
             case "addresearch" -> withPlayerContext(sender, args, 2, (target, island) -> {
-                island.researchPoints(island.researchPoints() + parseLong(args, 3, 0));
+                research.addResearch(island, parseLong(args, 3, 0));
                 islands.save(island);
                 sender.sendMessage("Research updated.");
             });
@@ -249,6 +252,18 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
         player.sendMessage("Storage used: " + storage.islandStorage(island.islandUuid()).used());
     }
 
+    private void research(Player player, FactoryIsland island, String[] args) {
+        if (args.length >= 3 && args[1].equalsIgnoreCase("unlock")) {
+            ResearchService.UnlockResult result = research.unlock(island, args[2]);
+            islands.save(island);
+            player.sendMessage("Research unlock result: " + result.name());
+            return;
+        }
+        player.sendMessage("Research points: " + island.researchPoints());
+        player.sendMessage("Unlocked: " + research.unlocked(island));
+        research.all().values().forEach(unlock -> player.sendMessage(unlock.id() + " cost=" + unlock.cost() + " requires=" + unlock.requires()));
+    }
+
     private void help(Player player) {
         player.sendMessage("/factory status, storage, machines, market, contracts, research");
         player.sendMessage("/factory node scan, sell <itemId> <amount>, emergency");
@@ -351,6 +366,9 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
         }
         if (args.length == 2 && args[0].equalsIgnoreCase("admin")) {
             return filter(List.of("reload", "give", "giveitem", "addresearch", "setdebt", "charge", "gennodes", "debug", "removehere"), args[1]);
+        }
+        if (args.length == 3 && args[0].equalsIgnoreCase("research") && args[1].equalsIgnoreCase("unlock")) {
+            return filter(research.all().keySet().stream().toList(), args[2]);
         }
         if (args.length == 4 && args[0].equalsIgnoreCase("admin") && args[1].equalsIgnoreCase("give")) {
             return filter(definitions.all().stream().map(machine -> machine.typeId()).toList(), args[3]);

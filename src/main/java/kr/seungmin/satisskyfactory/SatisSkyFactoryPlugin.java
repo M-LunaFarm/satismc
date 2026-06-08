@@ -21,6 +21,7 @@ import kr.seungmin.satisskyfactory.market.MarketService;
 import kr.seungmin.satisskyfactory.node.ResourceNodeService;
 import kr.seungmin.satisskyfactory.power.PowerNetworkService;
 import kr.seungmin.satisskyfactory.recipe.RecipeService;
+import kr.seungmin.satisskyfactory.research.ResearchService;
 import kr.seungmin.satisskyfactory.storage.StorageService;
 import kr.seungmin.satisskyfactory.task.DirtySaveService;
 import kr.seungmin.satisskyfactory.task.MachineTickService;
@@ -45,6 +46,7 @@ public final class SatisSkyFactoryPlugin extends JavaPlugin {
     private MarketService market;
     private ContractService contracts;
     private MaintenanceService maintenance;
+    private ResearchService research;
     private FactoryGuiService gui;
     private DirtySaveService dirtySaves;
     private MachineTickService ticker;
@@ -82,6 +84,7 @@ public final class SatisSkyFactoryPlugin extends JavaPlugin {
         market = new MarketService(storage, economy, database);
         contracts = new ContractService(storage, economy, database);
         maintenance = new MaintenanceService(machines, economy, database);
+        research = new ResearchService(database);
         gui = new FactoryGuiService(storage, itemRegistry, machineDefinitions);
 
         loadDefinitions();
@@ -131,6 +134,7 @@ public final class SatisSkyFactoryPlugin extends JavaPlugin {
         market.load(configs.file("market.yml"));
         contracts.load(configs.file("contracts.yml"));
         maintenance.load(configs.file("maintenance.yml"));
+        research.load(configs.file("research.yml"));
     }
 
     private void registerCommands() {
@@ -143,6 +147,7 @@ public final class SatisSkyFactoryPlugin extends JavaPlugin {
                 market,
                 contracts,
                 maintenance,
+                research,
                 gui,
                 itemFactory,
                 itemRegistry,

@@ -20,8 +20,10 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 public final class DatabaseService {
@@ -511,6 +513,37 @@ public final class DatabaseService {
             statement.executeUpdate();
         } catch (SQLException exception) {
             throw new IllegalStateException("Failed to write ledger", exception);
+        }
+    }
+
+    public Set<String> loadUnlocks(UUID islandUuid) {
+        Set<String> unlocks = new HashSet<>();
+        try (Connection connection = connection();
+             PreparedStatement statement = connection.prepareStatement("SELECT unlock_id FROM island_unlocks WHERE island_uuid = ?")) {
+            statement.setString(1, islandUuid.toString());
+            try (ResultSet rs = statement.executeQuery()) {
+                while (rs.next()) {
+                    unlocks.add(rs.getString("unlock_id"));
+                }
+            }
+            return unlocks;
+        } catch (SQLException exception) {
+            throw new IllegalStateException("Failed to load unlocks", exception);
+        }
+    }
+
+    public void saveUnlock(UUID islandUuid, String unlockId) {
+        try (Connection connection = connection();
+             PreparedStatement statement = connection.prepareStatement("""
+                     INSERT OR IGNORE INTO island_unlocks(island_uuid, unlock_id, unlocked_at)
+                     VALUES(?, ?, ?)
+                     """)) {
+            statement.setString(1, islandUuid.toString());
+            statement.setString(2, unlockId);
+            statement.setLong(3, Instant.now().toEpochMilli());
+            statement.executeUpdate();
+        } catch (SQLException exception) {
+            throw new IllegalStateException("Failed to save unlock", exception);
         }
     }
 
