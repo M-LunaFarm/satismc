@@ -204,6 +204,11 @@ public final class FactoryGuiListener implements Listener {
     }
 
     private void withdrawStorageItem(Player player, FactoryIsland island, String itemId, int page, long requested) {
+        if (items.get(itemId).map(ItemRegistry.FactoryItem::virtualOnly).orElse(false)) {
+            messages.send(player, "virtual-only-withdraw");
+            gui.openStorage(player, island, page);
+            return;
+        }
         var inventory = storage.islandStorage(island.islandUuid());
         long amount = Math.min(requested, inventory.amount(itemId));
         if (amount <= 0 || !inventory.remove(itemId, amount)) {
