@@ -139,6 +139,7 @@ public final class SatisSkyFactoryPlugin extends JavaPlugin {
         configureSkyblockHook();
         boosts.configure(configs.main());
         loadDefinitions();
+        rebuildNetworks();
         restartRuntimeTasks();
     }
 
