@@ -1,12 +1,15 @@
 package kr.seungmin.satisskyfactory.task;
 
+import kr.seungmin.satisskyfactory.machine.FactoryIslandService;
 import kr.seungmin.satisskyfactory.machine.IslandBoostService;
 import kr.seungmin.satisskyfactory.machine.MachineDefinitionService;
 import kr.seungmin.satisskyfactory.machine.MachineService;
 import kr.seungmin.satisskyfactory.model.BlockKey;
+import kr.seungmin.satisskyfactory.model.FactoryIsland;
 import kr.seungmin.satisskyfactory.model.MachineDefinition;
 import kr.seungmin.satisskyfactory.model.MachineInstance;
 import kr.seungmin.satisskyfactory.model.MachineStatus;
+import kr.seungmin.satisskyfactory.model.MaintenanceStatus;
 import kr.seungmin.satisskyfactory.model.ResourceNode;
 import kr.seungmin.satisskyfactory.node.ResourceNodeService;
 import kr.seungmin.satisskyfactory.power.PowerNetworkService;
@@ -28,6 +31,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 
 public final class MachineTickService {
@@ -39,12 +43,16 @@ public final class MachineTickService {
     private final ResourceNodeService nodes;
     private final PowerNetworkService power;
     private final IslandBoostService boosts;
+    private final FactoryIslandService islands;
     private final int maxPerCycle;
+    private final Set<String> recoveryTypes;
+    private final double limitedEfficiency;
     private BukkitTask task;
 
     public MachineTickService(JavaPlugin plugin, MachineService machines, MachineDefinitionService definitions, StorageService storage,
                               RecipeService recipes, ResourceNodeService nodes, PowerNetworkService power,
-                              IslandBoostService boosts, int maxPerCycle) {
+                              IslandBoostService boosts, FactoryIslandService islands, int maxPerCycle,
+                              Set<String> recoveryTypes, double limitedEfficiency) {
         this.plugin = plugin;
         this.machines = machines;
         this.definitions = definitions;
@@ -53,7 +61,10 @@ public final class MachineTickService {
         this.nodes = nodes;
         this.power = power;
         this.boosts = boosts;
+        this.islands = islands;
         this.maxPerCycle = maxPerCycle;
+        this.recoveryTypes = Set.copyOf(recoveryTypes);
+        this.limitedEfficiency = Math.max(0.05, Math.min(1.0, limitedEfficiency));
     }
 
     public void start(long intervalTicks) {
@@ -80,6 +91,9 @@ public final class MachineTickService {
     }
 
     private void process(MachineInstance machine, MachineDefinition definition) {
+        if (!passesMaintenanceGate(machine)) {
+            return;
+        }
         double ratio = power.powerRatio(machine.islandUuid());
         if (!definition.isGenerator() && !definition.isBattery() && ratio <= 0.0) {
             setStatus(machine, MachineStatus.NO_POWER);
@@ -101,6 +115,24 @@ public final class MachineTickService {
         } else {
             processRecipe(machine);
         }
+    }
+
+    private boolean passesMaintenanceGate(MachineInstance machine) {
+        Optional<FactoryIsland> island = islands.find(machine.islandUuid());
+        if (island.isEmpty()) {
+            return true;
+        }
+        MaintenanceStatus status = island.get().maintenanceStatus();
+        if (status == MaintenanceStatus.LOCKED && !recoveryTypes.contains(machine.typeId())) {
+            setStatus(machine, MachineStatus.LOCKED);
+            return false;
+        }
+        if (status == MaintenanceStatus.LIMITED && !recoveryTypes.contains(machine.typeId())
+                && ThreadLocalRandom.current().nextDouble() > limitedEfficiency) {
+            setStatus(machine, MachineStatus.IDLE);
+            return false;
+        }
+        return true;
     }
 
     private void processGenerator(MachineInstance machine) {

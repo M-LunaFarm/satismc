@@ -40,6 +40,16 @@ public final class FactoryIslandService {
         });
     }
 
+    public Optional<FactoryIsland> find(UUID islandUuid) {
+        FactoryIsland cached = cache.get(islandUuid);
+        if (cached != null) {
+            return Optional.of(cached);
+        }
+        Optional<FactoryIsland> loaded = database.findIsland(islandUuid);
+        loaded.ifPresent(island -> cache.put(island.islandUuid(), island));
+        return loaded;
+    }
+
     public void save(FactoryIsland island) {
         cache.put(island.islandUuid(), island);
         if (dirtySaves != null) {

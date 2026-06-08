@@ -30,6 +30,8 @@ import kr.seungmin.satisskyfactory.task.MachineTickService;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.util.Set;
+
 public final class SatisSkyFactoryPlugin extends JavaPlugin {
     private ConfigService configs;
     private MessageService messages;
@@ -104,7 +106,10 @@ public final class SatisSkyFactoryPlugin extends JavaPlugin {
                 nodes,
                 power,
                 boosts,
-                configs.main().getInt("settings.max-machines-per-cycle", 200)
+                islands,
+                configs.main().getInt("settings.max-machines-per-cycle", 200),
+                Set.copyOf(configs.main().getStringList("limits.recovery-machine-types")),
+                configs.file("maintenance.yml").getDouble("maintenance.limited-efficiency", 0.5)
         );
         ticker.start(configs.main().getLong("settings.tick-interval", 40));
         dirtySaves.start(configs.main().getLong("settings.dirty-save-interval", 200));
