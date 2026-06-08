@@ -205,7 +205,7 @@ public final class ResourceNodeService {
             return node;
         }
         long before = node.remaining();
-        node.remaining(before + restored);
+        node.remaining(Math.min(node.maxRemaining(), before + restored));
         node.updatedAt(now);
         if (node.remaining() != before) {
             save(node);
