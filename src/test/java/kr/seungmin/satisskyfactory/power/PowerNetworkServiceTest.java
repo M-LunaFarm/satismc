@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.lang.reflect.Field;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
@@ -74,6 +75,67 @@ class PowerNetworkServiceTest {
         }
     }
 
+    @Test
+    void surplusPowerChargesBatteryWithoutExceedingCapacity() {
+        UUID islandUuid = UUID.fromString("00000000-0000-0000-0000-000000000611");
+        UUID ownerUuid = UUID.fromString("00000000-0000-0000-0000-000000000612");
+
+        DatabaseService database = new DatabaseService(tempDir.resolve("charge-db").toFile());
+        database.open();
+        try {
+            MachineDefinitionService definitions = new MachineDefinitionService();
+            register(definitions, definition("bio_generator_t1", 20.0, 0.0, 0.0));
+            register(definitions, definition("grinder_t1", 0.0, 8.0, 0.0));
+            register(definitions, definition("battery_t1", 0.0, 0.0, 100.0));
+            StorageService storage = new StorageService(database, 1000);
+            VirtualInventory islandStorage = storage.islandStorage(islandUuid);
+            islandStorage.add("biofuel", 4);
+            islandStorage.add("power_charge", 95);
+            storage.saveNow(islandStorage);
+            MachineService machines = new MachineService(database, definitions, storage);
+            saveMachine(machines, islandUuid, ownerUuid, "bio_generator_t1", 0);
+            saveMachine(machines, islandUuid, ownerUuid, "grinder_t1", 1);
+            saveMachine(machines, islandUuid, ownerUuid, "battery_t1", 2);
+
+            PowerNetworkService power = new PowerNetworkService(database, machines, definitions, new RecipeService(), storage);
+
+            assertEquals(1.0, power.powerRatio(islandUuid));
+            assertEquals(100, storage.islandStorage(islandUuid).amount("power_charge"));
+            assertEquals(100, power.state(islandUuid).batteryStored());
+        } finally {
+            database.close();
+        }
+    }
+
+    @Test
+    void storedBatteryPowerCoversDeficitAndLowersRatioWhenInsufficient() {
+        UUID islandUuid = UUID.fromString("00000000-0000-0000-0000-000000000621");
+        UUID ownerUuid = UUID.fromString("00000000-0000-0000-0000-000000000622");
+
+        DatabaseService database = new DatabaseService(tempDir.resolve("discharge-db").toFile());
+        database.open();
+        try {
+            MachineDefinitionService definitions = new MachineDefinitionService();
+            register(definitions, definition("grinder_t1", 0.0, 30.0, 0.0));
+            register(definitions, definition("battery_t1", 0.0, 0.0, 100.0));
+            StorageService storage = new StorageService(database, 1000);
+            VirtualInventory islandStorage = storage.islandStorage(islandUuid);
+            islandStorage.add("power_charge", 20);
+            storage.saveNow(islandStorage);
+            MachineService machines = new MachineService(database, definitions, storage);
+            saveMachine(machines, islandUuid, ownerUuid, "grinder_t1", 1);
+            saveMachine(machines, islandUuid, ownerUuid, "battery_t1", 2);
+
+            PowerNetworkService power = new PowerNetworkService(database, machines, definitions, new RecipeService(), storage);
+
+            assertEquals(20.0 / 30.0, power.powerRatio(islandUuid), 0.0001);
+            assertEquals(0, storage.islandStorage(islandUuid).amount("power_charge"));
+            assertEquals(0, power.state(islandUuid).batteryStored());
+        } finally {
+            database.close();
+        }
+    }
+
     private MachineDefinition definition(String typeId, double generation, double consumption, double batteryCapacity) {
         return new MachineDefinition(
                 typeId,
@@ -110,6 +172,11 @@ class PowerNetworkServiceTest {
                 0.0,
                 ""
         );
+    }
+
+    private void saveMachine(MachineService machines, UUID islandUuid, UUID ownerUuid, String typeId, int x) {
+        machines.save(new MachineInstance(UUID.nameUUIDFromBytes((islandUuid + ":" + typeId + ":" + x).getBytes(StandardCharsets.UTF_8)),
+                islandUuid, ownerUuid, typeId, 1, new BlockKey("world", x, 64, 0)));
     }
 
     @SuppressWarnings("unchecked")
