@@ -187,8 +187,13 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
         }
         String itemId = args[1];
         long amount = parseLong(args, 2, 0);
-        market.sell(island.islandUuid(), player, itemId, amount)
-                .ifPresentOrElse(money -> messages.send(player, "sold", Map.of("item", itemId, "amount", String.valueOf(amount), "money", String.valueOf(money))),
+        market.sell(island, player, itemId, amount)
+                .ifPresentOrElse(result -> {
+                            messages.send(player, "sold", Map.of("item", itemId, "amount", String.valueOf(amount), "money", String.valueOf(result.paidToPlayer())));
+                            if (result.debtRepaid() > 0) {
+                                player.sendMessage("Debt repaid from sale: " + result.debtRepaid());
+                            }
+                        },
                         () -> player.sendMessage("Cannot sell that item or amount."));
     }
 
@@ -200,9 +205,12 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
         }
         String itemId = itemFactory.factoryItemId(hand).orElseGet(() -> hand.getType().name().toLowerCase(Locale.ROOT));
         int amount = hand.getAmount();
-        market.sellDirect(island.islandUuid(), player, itemId, amount).ifPresentOrElse(money -> {
+        market.sellDirect(island, player, itemId, amount).ifPresentOrElse(result -> {
             hand.setAmount(0);
-            messages.send(player, "sold", Map.of("item", itemId, "amount", String.valueOf(amount), "money", String.valueOf(money)));
+            messages.send(player, "sold", Map.of("item", itemId, "amount", String.valueOf(amount), "money", String.valueOf(result.paidToPlayer())));
+            if (result.debtRepaid() > 0) {
+                player.sendMessage("Debt repaid from sale: " + result.debtRepaid());
+            }
         }, () -> player.sendMessage("The item in your hand cannot be sold."));
     }
 

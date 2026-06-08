@@ -1,18 +1,28 @@
 market:
   demand-floor: 0.35
+  demand-ceiling: 1.25
+  demand-exponent: 0.35
   personal-soft-cap: 256
+  debt-repay-rate: 0.35
   items:
     wheat:
       base-price: 1
+      target-daily-amount: 2048
     flour:
       base-price: 4
+      target-daily-amount: 1024
     bread_box:
       base-price: 18
+      target-daily-amount: 256
     iron_ore:
       base-price: 3
+      target-daily-amount: 2048
     crushed_iron:
       base-price: 7
+      target-daily-amount: 1024
     iron_ingot:
       base-price: 12
+      target-daily-amount: 768
     iron_plate:
       base-price: 28
+      target-daily-amount: 384

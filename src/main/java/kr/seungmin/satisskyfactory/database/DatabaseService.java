@@ -516,6 +516,70 @@ public final class DatabaseService {
         }
     }
 
+    public long marketDailySold(String itemId, String dateKey) {
+        try (Connection connection = connection();
+             PreparedStatement statement = connection.prepareStatement("SELECT sold_amount FROM market_daily WHERE item_id = ? AND date_key = ?")) {
+            statement.setString(1, itemId);
+            statement.setString(2, dateKey);
+            try (ResultSet rs = statement.executeQuery()) {
+                return rs.next() ? rs.getLong("sold_amount") : 0L;
+            }
+        } catch (SQLException exception) {
+            throw new IllegalStateException("Failed to read market daily sold amount", exception);
+        }
+    }
+
+    public long marketPersonalSold(UUID islandUuid, String itemId, String dateKey) {
+        try (Connection connection = connection();
+             PreparedStatement statement = connection.prepareStatement("""
+                     SELECT sold_amount FROM market_personal_daily
+                     WHERE island_uuid = ? AND item_id = ? AND date_key = ?
+                     """)) {
+            statement.setString(1, islandUuid.toString());
+            statement.setString(2, itemId);
+            statement.setString(3, dateKey);
+            try (ResultSet rs = statement.executeQuery()) {
+                return rs.next() ? rs.getLong("sold_amount") : 0L;
+            }
+        } catch (SQLException exception) {
+            throw new IllegalStateException("Failed to read personal market sold amount", exception);
+        }
+    }
+
+    public void recordMarketSale(UUID islandUuid, String itemId, String dateKey, long amount, double demandFactor) {
+        try (Connection connection = connection()) {
+            connection.setAutoCommit(false);
+            try (PreparedStatement daily = connection.prepareStatement("""
+                    INSERT INTO market_daily(item_id, date_key, sold_amount, demand_factor)
+                    VALUES(?, ?, ?, ?)
+                    ON CONFLICT(item_id, date_key) DO UPDATE SET
+                      sold_amount = sold_amount + excluded.sold_amount,
+                      demand_factor = excluded.demand_factor
+                    """)) {
+                daily.setString(1, itemId);
+                daily.setString(2, dateKey);
+                daily.setLong(3, amount);
+                daily.setDouble(4, demandFactor);
+                daily.executeUpdate();
+            }
+            try (PreparedStatement personal = connection.prepareStatement("""
+                    INSERT INTO market_personal_daily(island_uuid, item_id, date_key, sold_amount)
+                    VALUES(?, ?, ?, ?)
+                    ON CONFLICT(island_uuid, item_id, date_key) DO UPDATE SET
+                      sold_amount = sold_amount + excluded.sold_amount
+                    """)) {
+                personal.setString(1, islandUuid.toString());
+                personal.setString(2, itemId);
+                personal.setString(3, dateKey);
+                personal.setLong(4, amount);
+                personal.executeUpdate();
+            }
+            connection.commit();
+        } catch (SQLException exception) {
+            throw new IllegalStateException("Failed to record market sale", exception);
+        }
+    }
+
     public Set<String> loadUnlocks(UUID islandUuid) {
         Set<String> unlocks = new HashSet<>();
         try (Connection connection = connection();
