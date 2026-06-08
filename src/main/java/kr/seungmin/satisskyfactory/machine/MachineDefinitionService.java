@@ -26,10 +26,16 @@ public final class MachineDefinitionService {
             if (material == null) {
                 material = Material.STONE;
             }
+            Material placedMaterial = Material.matchMaterial(config.getString(path + "placed-block",
+                    config.getString(path + "placed-material", material.name())));
+            if (placedMaterial == null || !placedMaterial.isBlock()) {
+                placedMaterial = material.isBlock() ? material : Material.STONE;
+            }
             definitions.put(typeId, new MachineDefinition(
                     typeId,
                     config.getString(path + "display", typeId),
                     material,
+                    placedMaterial,
                     config.getInt(path + "custom-model-data", 0),
                     config.getInt(path + "tier", 1),
                     config.getInt(path + "input-capacity", 128),

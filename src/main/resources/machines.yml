@@ -2,6 +2,7 @@ machines:
   harvester_t1:
     display: "Harvester T1"
     material: IRON_HOE
+    placed-block: DISPENSER
     custom-model-data: 2001
     tier: 1
     input-capacity: 128
@@ -20,6 +21,7 @@ machines:
   planter_t1:
     display: "Planter T1"
     material: IRON_HOE
+    placed-block: DROPPER
     tier: 1
     input-capacity: 128
     output-capacity: 64
@@ -46,6 +48,7 @@ machines:
   fertilizer_sprayer_t1:
     display: "Fertilizer Sprayer T1"
     material: DISPENSER
+    placed-block: DISPENSER
     tier: 1
     input-capacity: 128
     output-capacity: 128
@@ -62,6 +65,7 @@ machines:
   miner_drill_t1:
     display: "Miner Drill T1"
     material: IRON_PICKAXE
+    placed-block: BLAST_FURNACE
     custom-model-data: 2101
     tier: 1
     input-capacity: 64
@@ -74,6 +78,7 @@ machines:
   grinder_t1:
     display: "Grinder T1"
     material: STONECUTTER
+    placed-block: STONECUTTER
     tier: 1
     input-capacity: 256
     output-capacity: 512
@@ -83,6 +88,7 @@ machines:
   furnace_t1:
     display: "Furnace T1"
     material: FURNACE
+    placed-block: FURNACE
     tier: 1
     input-capacity: 256
     output-capacity: 512
@@ -92,6 +98,7 @@ machines:
   assembler_t1:
     display: "Assembler T1"
     material: CRAFTING_TABLE
+    placed-block: CRAFTING_TABLE
     tier: 2
     input-capacity: 256
     output-capacity: 512
@@ -102,6 +109,7 @@ machines:
   packager_t1:
     display: "Packager T1"
     material: BARREL
+    placed-block: BARREL
     tier: 2
     input-capacity: 256
     output-capacity: 512
@@ -112,6 +120,7 @@ machines:
   bio_generator_t1:
     display: "Bio Generator T1"
     material: COMPOSTER
+    placed-block: COMPOSTER
     custom-model-data: 2201
     tier: 1
     input-capacity: 256
@@ -122,6 +131,7 @@ machines:
   battery_t1:
     display: "Battery T1"
     material: COPPER_BLOCK
+    placed-block: COPPER_BLOCK
     tier: 2
     input-capacity: 64
     output-capacity: 64
@@ -132,6 +142,7 @@ machines:
   conveyor_t1:
     display: "Conveyor T1"
     material: CHAIN
+    placed-block: CHAIN
     custom-model-data: 2301
     tier: 2
     input-capacity: 64
@@ -144,6 +155,7 @@ machines:
   storage_t1:
     display: "Storage T1"
     material: CHEST
+    placed-block: CHEST
     custom-model-data: 2401
     tier: 1
     input-capacity: 5000
@@ -153,6 +165,7 @@ machines:
   tree_farm_t1:
     display: "Tree Farm T1"
     material: OAK_SAPLING
+    placed-block: COMPOSTER
     tier: 1
     input-capacity: 64
     output-capacity: 512
@@ -164,6 +177,7 @@ machines:
   fish_trap_t1:
     display: "Fish Trap T1"
     material: FISHING_ROD
+    placed-block: BARREL
     tier: 1
     input-capacity: 64
     output-capacity: 512
@@ -175,6 +189,7 @@ machines:
   collector_t1:
     display: "Pasture Collector T1"
     material: HAY_BLOCK
+    placed-block: HAY_BLOCK
     tier: 1
     input-capacity: 128
     output-capacity: 512
@@ -186,6 +201,7 @@ machines:
   sawmill_t1:
     display: "Sawmill T1"
     material: STONECUTTER
+    placed-block: STONECUTTER
     tier: 2
     input-capacity: 256
     output-capacity: 512
@@ -196,6 +212,7 @@ machines:
   charcoal_kiln_t1:
     display: "Charcoal Kiln T1"
     material: SMOKER
+    placed-block: SMOKER
     tier: 2
     input-capacity: 256
     output-capacity: 512
@@ -206,6 +223,7 @@ machines:
   fish_processor_t1:
     display: "Fish Processor T1"
     material: BARREL
+    placed-block: BARREL
     tier: 2
     input-capacity: 256
     output-capacity: 512

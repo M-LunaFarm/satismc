@@ -9,6 +9,7 @@ public record MachineDefinition(
         String typeId,
         String displayName,
         Material material,
+        Material placedMaterial,
         int customModelData,
         int tier,
         int inputCapacity,

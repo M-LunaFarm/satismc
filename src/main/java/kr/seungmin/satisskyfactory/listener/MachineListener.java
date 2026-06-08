@@ -95,6 +95,7 @@ public final class MachineListener implements Listener {
                 return;
             }
             event.setCancelled(false);
+            event.getBlockPlaced().setType(definition.placedMaterial(), false);
             MachineInstance machine = machines.create(island.islandUuid(), player.getUniqueId(), typeId, event.getBlockPlaced().getLocation(), player.getFacing());
             linkResourceNode(machine, definition);
             messages.send(player, "placed", Map.of("machine", definition.displayName()));
