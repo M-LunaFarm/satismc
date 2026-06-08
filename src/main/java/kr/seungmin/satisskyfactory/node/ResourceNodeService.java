@@ -14,11 +14,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Predicate;
 
 public final class ResourceNodeService {
     private final DatabaseService database;
+    private final ConcurrentHashMap<UUID, List<ResourceNode>> nodesByIsland = new ConcurrentHashMap<>();
     private FileConfiguration config;
     private DirtySaveService dirtySaves;
 
@@ -31,7 +33,12 @@ public final class ResourceNodeService {
     }
 
     public List<ResourceNode> nodes(UUID islandUuid) {
-        return database.loadNodes(islandUuid).stream().map(this::regenerate).toList();
+        List<ResourceNode> nodes = nodesByIsland.computeIfAbsent(islandUuid, database::loadNodes);
+        List<ResourceNode> regenerated = nodes.stream().map(this::regenerate).toList();
+        if (regenerated != nodes) {
+            nodesByIsland.put(islandUuid, regenerated);
+        }
+        return List.copyOf(regenerated);
     }
 
     public List<ResourceNode> generateIfMissing(UUID islandUuid, Location origin) {
@@ -79,7 +86,7 @@ public final class ResourceNodeService {
                     BlockKey.from(location),
                     now
             );
-            database.saveNode(node);
+            save(node);
         }
         return nodes(islandUuid);
     }
@@ -112,6 +119,7 @@ public final class ResourceNodeService {
 
     public void save(ResourceNode node) {
         node.updatedAt(System.currentTimeMillis());
+        cache(node);
         if (dirtySaves != null) {
             dirtySaves.markNode(node);
             return;
@@ -121,6 +129,15 @@ public final class ResourceNodeService {
 
     public void dirtySaves(DirtySaveService dirtySaves) {
         this.dirtySaves = dirtySaves;
+    }
+
+    private void cache(ResourceNode node) {
+        nodesByIsland.compute(node.islandUuid(), (islandUuid, current) -> {
+            List<ResourceNode> updated = current == null ? new ArrayList<>() : new ArrayList<>(current);
+            updated.removeIf(existing -> existing.nodeId().equals(node.nodeId()));
+            updated.add(node);
+            return updated;
+        });
     }
 
     private ResourceNode regenerate(ResourceNode node) {
