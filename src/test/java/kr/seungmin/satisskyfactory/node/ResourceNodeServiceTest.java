@@ -26,7 +26,7 @@ class ResourceNodeServiceTest {
         UUID nodeId = UUID.fromString("00000000-0000-0000-0000-000000000702");
         try (DatabaseHandle handle = openDatabase("regen-db")) {
             ResourceNode node = new ResourceNode(nodeId, islandUuid, "MINERAL", "iron_ore", 1.0,
-                    100, 250, 60, 1, new BlockKey("world", 0, 64, 0), 0);
+                    100, 250, 60, 1, new BlockKey("world", 0, 64, 0), 0, 0);
             handle.database().saveNode(node);
             setUpdatedAt(handle.database(), nodeId, Instant.now().minus(Duration.ofHours(2)).toEpochMilli());
             ResourceNodeService nodes = new ResourceNodeService(handle.database());
@@ -52,7 +52,7 @@ class ResourceNodeServiceTest {
         UUID nodeId = UUID.fromString("00000000-0000-0000-0000-000000000712");
         try (DatabaseHandle handle = openDatabase("regen-disabled-db")) {
             ResourceNode node = new ResourceNode(nodeId, islandUuid, "FOREST", "wood_log", 1.0,
-                    100, 250, 60, 1, new BlockKey("world", 0, 64, 0), 0);
+                    100, 250, 60, 1, new BlockKey("world", 0, 64, 0), 0, 0);
             handle.database().saveNode(node);
             setUpdatedAt(handle.database(), nodeId, Instant.now().minus(Duration.ofHours(2)).toEpochMilli());
             ResourceNodeService nodes = new ResourceNodeService(handle.database());

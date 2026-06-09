@@ -120,7 +120,7 @@ class DatabaseServiceTest {
             database.saveMachine(machine);
 
             ResourceNode node = new ResourceNode(nodeId, islandUuid, "MINERAL", "iron_ore", 0.75, 500, 1000, 120, 1,
-                    new BlockKey("world", 20, 64, 20), 4000);
+                    new BlockKey("world", 20, 64, 20), 3500, 4000);
             database.saveNode(node);
 
             database.saveUnlock(islandUuid, "tier_2");
@@ -177,6 +177,8 @@ class DatabaseServiceTest {
             assertEquals("iron_ore", node.resourceId());
             assertEquals(500, node.remaining());
             assertEquals(0.75, node.purity());
+            assertEquals(3500, node.createdAt());
+            assertTrue(node.updatedAt() >= 4000);
 
             assertTrue(database.loadUnlocks(islandUuid).contains("tier_2"));
             assertEquals(12, database.marketDailySold("flour", "2026-06-08"));

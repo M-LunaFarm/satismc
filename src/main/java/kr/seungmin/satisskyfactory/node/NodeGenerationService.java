@@ -51,6 +51,7 @@ public final class NodeGenerationService {
                     longValue(nodeConfig, "regen-per-hour", 100L),
                     intValue(nodeConfig, "required-machine-tier", 1),
                     location,
+                    now,
                     now
             ));
         }
@@ -88,6 +89,7 @@ public final class NodeGenerationService {
                     config.getLong(path + "regen-per-hour", 100),
                     config.getInt(path + "required-machine-tier", 1),
                     location,
+                    now,
                     now
             ));
         }

@@ -590,6 +590,7 @@ public final class DatabaseService {
                             rs.getLong("regen_per_hour"),
                             rs.getInt("required_machine_tier"),
                             new BlockKey(rs.getString("world"), rs.getInt("x"), rs.getInt("y"), rs.getInt("z")),
+                            rs.getLong("created_at"),
                             rs.getLong("updated_at")
                     ));
                 }
@@ -602,6 +603,10 @@ public final class DatabaseService {
 
     public void saveNode(ResourceNode node) {
         long now = Instant.now().toEpochMilli();
+        if (node.createdAt() <= 0) {
+            node.createdAt(now);
+        }
+        node.updatedAt(now);
         try (Connection connection = connection();
              PreparedStatement statement = connection.prepareStatement("""
                      INSERT INTO resource_nodes(node_id, island_uuid, node_type, resource_id, purity, remaining, max_remaining,
@@ -622,8 +627,8 @@ public final class DatabaseService {
             statement.setInt(11, node.location().x());
             statement.setInt(12, node.location().y());
             statement.setInt(13, node.location().z());
-            statement.setLong(14, now);
-            statement.setLong(15, now);
+            statement.setLong(14, node.createdAt());
+            statement.setLong(15, node.updatedAt());
             statement.executeUpdate();
         } catch (SQLException exception) {
             throw new IllegalStateException("Failed to save resource node", exception);

@@ -144,6 +144,7 @@ public final class DirtySaveService {
                 node.regenPerHour(),
                 node.requiredMachineTier(),
                 node.location(),
+                node.createdAt(),
                 node.updatedAt()
         );
     }
