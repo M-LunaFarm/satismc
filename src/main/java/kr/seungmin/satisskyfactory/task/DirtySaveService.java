@@ -54,6 +54,10 @@ public final class DirtySaveService {
         inventories.put(inventory.inventoryId(), snapshot(inventory));
     }
 
+    public void forgetInventory(UUID inventoryId) {
+        inventories.remove(inventoryId);
+    }
+
     public void markNode(ResourceNode node) {
         nodes.put(node.nodeId(), snapshot(node));
     }

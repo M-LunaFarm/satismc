@@ -71,6 +71,17 @@ public final class StorageService {
         database.saveInventory(inventory);
     }
 
+    public void delete(UUID inventoryId) {
+        if (inventoryId == null) {
+            return;
+        }
+        cache.remove(inventoryId);
+        if (dirtySaves != null) {
+            dirtySaves.forgetInventory(inventoryId);
+        }
+        database.deleteInventory(inventoryId);
+    }
+
     public void dirtySaves(DirtySaveService dirtySaves) {
         this.dirtySaves = dirtySaves;
     }

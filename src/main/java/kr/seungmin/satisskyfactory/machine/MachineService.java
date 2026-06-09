@@ -140,7 +140,19 @@ public final class MachineService {
             dirtySaves.forgetMachine(machine.machineId());
         }
         database.deleteMachine(machine.machineId());
+        deleteInventories(machine);
         revision.incrementAndGet();
+    }
+
+    private void deleteInventories(MachineInstance machine) {
+        Set<UUID> inventoryIds = new HashSet<>();
+        if (machine.inputInventoryId() != null) {
+            inventoryIds.add(machine.inputInventoryId());
+        }
+        if (machine.outputInventoryId() != null) {
+            inventoryIds.add(machine.outputInventoryId());
+        }
+        inventoryIds.forEach(storage::delete);
     }
 
     private boolean hasBufferedItems(MachineInstance machine) {

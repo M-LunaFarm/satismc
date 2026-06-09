@@ -669,6 +669,23 @@ public final class DatabaseService {
         }
     }
 
+    public void deleteInventory(UUID inventoryId) {
+        try (Connection connection = connection()) {
+            connection.setAutoCommit(false);
+            try (PreparedStatement items = connection.prepareStatement("DELETE FROM virtual_inventory_items WHERE inventory_id = ?")) {
+                items.setString(1, inventoryId.toString());
+                items.executeUpdate();
+            }
+            try (PreparedStatement inventory = connection.prepareStatement("DELETE FROM virtual_inventories WHERE inventory_id = ?")) {
+                inventory.setString(1, inventoryId.toString());
+                inventory.executeUpdate();
+            }
+            connection.commit();
+        } catch (SQLException exception) {
+            throw new IllegalStateException("Failed to delete inventory", exception);
+        }
+    }
+
     public List<ResourceNode> loadNodes(UUID islandUuid) {
         List<ResourceNode> nodes = new ArrayList<>();
         try (Connection connection = connection();

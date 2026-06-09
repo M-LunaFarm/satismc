@@ -54,7 +54,10 @@ class MachineServiceTest {
             assertTrue(handle.database().loadMachines().stream()
                     .noneMatch(machine -> machine.machineId().equals(bundle.machine().machineId())));
             assertEquals(10, storage.islandStorage(bundle.machine().islandUuid()).amount("wheat"));
-            assertEquals(0, storage.get(bundle.input().inventoryId()).orElseThrow().amount("wheat"));
+            assertTrue(storage.get(bundle.input().inventoryId()).isEmpty());
+            assertTrue(storage.get(bundle.output().inventoryId()).isEmpty());
+            assertTrue(handle.database().loadInventory(bundle.input().inventoryId()).isEmpty());
+            assertTrue(handle.database().loadInventory(bundle.output().inventoryId()).isEmpty());
         }
     }
 
@@ -116,7 +119,7 @@ class MachineServiceTest {
         machine.inputInventoryId(input.inventoryId());
         machine.outputInventoryId(output.inventoryId());
         machines.save(machine);
-        return new MachineBundle(machine, input);
+        return new MachineBundle(machine, input, output);
     }
 
     private DatabaseHandle openDatabase(String name) {
@@ -125,7 +128,7 @@ class MachineServiceTest {
         return new DatabaseHandle(database);
     }
 
-    private record MachineBundle(MachineInstance machine, VirtualInventory input) {
+    private record MachineBundle(MachineInstance machine, VirtualInventory input, VirtualInventory output) {
     }
 
     private record DatabaseHandle(DatabaseService database) implements AutoCloseable {
