@@ -20,6 +20,7 @@ public final class ItemConfigLoader {
             if (material == null) {
                 material = Material.STONE;
             }
+            java.util.List<String> tags = section.getStringList(id + ".tags");
             items.put(id, new ItemDefinition(
                     id,
                     material,
@@ -27,7 +28,8 @@ public final class ItemConfigLoader {
                     section.getInt(id + ".custom-model-data", 0),
                     section.getBoolean(id + ".virtual-only", false),
                     section.getLong(id + ".base-price", 0),
-                    section.getStringList(id + ".tags")
+                    section.getBoolean(id + ".quality-enabled", tags.stream().anyMatch(tag -> tag.equalsIgnoreCase("quality"))),
+                    tags
             ));
         }
         return items;

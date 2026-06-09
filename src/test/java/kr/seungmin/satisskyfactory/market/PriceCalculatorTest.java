@@ -16,7 +16,7 @@ class PriceCalculatorTest {
     @Test
     void appliesDemandPersonalAndQualityFactors() throws Exception {
         ItemRegistry items = new ItemRegistry();
-        register(items, new ItemDefinition("quality_machine_parts", Material.IRON_NUGGET, "Quality", 0, false, 400, List.of("quality")));
+        register(items, new ItemDefinition("quality_machine_parts", Material.IRON_NUGGET, "Quality", 0, false, 400, true, List.of("quality")));
         PriceCalculator calculator = new PriceCalculator(
                 items,
                 Map.of("quality_machine_parts", 400L),
@@ -37,6 +37,27 @@ class PriceCalculatorTest {
         assertEquals(0.85, factors.personalFactor());
         assertEquals(1.15, factors.qualityFactor());
         assertTrue(calculator.finalPrice("quality_machine_parts", 10, 10, 4096) > calculator.basePrice("quality_machine_parts", 10));
+    }
+
+    @Test
+    void ignoresQualityTagsWhenQualityIsDisabled() throws Exception {
+        ItemRegistry items = new ItemRegistry();
+        register(items, new ItemDefinition("tagged_scrap", Material.STICK, "Tagged Scrap", 0, false, 20, false, List.of("quality")));
+        PriceCalculator calculator = new PriceCalculator(
+                items,
+                Map.of("tagged_scrap", 20L),
+                Map.of("tagged_scrap", 500L),
+                Map.of(),
+                Map.of("quality", 1.15),
+                List.of(),
+                true,
+                1000,
+                0.55,
+                1.35,
+                0.25
+        );
+
+        assertEquals(1.0, calculator.factors("tagged_scrap", 1, 500, 1).qualityFactor());
     }
 
     @SuppressWarnings("unchecked")

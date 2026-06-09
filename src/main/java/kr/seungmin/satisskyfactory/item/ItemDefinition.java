@@ -11,6 +11,7 @@ public record ItemDefinition(
         int customModelData,
         boolean virtualOnly,
         long basePrice,
+        boolean qualityEnabled,
         List<String> tags
 ) {
 }

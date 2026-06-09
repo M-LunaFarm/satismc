@@ -67,6 +67,7 @@ public final class PriceCalculator {
             return itemFactor;
         }
         return items.get(itemId)
+                .filter(kr.seungmin.satisskyfactory.item.ItemDefinition::qualityEnabled)
                 .map(item -> item.tags().stream()
                         .map(tag -> tagQualityFactors.getOrDefault(tag.toLowerCase(), 1.0))
                         .max(Double::compareTo)

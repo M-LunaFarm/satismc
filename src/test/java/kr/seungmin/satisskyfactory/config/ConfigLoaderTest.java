@@ -37,6 +37,7 @@ class ConfigLoaderTest {
         config.set("items.iron_plate.material", "LIGHT_WEIGHTED_PRESSURE_PLATE");
         config.set("items.iron_plate.display-name", "철판");
         config.set("items.iron_plate.base-price", 140);
+        config.set("items.iron_plate.quality-enabled", true);
         config.set("items.iron_plate.tags", java.util.List.of("manufacturing"));
 
         var item = new ItemConfigLoader().load(config).get("iron_plate");
@@ -44,6 +45,7 @@ class ConfigLoaderTest {
         assertEquals(Material.LIGHT_WEIGHTED_PRESSURE_PLATE, item.material());
         assertEquals("철판", item.displayName());
         assertEquals(140, item.basePrice());
+        assertEquals(true, item.qualityEnabled());
         assertEquals(java.util.List.of("manufacturing"), item.tags());
     }
 

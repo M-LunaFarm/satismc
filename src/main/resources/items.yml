@@ -41,6 +41,7 @@ items:
     display: "Quality Bread Box"
     custom-model-data: 1003
     base-price: 800
+    quality-enabled: true
     tags: [quality, packaged, food]
   iron_ore:
     material: RAW_IRON
@@ -67,6 +68,7 @@ items:
     display: "Quality Machine Parts"
     custom-model-data: 1004
     base-price: 400
+    quality-enabled: true
     tags: [quality, manufacturing]
   biomass:
     material: DRIED_KELP
@@ -127,4 +129,5 @@ items:
     material: GOLDEN_CARROT
     display: "Quality Crop"
     custom-model-data: 1002
+    quality-enabled: true
     tags: [quality, crop]
