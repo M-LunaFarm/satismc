@@ -2,6 +2,7 @@ package kr.seungmin.satisskyfactory.database;
 
 import kr.seungmin.satisskyfactory.economy.EconomyService;
 import kr.seungmin.satisskyfactory.model.FactoryIsland;
+import kr.seungmin.satisskyfactory.model.MaintenanceStatus;
 import kr.seungmin.satisskyfactory.research.ResearchService;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -71,6 +72,56 @@ class ResearchServiceTest {
             island.researchPoints(100);
             assertEquals(ResearchService.UnlockResult.NOT_ENOUGH_POINTS,
                     research.unlock(island, "advanced_processing"));
+        }
+    }
+
+    @Test
+    void limitedMaintenanceBlocksConfiguredTierUpgrades() {
+        try (DatabaseHandle handle = openDatabase("research-maintenance-limited")) {
+            ResearchService research = new ResearchService(handle.database(), new TrackingEconomy());
+            YamlConfiguration config = load("research.yml");
+            config.set("research.unlocks.tier_2_logistics.cost-money", 0);
+            YamlConfiguration maintenance = load("maintenance.yml");
+            maintenance.set("maintenance.limited.block-upgrades", true);
+            research.load(config, maintenance);
+            FactoryIsland island = new FactoryIsland(
+                    UUID.fromString("00000000-0000-0000-0000-000000003201"),
+                    UUID.fromString("00000000-0000-0000-0000-000000003202")
+            );
+            island.researchPoints(120);
+            island.maintenanceStatus(MaintenanceStatus.LIMITED);
+            handle.database().saveIsland(island);
+
+            ResearchService.UnlockResult result = research.unlock(island, "tier_2_logistics");
+
+            assertEquals(ResearchService.UnlockResult.MAINTENANCE_LIMITED, result);
+            assertEquals(120, island.researchPoints());
+            assertEquals(1, island.tier());
+            assertTrue(handle.database().loadUnlocks(island.islandUuid()).isEmpty());
+        }
+    }
+
+    @Test
+    void limitedMaintenanceCanAllowTierUpgradesWhenConfigured() {
+        try (DatabaseHandle handle = openDatabase("research-maintenance-allowed")) {
+            ResearchService research = new ResearchService(handle.database(), new TrackingEconomy());
+            YamlConfiguration config = load("research.yml");
+            config.set("research.unlocks.tier_2_logistics.cost-money", 0);
+            YamlConfiguration maintenance = load("maintenance.yml");
+            maintenance.set("maintenance.limited.block-upgrades", false);
+            research.load(config, maintenance);
+            FactoryIsland island = new FactoryIsland(
+                    UUID.fromString("00000000-0000-0000-0000-000000003301"),
+                    UUID.fromString("00000000-0000-0000-0000-000000003302")
+            );
+            island.researchPoints(120);
+            island.maintenanceStatus(MaintenanceStatus.LIMITED);
+            handle.database().saveIsland(island);
+
+            ResearchService.UnlockResult result = research.unlock(island, "tier_2_logistics");
+
+            assertEquals(ResearchService.UnlockResult.UNLOCKED, result);
+            assertEquals(2, island.tier());
         }
     }
 

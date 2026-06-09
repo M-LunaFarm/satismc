@@ -235,7 +235,7 @@ public final class SatisSkyFactoryPlugin extends JavaPlugin {
         market.load(configs.file("market.yml"), configs.file("maintenance.yml"));
         contracts.load(configs.file("contracts.yml"));
         maintenance.load(configs.file("maintenance.yml"));
-        research.load(configs.file("research.yml"));
+        research.load(configs.file("research.yml"), configs.file("maintenance.yml"));
     }
 
     private void registerCommands() {

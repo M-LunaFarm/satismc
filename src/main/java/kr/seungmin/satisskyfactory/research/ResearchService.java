@@ -3,6 +3,7 @@ package kr.seungmin.satisskyfactory.research;
 import kr.seungmin.satisskyfactory.database.DatabaseService;
 import kr.seungmin.satisskyfactory.economy.EconomyService;
 import kr.seungmin.satisskyfactory.model.FactoryIsland;
+import kr.seungmin.satisskyfactory.model.MaintenanceStatus;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -25,12 +26,14 @@ public final class ResearchService {
         MISSING_REQUIREMENT,
         NOT_ENOUGH_POINTS,
         NOT_ENOUGH_MONEY,
-        NOT_ENOUGH_REPUTATION
+        NOT_ENOUGH_REPUTATION,
+        MAINTENANCE_LIMITED
     }
 
     private final DatabaseService database;
     private final EconomyService economy;
     private final Map<String, ResearchUnlock> unlocks = new HashMap<>();
+    private boolean blockTierUpgradesWhenLimited;
 
     public ResearchService(DatabaseService database, EconomyService economy) {
         this.database = database;
@@ -38,7 +41,13 @@ public final class ResearchService {
     }
 
     public void load(FileConfiguration config) {
+        load(config, null);
+    }
+
+    public void load(FileConfiguration config, FileConfiguration maintenanceConfig) {
         unlocks.clear();
+        blockTierUpgradesWhenLimited = maintenanceConfig != null
+                && maintenanceConfig.getBoolean("maintenance.limited.block-upgrades", true);
         ConfigurationSection section = config.getConfigurationSection("research.unlocks");
         if (section == null) {
             return;
@@ -82,6 +91,11 @@ public final class ResearchService {
         }
         if (island.reputation() < unlock.requiredReputation()) {
             return UnlockResult.NOT_ENOUGH_REPUTATION;
+        }
+        if (blockTierUpgradesWhenLimited
+                && island.maintenanceStatus() == MaintenanceStatus.LIMITED
+                && unlock.factoryTier() > island.tier()) {
+            return UnlockResult.MAINTENANCE_LIMITED;
         }
         if (unlock.moneyCost() > 0 && (owner == null || !economy.withdraw(owner, unlock.moneyCost()))) {
             return UnlockResult.NOT_ENOUGH_MONEY;
