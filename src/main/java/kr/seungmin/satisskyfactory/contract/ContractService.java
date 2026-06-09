@@ -24,11 +24,6 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 public final class ContractService {
-    public record ContractTemplate(String id, String type, int tier, int maxTier, Map<String, Long> required,
-                                   long money, long research, long reputation, long debtRelief,
-                                   Map<String, Long> itemRewards, long expiresHours) {
-    }
-
     public record ActiveContract(UUID contractId, ContractTemplate template, long expiresAt) {
     }
 

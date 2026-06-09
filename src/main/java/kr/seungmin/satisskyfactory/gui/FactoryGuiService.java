@@ -1,7 +1,8 @@
 package kr.seungmin.satisskyfactory.gui;
 
-import kr.seungmin.satisskyfactory.contract.ContractService;
 import kr.seungmin.satisskyfactory.config.MessageService;
+import kr.seungmin.satisskyfactory.contract.ContractService;
+import kr.seungmin.satisskyfactory.contract.ContractTemplate;
 import kr.seungmin.satisskyfactory.economy.EconomyService;
 import kr.seungmin.satisskyfactory.item.ItemRegistry;
 import kr.seungmin.satisskyfactory.machine.FactoryIslandService;
@@ -245,7 +246,7 @@ public final class FactoryGuiService {
             if (slot >= 17) {
                 break;
             }
-            ContractService.ContractTemplate template = active.template();
+            ContractTemplate template = active.template();
             holder.action(slot, "contract_detail", active.contractId().toString());
             inventory.setItem(slot++, icon(Material.WRITABLE_BOOK, ChatColor.GOLD + template.id(),
                     List.of(ChatColor.GRAY + "Type: " + template.type(),
@@ -283,7 +284,7 @@ public final class FactoryGuiService {
             openContracts(player, island, contracts);
             return;
         }
-        ContractService.ContractTemplate template = active.template();
+        ContractTemplate template = active.template();
         FactoryGuiHolder holder = new FactoryGuiHolder("contract-detail", island.islandUuid(), null);
         Inventory inventory = Bukkit.createInventory(holder, 27, title("contract-detail-title", "Contract Detail"));
         holder.inventory(inventory);
@@ -314,7 +315,7 @@ public final class FactoryGuiService {
                 .toList();
     }
 
-    private List<String> rewardLines(ContractService.ContractTemplate template) {
+    private List<String> rewardLines(ContractTemplate template) {
         List<String> lore = new ArrayList<>();
         if (template.money() > 0) {
             lore.add(ChatColor.GRAY + "Money: " + template.money());
