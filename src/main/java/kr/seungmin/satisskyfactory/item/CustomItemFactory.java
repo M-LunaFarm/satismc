@@ -88,6 +88,22 @@ public final class CustomItemFactory {
         return machineType(stack).isPresent();
     }
 
+    public Optional<Integer> machineTier(ItemStack stack) {
+        if (stack == null || !stack.hasItemMeta()) {
+            return Optional.empty();
+        }
+        PersistentDataContainer pdc = stack.getItemMeta().getPersistentDataContainer();
+        return Optional.ofNullable(pdc.get(machineTierKey, PersistentDataType.INTEGER));
+    }
+
+    public Optional<String> internalUuid(ItemStack stack) {
+        if (stack == null || !stack.hasItemMeta()) {
+            return Optional.empty();
+        }
+        PersistentDataContainer pdc = stack.getItemMeta().getPersistentDataContainer();
+        return Optional.ofNullable(pdc.get(internalUuidKey, PersistentDataType.STRING));
+    }
+
     public Optional<String> factoryItemId(ItemStack stack) {
         if (stack == null || !stack.hasItemMeta()) {
             return Optional.empty();
