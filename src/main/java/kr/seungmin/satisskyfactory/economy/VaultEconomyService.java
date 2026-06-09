@@ -1,8 +1,8 @@
 package kr.seungmin.satisskyfactory.economy;
 
+import kr.seungmin.satisskyfactory.hook.VaultHook;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.OfflinePlayer;
-import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public final class VaultEconomyService implements EconomyService {
@@ -13,14 +13,13 @@ public final class VaultEconomyService implements EconomyService {
     }
 
     public static EconomyService createOrFallback(JavaPlugin plugin) {
-        if (plugin.getServer().getPluginManager().getPlugin("Vault") == null) {
-            return new FallbackEconomyService();
-        }
-        RegisteredServiceProvider<Economy> provider = plugin.getServer().getServicesManager().getRegistration(Economy.class);
-        if (provider == null || provider.getProvider() == null) {
-            return new FallbackEconomyService();
-        }
-        return new VaultEconomyService(provider.getProvider());
+        return createOrFallback(new VaultHook(plugin));
+    }
+
+    public static EconomyService createOrFallback(VaultHook vaultHook) {
+        return vaultHook.economy()
+                .<EconomyService>map(VaultEconomyService::new)
+                .orElseGet(FallbackEconomyService::new);
     }
 
     @Override

@@ -1,5 +1,6 @@
 package kr.seungmin.satisskyfactory.economy;
 
+import kr.seungmin.satisskyfactory.hook.VaultHook;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -27,10 +28,11 @@ public final class EconomyModeFactory {
         if (!useVault) {
             return resolvePlayerEconomy(false, null);
         }
-        if (plugin.getServer().getPluginManager().getPlugin("Vault") == null) {
+        VaultHook vaultHook = new VaultHook(plugin);
+        if (!vaultHook.isVaultInstalled()) {
             return new FallbackEconomyService();
         }
-        return resolvePlayerEconomy(true, VaultEconomyService.createOrFallback(plugin));
+        return resolvePlayerEconomy(true, VaultEconomyService.createOrFallback(vaultHook));
     }
 
     static EconomyService resolvePlayerEconomy(boolean useVault, EconomyService vaultEconomy) {
