@@ -120,7 +120,7 @@ class DatabaseServiceTest {
                     new BlockKey("world", 20, 64, 20), 4000);
             database.saveNode(node);
 
-            database.saveUnlock(islandUuid, "tier_2_logistics");
+            database.saveUnlock(islandUuid, "tier_2");
             database.recordMarketSale(islandUuid, "flour", "2026-06-08", 12, 0.8);
             database.saveContract(new DatabaseService.StoredContract(
                     UUID.fromString("00000000-0000-0000-0000-000000000107"),
@@ -172,7 +172,7 @@ class DatabaseServiceTest {
             assertEquals(500, node.remaining());
             assertEquals(0.75, node.purity());
 
-            assertTrue(database.loadUnlocks(islandUuid).contains("tier_2_logistics"));
+            assertTrue(database.loadUnlocks(islandUuid).contains("tier_2"));
             assertEquals(12, database.marketDailySold("flour", "2026-06-08"));
             assertEquals(12, database.marketPersonalSold(islandUuid, "flour", "2026-06-08"));
             assertTrue(database.hasContractForTemplate(islandUuid, "bread_supply", "ACTIVE"));

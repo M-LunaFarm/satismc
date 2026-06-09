@@ -20,6 +20,28 @@ machines:
       BEETROOTS: beetroot
       NETHER_WART: nether_wart
       SUGAR_CANE: sugar_cane
+  harvester_t2:
+    display: "Harvester T2"
+    material: DIAMOND_HOE
+    placed-block: DISPENSER
+    custom-model-data: 2002
+    tier: 2
+    input-capacity: 256
+    output-capacity: 1024
+    power-consumption: 8.0
+    cycle-ticks: 60
+    range: 6
+    factory-score: 24
+    maintenance-score: 20
+    wear-per-cycle: 0.035
+    harvest-drops:
+      WHEAT: wheat
+      CARROTS: carrot
+      POTATOES: potato
+      BEETROOTS: beetroot
+      NETHER_WART: nether_wart
+      SUGAR_CANE: sugar_cane
+    required-unlocks: [tier_2]
   planter_t1:
     display: "Planter T1"
     material: IRON_HOE
@@ -83,6 +105,22 @@ machines:
     maintenance-score: 14
     wear-per-cycle: 0.04
     node-type: MINERAL
+  miner_drill_t2:
+    display: "Miner Drill T2"
+    material: DIAMOND_PICKAXE
+    placed-block: BLAST_FURNACE
+    custom-model-data: 2102
+    tier: 2
+    input-capacity: 128
+    output-capacity: 1024
+    power-consumption: 12.0
+    cycle-ticks: 60
+    amount-per-cycle: 4
+    factory-score: 32
+    maintenance-score: 28
+    wear-per-cycle: 0.045
+    node-type: MINERAL
+    required-unlocks: [tier_2]
   grinder_t1:
     display: "Grinder T1"
     material: STONECUTTER
@@ -175,6 +213,66 @@ machines:
     factory-score: 3
     maintenance-score: 2
     wear-per-cycle: 0.015
+  conveyor_t2:
+    display: "Conveyor T2"
+    material: CHAIN
+    placed-block: CHAIN
+    custom-model-data: 2302
+    tier: 2
+    input-capacity: 128
+    output-capacity: 128
+    power-consumption: 4.0
+    cycle-ticks: 30
+    logistics-throughput: 64
+    factory-score: 8
+    maintenance-score: 5
+    wear-per-cycle: 0.018
+    required-unlocks: [tier_2]
+  splitter_t1:
+    display: "Splitter T1"
+    material: HOPPER
+    placed-block: HOPPER
+    tier: 2
+    input-capacity: 128
+    output-capacity: 128
+    power-consumption: 3.0
+    cycle-ticks: 35
+    logistics-throughput: 48
+    factory-score: 6
+    maintenance-score: 4
+    wear-per-cycle: 0.018
+    required-unlocks: [smart_logistics]
+  merger_t1:
+    display: "Merger T1"
+    material: HOPPER
+    placed-block: HOPPER
+    tier: 2
+    input-capacity: 128
+    output-capacity: 128
+    power-consumption: 3.0
+    cycle-ticks: 35
+    logistics-throughput: 48
+    factory-score: 6
+    maintenance-score: 4
+    wear-per-cycle: 0.018
+    required-unlocks: [smart_logistics]
+  filter_splitter_t1:
+    display: "Filter Splitter T1"
+    material: COMPARATOR
+    placed-block: COMPARATOR
+    tier: 2
+    input-capacity: 128
+    output-capacity: 128
+    power-consumption: 4.0
+    cycle-ticks: 35
+    logistics-throughput: 48
+    logistics:
+      allowed-items: [iron_ore, crushed_iron, iron_ingot, iron_plate, machine_parts]
+      blocked-items: []
+    factory-score: 8
+    maintenance-score: 5
+    wear-per-cycle: 0.018
+    required-unlocks: [smart_logistics]
   filter_distributor_t1:
     display: "Filter Distributor T1"
     material: COMPARATOR
@@ -191,7 +289,7 @@ machines:
     factory-score: 4
     maintenance-score: 3
     wear-per-cycle: 0.015
-    required-unlocks: [tier_2_logistics]
+    required-unlocks: [smart_logistics]
   storage_t1:
     display: "Storage T1"
     material: CHEST

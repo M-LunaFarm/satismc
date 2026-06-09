@@ -94,6 +94,15 @@ class DefaultConfigIntegrityTest {
         assertEquals("EMERGENCY", contractsConfig.getString("contracts.templates.emergency_manual_farm.type"));
         assertEquals(4000, contractsConfig.getLong("contracts.templates.emergency_manual_farm.rewards.debt-payment"));
         assertEquals(6000, contractsConfig.getLong("contracts.templates.emergency_manual_mine.rewards.debt-payment"));
+        assertEquals("공장 티어 2", researchConfig.getString("research.unlocks.tier_2.display-name"));
+        assertEquals(100, researchConfig.getLong("research.unlocks.tier_2.cost-research-points"));
+        assertEquals(100000, researchConfig.getLong("research.unlocks.tier_2.cost-money"));
+        assertEquals(30, researchConfig.getLong("research.unlocks.tier_2.required-reputation"));
+        assertEquals(List.of("harvester_t2", "miner_drill_t2", "conveyor_t2"),
+                researchConfig.getStringList("research.unlocks.tier_2.unlocks"));
+        assertEquals("스마트 물류", researchConfig.getString("research.unlocks.smart_logistics.display-name"));
+        assertEquals(List.of("splitter_t1", "merger_t1", "filter_splitter_t1"),
+                researchConfig.getStringList("research.unlocks.smart_logistics.unlocks"));
 
         for (String recipeId : recipes) {
             String base = "recipes." + recipeId + ".";

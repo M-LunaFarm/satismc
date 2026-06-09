@@ -25,7 +25,8 @@ class ResearchServiceTest {
         try (DatabaseHandle handle = openDatabase("research-unlock")) {
             ResearchService research = new ResearchService(handle.database(), new TrackingEconomy());
             YamlConfiguration config = load("research.yml");
-            config.set("research.unlocks.tier_2_logistics.cost-money", 0);
+            config.set("research.unlocks.tier_2.cost-money", 0);
+            config.set("research.unlocks.tier_2.required-reputation", 0);
             research.load(config);
             FactoryIsland island = new FactoryIsland(
                     UUID.fromString("00000000-0000-0000-0000-000000003001"),
@@ -34,14 +35,41 @@ class ResearchServiceTest {
             island.researchPoints(120);
             handle.database().saveIsland(island);
 
-            ResearchService.UnlockResult result = research.unlock(island, "tier_2_logistics");
+            ResearchService.UnlockResult result = research.unlock(island, "tier_2");
 
             assertEquals(ResearchService.UnlockResult.UNLOCKED, result);
             assertEquals(20, island.researchPoints());
             assertEquals(2, island.tier());
-            assertTrue(handle.database().loadUnlocks(island.islandUuid()).contains("tier_2_logistics"));
-            assertTrue(handle.database().loadUnlocks(island.islandUuid()).contains("filter_distributor_t1"));
-            assertEquals(ResearchService.UnlockResult.ALREADY_UNLOCKED, research.unlock(island, "tier_2_logistics"));
+            assertTrue(handle.database().loadUnlocks(island.islandUuid()).contains("tier_2"));
+            assertTrue(handle.database().loadUnlocks(island.islandUuid()).contains("harvester_t2"));
+            assertTrue(handle.database().loadUnlocks(island.islandUuid()).contains("miner_drill_t2"));
+            assertTrue(handle.database().loadUnlocks(island.islandUuid()).contains("conveyor_t2"));
+            assertEquals(ResearchService.UnlockResult.ALREADY_UNLOCKED, research.unlock(island, "tier_2"));
+        }
+    }
+
+    @Test
+    void smartLogisticsStoresConfiguredMachineUnlocks() {
+        try (DatabaseHandle handle = openDatabase("smart-logistics-unlock")) {
+            ResearchService research = new ResearchService(handle.database(), new TrackingEconomy());
+            YamlConfiguration config = load("research.yml");
+            config.set("research.unlocks.smart_logistics.cost-money", 0);
+            research.load(config);
+            FactoryIsland island = new FactoryIsland(
+                    UUID.fromString("00000000-0000-0000-0000-000000003401"),
+                    UUID.fromString("00000000-0000-0000-0000-000000003402")
+            );
+            island.researchPoints(60);
+            handle.database().saveIsland(island);
+
+            ResearchService.UnlockResult result = research.unlock(island, "smart_logistics");
+
+            assertEquals(ResearchService.UnlockResult.UNLOCKED, result);
+            assertEquals(0, island.researchPoints());
+            assertTrue(handle.database().loadUnlocks(island.islandUuid()).contains("smart_logistics"));
+            assertTrue(handle.database().loadUnlocks(island.islandUuid()).contains("splitter_t1"));
+            assertTrue(handle.database().loadUnlocks(island.islandUuid()).contains("merger_t1"));
+            assertTrue(handle.database().loadUnlocks(island.islandUuid()).contains("filter_splitter_t1"));
         }
     }
 
@@ -63,7 +91,7 @@ class ResearchServiceTest {
             assertEquals(ResearchService.UnlockResult.MISSING_REQUIREMENT,
                     research.unlock(island, "advanced_processing"));
 
-            handle.database().saveUnlock(island.islandUuid(), "tier_2_logistics");
+            handle.database().saveUnlock(island.islandUuid(), "tier_2");
             island.reputation(0);
             assertEquals(ResearchService.UnlockResult.NOT_ENOUGH_REPUTATION,
                     research.unlock(island, "advanced_processing"));
@@ -80,7 +108,8 @@ class ResearchServiceTest {
         try (DatabaseHandle handle = openDatabase("research-maintenance-limited")) {
             ResearchService research = new ResearchService(handle.database(), new TrackingEconomy());
             YamlConfiguration config = load("research.yml");
-            config.set("research.unlocks.tier_2_logistics.cost-money", 0);
+            config.set("research.unlocks.tier_2.cost-money", 0);
+            config.set("research.unlocks.tier_2.required-reputation", 0);
             YamlConfiguration maintenance = load("maintenance.yml");
             maintenance.set("maintenance.limited.block-upgrades", true);
             research.load(config, maintenance);
@@ -92,7 +121,7 @@ class ResearchServiceTest {
             island.maintenanceStatus(MaintenanceStatus.LIMITED);
             handle.database().saveIsland(island);
 
-            ResearchService.UnlockResult result = research.unlock(island, "tier_2_logistics");
+            ResearchService.UnlockResult result = research.unlock(island, "tier_2");
 
             assertEquals(ResearchService.UnlockResult.MAINTENANCE_LIMITED, result);
             assertEquals(120, island.researchPoints());
@@ -106,7 +135,8 @@ class ResearchServiceTest {
         try (DatabaseHandle handle = openDatabase("research-maintenance-allowed")) {
             ResearchService research = new ResearchService(handle.database(), new TrackingEconomy());
             YamlConfiguration config = load("research.yml");
-            config.set("research.unlocks.tier_2_logistics.cost-money", 0);
+            config.set("research.unlocks.tier_2.cost-money", 0);
+            config.set("research.unlocks.tier_2.required-reputation", 0);
             YamlConfiguration maintenance = load("maintenance.yml");
             maintenance.set("maintenance.limited.block-upgrades", false);
             research.load(config, maintenance);
@@ -118,7 +148,7 @@ class ResearchServiceTest {
             island.maintenanceStatus(MaintenanceStatus.LIMITED);
             handle.database().saveIsland(island);
 
-            ResearchService.UnlockResult result = research.unlock(island, "tier_2_logistics");
+            ResearchService.UnlockResult result = research.unlock(island, "tier_2");
 
             assertEquals(ResearchService.UnlockResult.UNLOCKED, result);
             assertEquals(2, island.tier());
