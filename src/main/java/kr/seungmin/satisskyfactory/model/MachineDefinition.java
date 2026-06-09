@@ -1,5 +1,7 @@
 package kr.seungmin.satisskyfactory.model;
 
+import kr.seungmin.satisskyfactory.machine.MachineIndustry;
+import kr.seungmin.satisskyfactory.machine.MachineRole;
 import org.bukkit.Material;
 
 import java.util.List;
@@ -12,8 +14,8 @@ public record MachineDefinition(
         Material placedMaterial,
         int customModelData,
         int tier,
-        String industry,
-        String role,
+        MachineIndustry industry,
+        MachineRole role,
         int inputCapacity,
         int outputCapacity,
         double powerConsumption,
@@ -44,18 +46,18 @@ public record MachineDefinition(
     }
 
     public boolean isGenerator() {
-        return powerGeneration > 0;
+        return role == MachineRole.GENERATOR || powerGeneration > 0;
     }
 
     public boolean isBattery() {
-        return batteryCapacity > 0;
+        return role == MachineRole.BATTERY || batteryCapacity > 0;
     }
 
     public boolean isLogistics() {
-        return logisticsThroughput > 0;
+        return role == MachineRole.LOGISTICS || logisticsThroughput > 0;
     }
 
     public boolean isStorage() {
-        return typeId.startsWith("storage_");
+        return role == MachineRole.STORAGE || typeId.startsWith("storage_");
     }
 }

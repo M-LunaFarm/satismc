@@ -1,6 +1,8 @@
 package kr.seungmin.satisskyfactory.database;
 
 import kr.seungmin.satisskyfactory.machine.MachineDefinitionService;
+import kr.seungmin.satisskyfactory.machine.MachineIndustry;
+import kr.seungmin.satisskyfactory.machine.MachineRole;
 import kr.seungmin.satisskyfactory.machine.MachineService;
 import kr.seungmin.satisskyfactory.model.BlockKey;
 import kr.seungmin.satisskyfactory.model.MachineDefinition;
@@ -182,8 +184,8 @@ class PowerNetworkServiceTest {
                 Material.STONE,
                 0,
                 1,
-                "",
-                "",
+                MachineIndustry.UNKNOWN,
+                MachineRole.UNKNOWN,
                 64,
                 64,
                 consumption,
