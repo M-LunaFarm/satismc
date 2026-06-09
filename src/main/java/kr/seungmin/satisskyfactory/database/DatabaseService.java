@@ -358,10 +358,17 @@ public final class DatabaseService {
     }
 
     public void deleteMachine(UUID machineId) {
-        try (Connection connection = connection();
-             PreparedStatement statement = connection.prepareStatement("DELETE FROM machines WHERE machine_id = ?")) {
-            statement.setString(1, machineId.toString());
-            statement.executeUpdate();
+        try (Connection connection = connection()) {
+            connection.setAutoCommit(false);
+            try (PreparedStatement links = connection.prepareStatement("DELETE FROM machine_network_links WHERE machine_id = ?")) {
+                links.setString(1, machineId.toString());
+                links.executeUpdate();
+            }
+            try (PreparedStatement statement = connection.prepareStatement("DELETE FROM machines WHERE machine_id = ?")) {
+                statement.setString(1, machineId.toString());
+                statement.executeUpdate();
+            }
+            connection.commit();
         } catch (SQLException exception) {
             throw new IllegalStateException("Failed to delete machine", exception);
         }

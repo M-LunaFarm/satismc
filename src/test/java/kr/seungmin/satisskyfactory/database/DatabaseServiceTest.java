@@ -309,6 +309,12 @@ class DatabaseServiceTest {
                     .findFirst()
                     .orElseThrow();
             assertEquals(networkId, conveyor.itemNetworkId());
+
+            handle.database().deleteMachine(grinderId);
+
+            ItemNetwork cleaned = handle.database().loadItemNetworks(islandUuid).stream().findFirst().orElseThrow();
+            assertEquals(Set.of(conveyorId, storageId), cleaned.connectedMachineIds());
+            assertEquals(Set.of(new ItemNetwork.Route(conveyorId, storageId)), Set.copyOf(cleaned.routes()));
         }
     }
 
@@ -357,6 +363,11 @@ class DatabaseServiceTest {
                     .findFirst()
                     .orElseThrow();
             assertEquals(networkId, generator.powerNetworkId());
+
+            handle.database().deleteMachine(grinderId);
+
+            PowerNetwork cleaned = handle.database().loadPowerNetworks(islandUuid).stream().findFirst().orElseThrow();
+            assertEquals(Set.of(generatorId, batteryId), cleaned.connectedMachineIds());
         }
     }
 
