@@ -5,6 +5,7 @@ api-version: "1.21"
 depend: [SuperiorSkyblock2]
 softdepend: [Vault, PlaceholderAPI]
 author: LeeSeungmin
+website: "mailto:admin@lunaf.kr"
 commands:
   factory:
     description: SatisSkyFactory command
