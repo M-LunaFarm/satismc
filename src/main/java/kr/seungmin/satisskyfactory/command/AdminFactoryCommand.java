@@ -206,7 +206,7 @@ public final class AdminFactoryCommand {
     private long giveMachineItem(Player target, MachineDefinition definition, long amount) {
         long remaining = amount;
         while (remaining > 0) {
-            ItemStack stack = itemFactory.machineItem(definition, stackAmount(definition.material(), remaining));
+            ItemStack stack = itemFactory.createMachineItem(definition.typeId(), stackAmount(definition.material(), remaining));
             int stackAmount = stack.getAmount();
             Map<Integer, ItemStack> overflow = target.getInventory().addItem(stack);
             if (!overflow.isEmpty()) {

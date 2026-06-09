@@ -505,7 +505,7 @@ public final class FactoryGuiListener implements Listener {
         location(machine.location()).ifPresent(location -> location.getBlock().setType(Material.AIR, false));
         itemNetworks.rebuildIsland(island.islandUuid());
         power.rebuildIsland(island.islandUuid());
-        Map<Integer, ItemStack> overflow = player.getInventory().addItem(itemFactory.machineItem(definition, 1));
+        Map<Integer, ItemStack> overflow = player.getInventory().addItem(itemFactory.createMachineItem(definition.typeId(), 1));
         overflow.values().forEach(item -> player.getWorld().dropItemNaturally(player.getLocation(), item));
         player.closeInventory();
         messages.send(player, "machine-reclaimed", Map.of("machine", definition.displayName()));

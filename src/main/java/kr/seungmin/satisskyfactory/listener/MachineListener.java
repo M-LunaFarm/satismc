@@ -231,7 +231,8 @@ public final class MachineListener implements Listener {
             event.setDropItems(false);
             event.setExpToDrop(0);
             if (definition != null) {
-                event.getBlock().getWorld().dropItemNaturally(event.getBlock().getLocation(), itemFactory.machineItem(definition, 1));
+                event.getBlock().getWorld().dropItemNaturally(event.getBlock().getLocation(),
+                        itemFactory.createMachineItem(definition.typeId(), 1));
                 messages.send(player, "removed", Map.of("machine", definition.displayName()));
             }
             itemNetworks.rebuildIsland(machine.islandUuid());

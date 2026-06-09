@@ -81,8 +81,8 @@ public final class SatisSkyFactoryPlugin extends JavaPlugin {
 
         economy = EconomyModeFactory.create(this, configs.main());
         itemRegistry = new ItemRegistry();
-        itemFactory = new CustomItemFactory(this);
         machineDefinitions = new MachineDefinitionService();
+        itemFactory = new CustomItemFactory(this, machineDefinitions);
         recipes = new RecipeService();
         storage = new StorageService(database, configInt("storage.default-capacity", "limits.default-storage-capacity", 10000));
         islands = new FactoryIslandService(skyblock, database);

@@ -2,6 +2,8 @@ package kr.seungmin.satisskyfactory.item;
 
 import org.junit.jupiter.api.Test;
 
+import org.bukkit.inventory.ItemStack;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class CustomItemKeysTest {
@@ -11,5 +13,12 @@ class CustomItemKeysTest {
         assertEquals("machine_type", CustomItemKeys.MACHINE_TYPE);
         assertEquals("machine_tier", CustomItemKeys.MACHINE_TIER);
         assertEquals("internal_uuid", CustomItemKeys.INTERNAL_UUID);
+    }
+
+    @Test
+    void exposesGoalMachineItemFactoryMethod() throws Exception {
+        assertEquals(ItemStack.class, CustomItemFactory.class
+                .getMethod("createMachineItem", String.class, int.class)
+                .getReturnType());
     }
 }

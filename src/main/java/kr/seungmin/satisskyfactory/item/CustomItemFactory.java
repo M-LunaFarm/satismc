@@ -1,6 +1,7 @@
 package kr.seungmin.satisskyfactory.item;
 
 import kr.seungmin.satisskyfactory.model.MachineDefinition;
+import kr.seungmin.satisskyfactory.machine.MachineDefinitionService;
 import org.bukkit.ChatColor;
 import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.ItemStack;
@@ -14,6 +15,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 public final class CustomItemFactory {
+    private final MachineDefinitionService definitions;
     private final NamespacedKey machineTypeKey;
     private final NamespacedKey machineTierKey;
     private final NamespacedKey itemIdKey;
@@ -21,11 +23,25 @@ public final class CustomItemFactory {
     private final NamespacedKey internalUuidKey;
 
     public CustomItemFactory(JavaPlugin plugin) {
+        this(plugin, null);
+    }
+
+    public CustomItemFactory(JavaPlugin plugin, MachineDefinitionService definitions) {
+        this.definitions = definitions;
         this.machineTypeKey = CustomItemKeys.machineType(plugin);
         this.machineTierKey = CustomItemKeys.machineTier(plugin);
         this.itemIdKey = CustomItemKeys.itemId(plugin);
         this.legacyFactoryItemKey = CustomItemKeys.legacyFactoryItem(plugin);
         this.internalUuidKey = CustomItemKeys.internalUuid(plugin);
+    }
+
+    public ItemStack createMachineItem(String typeId, int amount) {
+        if (definitions == null) {
+            throw new IllegalStateException("Machine definitions are not attached to this item factory");
+        }
+        MachineDefinition definition = definitions.get(typeId)
+                .orElseThrow(() -> new IllegalArgumentException("Unknown machine type: " + typeId));
+        return machineItem(definition, amount);
     }
 
     public ItemStack machineItem(MachineDefinition definition, int amount) {
