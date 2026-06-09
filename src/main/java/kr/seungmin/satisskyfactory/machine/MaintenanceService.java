@@ -73,19 +73,27 @@ public final class MaintenanceService {
     }
 
     public long chargeIfDue(FactoryIsland island, OfflinePlayer owner, Object rawIsland) {
+        return charge(island, owner, rawIsland, false);
+    }
+
+    public long chargeNow(FactoryIsland island, OfflinePlayer owner, Object rawIsland) {
+        return charge(island, owner, rawIsland, true);
+    }
+
+    private long charge(FactoryIsland island, OfflinePlayer owner, Object rawIsland, boolean force) {
         long now = Instant.now().toEpochMilli();
         if (!enabled) {
             factoryScores.refreshFactoryScore(island);
             island.maintenanceStatus(MaintenanceStatus.NORMAL);
             return 0;
         }
-        if (island.lastMaintenanceAt() > 0 && now - island.lastMaintenanceAt() < intervalMillis) {
+        if (!force && island.lastMaintenanceAt() > 0 && now - island.lastMaintenanceAt() < intervalMillis) {
             factoryScores.refreshFactoryScore(island);
             updateStatus(island);
             return 0;
         }
         factoryScores.refreshFactoryScore(island);
-        if (isNewIslandGracePeriod(island, now)) {
+        if (!force && isNewIslandGracePeriod(island, now)) {
             updateStatus(island);
             return 0;
         }

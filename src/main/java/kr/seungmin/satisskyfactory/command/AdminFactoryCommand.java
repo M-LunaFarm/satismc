@@ -101,7 +101,7 @@ public final class AdminFactoryCommand {
                 messages.send(sender, "admin-debt-updated");
             });
             case "charge" -> withPlayerContext(sender, args, 2, (target, island) -> {
-                islands.context(target).ifPresent(context -> maintenance.chargeIfDue(island, target, context.islandRef().raw()));
+                islands.context(target).ifPresent(context -> maintenance.chargeNow(island, target, context.islandRef().raw()));
                 islands.save(island);
                 messages.send(sender, "admin-maintenance-charged");
             });

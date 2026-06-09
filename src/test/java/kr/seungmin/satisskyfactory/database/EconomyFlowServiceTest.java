@@ -222,6 +222,11 @@ class EconomyFlowServiceTest {
                     || island.maintenanceStatus() == MaintenanceStatus.LOCKED);
             assertEquals(0, maintenance.chargeIfDue(island, null, null));
             assertEquals(due, island.maintenanceDebt());
+
+            long forcedDue = maintenance.chargeNow(island, null, null);
+
+            assertTrue(forcedDue > 0);
+            assertEquals(due + forcedDue, island.maintenanceDebt());
         }
     }
 
