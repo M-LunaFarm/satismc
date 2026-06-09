@@ -66,6 +66,15 @@ class DatabaseServiceTest {
     }
 
     @Test
+    void customSqliteFileNameControlsDatabasePath() {
+        File dataFolder = tempDir.resolve("custom-db").toFile();
+        try (DatabaseHandle ignored = openDatabase(dataFolder, "custom.sqlite")) {
+            assertTrue(new File(dataFolder, "custom.sqlite").isFile());
+            assertFalse(new File(dataFolder, "data.db").exists());
+        }
+    }
+
+    @Test
     void islandInventoryMachineNodeAndUnlocksSurviveReopen() {
         UUID islandUuid = UUID.fromString("00000000-0000-0000-0000-000000000101");
         UUID ownerUuid = UUID.fromString("00000000-0000-0000-0000-000000000102");
@@ -328,7 +337,11 @@ class DatabaseServiceTest {
     }
 
     private DatabaseHandle openDatabase(File dataFolder) {
-        DatabaseService database = new DatabaseService(dataFolder);
+        return openDatabase(dataFolder, "data.db");
+    }
+
+    private DatabaseHandle openDatabase(File dataFolder, String sqliteFileName) {
+        DatabaseService database = new DatabaseService(dataFolder, sqliteFileName);
         database.open();
         return new DatabaseHandle(database);
     }

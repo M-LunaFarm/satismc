@@ -30,25 +30,44 @@ import java.util.UUID;
 
 public final class DatabaseService {
     private final File dataFolder;
+    private final String sqliteFileName;
     private HikariDataSource dataSource;
 
     public DatabaseService(JavaPlugin plugin) {
         this(plugin.getDataFolder());
     }
 
+    public DatabaseService(JavaPlugin plugin, String sqliteFileName) {
+        this(plugin.getDataFolder(), sqliteFileName);
+    }
+
     DatabaseService(File dataFolder) {
+        this(dataFolder, "data.db");
+    }
+
+    public DatabaseService(File dataFolder, String sqliteFileName) {
         this.dataFolder = dataFolder;
+        this.sqliteFileName = sqliteFileName == null || sqliteFileName.isBlank() ? "data.db" : sqliteFileName;
     }
 
     public void open() {
         dataFolder.mkdirs();
-        File database = new File(dataFolder, "data.db");
+        File database = databaseFile();
+        File parent = database.getParentFile();
+        if (parent != null) {
+            parent.mkdirs();
+        }
         HikariConfig config = new HikariConfig();
         config.setJdbcUrl("jdbc:sqlite:" + database.getAbsolutePath());
         config.setMaximumPoolSize(4);
         config.setPoolName("SatisSkyFactory");
         dataSource = new HikariDataSource(config);
         migrate();
+    }
+
+    private File databaseFile() {
+        File configured = new File(sqliteFileName);
+        return configured.isAbsolute() ? configured : new File(dataFolder, sqliteFileName);
     }
 
     public void close() {

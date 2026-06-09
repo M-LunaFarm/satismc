@@ -75,7 +75,7 @@ public final class SatisSkyFactoryPlugin extends JavaPlugin {
         }
         configureSkyblockHook();
 
-        database = new DatabaseService(this);
+        database = new DatabaseService(this, configs.main().getString("database.sqlite-file", "data.db"));
         database.open();
 
         economy = EconomyModeFactory.create(this, configs.main());
