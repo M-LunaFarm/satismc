@@ -226,6 +226,34 @@ class EconomyFlowServiceTest {
     }
 
     @Test
+    void disabledMaintenanceDoesNotChargeOrApplyPenaltyStatus() {
+        try (DatabaseHandle handle = openDatabase("maintenance-disabled")) {
+            DatabaseService database = handle.database();
+            MachineDefinitionService definitions = new MachineDefinitionService();
+            MachineService machines = new MachineService(database, definitions, new StorageService(database, 1000));
+            MaintenanceService maintenance = new MaintenanceService(machines, new TrackingEconomy(), database);
+            YamlConfiguration config = load("maintenance.yml");
+            config.set("maintenance.enabled", false);
+            maintenance.load(config);
+
+            FactoryIsland island = new FactoryIsland(
+                    UUID.fromString("00000000-0000-0000-0000-000000001901"),
+                    UUID.fromString("00000000-0000-0000-0000-000000001902")
+            );
+            island.createdAt(Instant.now().minus(java.time.Duration.ofDays(10)).toEpochMilli());
+            island.maintenanceDebt(600);
+            island.maintenanceStatus(MaintenanceStatus.LOCKED);
+
+            long due = maintenance.chargeIfDue(island, null, null);
+
+            assertEquals(0, due);
+            assertEquals(600, island.maintenanceDebt());
+            assertEquals(MaintenanceStatus.NORMAL, island.maintenanceStatus());
+            assertEquals(0, island.lastMaintenanceAt());
+        }
+    }
+
+    @Test
     void maintenanceStatusesUseConfiguredDebtDays() {
         try (DatabaseHandle handle = openDatabase("maintenance-days")) {
             DatabaseService database = handle.database();

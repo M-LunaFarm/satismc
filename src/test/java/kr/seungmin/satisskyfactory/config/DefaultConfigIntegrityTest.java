@@ -49,6 +49,7 @@ class DefaultConfigIntegrityTest {
         assertEquals(25, config.getInt("limits.machine-limit-per-island-tier"));
         assertEquals(20, config.getInt("limits.base-network-limit"));
         assertTrue(messages.getString("messages.machine-status", "").contains("{status}"));
+        assertTrue(maintenance.getBoolean("maintenance.enabled"));
         assertEquals(24, maintenance.getInt("maintenance.charge-interval-hours"));
         assertEquals(1, maintenance.getInt("maintenance.status-thresholds.warning-days"));
         assertEquals(3, maintenance.getInt("maintenance.status-thresholds.limited-days"));

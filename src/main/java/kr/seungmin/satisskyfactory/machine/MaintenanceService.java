@@ -16,6 +16,7 @@ public final class MaintenanceService {
     private final MachineService machines;
     private final EconomyService economy;
     private final DatabaseService database;
+    private boolean enabled = true;
     private long intervalMillis;
     private long baseCost;
     private long perMachineCost;
@@ -42,6 +43,7 @@ public final class MaintenanceService {
     }
 
     public void load(FileConfiguration config) {
+        enabled = config.getBoolean("maintenance.enabled", true);
         intervalMillis = config.getLong("maintenance.charge-interval-hours",
                 config.getLong("maintenance.interval-hours", 24)) * 60L * 60L * 1000L;
         baseCost = config.getLong("maintenance.base-fee", config.getLong("maintenance.base-cost", 100));
@@ -67,6 +69,11 @@ public final class MaintenanceService {
 
     public long chargeIfDue(FactoryIsland island, OfflinePlayer owner, Object rawIsland) {
         long now = Instant.now().toEpochMilli();
+        if (!enabled) {
+            island.factoryScore(machines.factoryScore(island.islandUuid(), island.tier()));
+            island.maintenanceStatus(MaintenanceStatus.NORMAL);
+            return 0;
+        }
         if (island.lastMaintenanceAt() > 0 && now - island.lastMaintenanceAt() < intervalMillis) {
             island.factoryScore(machines.factoryScore(island.islandUuid(), island.tier()));
             updateStatus(island);
@@ -119,6 +126,10 @@ public final class MaintenanceService {
     }
 
     public void updateStatus(FactoryIsland island) {
+        if (!enabled) {
+            island.maintenanceStatus(MaintenanceStatus.NORMAL);
+            return;
+        }
         if (shouldDormant(island, Instant.now().toEpochMilli())) {
             island.maintenanceStatus(MaintenanceStatus.DORMANT);
             return;

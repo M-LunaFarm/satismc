@@ -1,4 +1,5 @@
 maintenance:
+  enabled: true
   charge-interval-hours: 24
   interval-hours: 24
   formula: EXPONENTIAL_SCORE
