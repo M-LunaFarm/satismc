@@ -206,6 +206,48 @@ class ContractFlowServiceTest {
         }
     }
 
+    @Test
+    void expiredContractsDoNotBlockSlotRefill() {
+        try (DatabaseHandle handle = openDatabase("contract-expiry-refill")) {
+            DatabaseService database = handle.database();
+            ContractService contracts = new ContractService(
+                    new StorageService(database, 1000),
+                    new TrackingEconomy(),
+                    database,
+                    new IslandBoostService(null)
+            );
+            YamlConfiguration config = load("contracts.yml");
+            config.set("contracts.daily_slots", 1);
+            config.set("contracts.weekly_slots", 0);
+            config.set("contracts.story_slots", 0);
+            config.set("contracts.market_slots", 0);
+            contracts.load(config);
+            UUID islandUuid = UUID.fromString("00000000-0000-0000-0000-000000002601");
+            FactoryIsland island = new FactoryIsland(islandUuid, UUID.fromString("00000000-0000-0000-0000-000000002602"));
+            UUID expiredId = UUID.fromString("00000000-0000-0000-0000-000000002603");
+            database.saveContract(new DatabaseService.StoredContract(
+                    expiredId,
+                    islandUuid,
+                    "beginner_wheat",
+                    "DAILY",
+                    1,
+                    "{\"wheat\":128}",
+                    "{}",
+                    "{\"money\":5000,\"research\":3,\"reputation\":1,\"debt-relief\":0}",
+                    "ACTIVE",
+                    System.currentTimeMillis() - 1000
+            ));
+
+            List<ContractService.ActiveContract> active = contracts.activeContracts(island);
+
+            assertEquals(1, database.loadContracts(islandUuid, "EXPIRED").size());
+            assertEquals(expiredId, database.loadContracts(islandUuid, "EXPIRED").getFirst().contractId());
+            assertEquals(1, active.size());
+            assertFalse(active.getFirst().contractId().equals(expiredId));
+            assertEquals(1, database.loadContracts(islandUuid, "ACTIVE").size());
+        }
+    }
+
     private DatabaseHandle openDatabase(String name) {
         DatabaseService database = new DatabaseService(tempDir.resolve(name).toFile());
         database.open();
