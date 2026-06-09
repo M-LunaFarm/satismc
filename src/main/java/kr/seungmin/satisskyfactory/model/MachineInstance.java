@@ -21,6 +21,8 @@ public final class MachineInstance {
     private String selectedRecipeId;
     private long lastProcessAt;
     private double wear;
+    private long createdAt;
+    private long updatedAt;
 
     public MachineInstance(UUID machineId, UUID islandUuid, UUID ownerUuid, String typeId, int tier, BlockKey location) {
         this.machineId = machineId;
@@ -31,6 +33,7 @@ public final class MachineInstance {
         this.location = location;
         this.direction = BlockFace.NORTH;
         this.status = MachineStatus.SLEEPING;
+        this.createdAt = System.currentTimeMillis();
     }
 
     public UUID machineId() { return machineId; }
@@ -59,4 +62,8 @@ public final class MachineInstance {
     public void lastProcessAt(long lastProcessAt) { this.lastProcessAt = lastProcessAt; }
     public double wear() { return wear; }
     public void wear(double wear) { this.wear = wear; }
+    public long createdAt() { return createdAt; }
+    public void createdAt(long createdAt) { this.createdAt = createdAt; }
+    public long updatedAt() { return updatedAt; }
+    public void updatedAt(long updatedAt) { this.updatedAt = updatedAt; }
 }

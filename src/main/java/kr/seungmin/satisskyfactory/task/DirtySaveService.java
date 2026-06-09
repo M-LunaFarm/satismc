@@ -115,6 +115,8 @@ public final class DirtySaveService {
         copy.selectedRecipeId(machine.selectedRecipeId());
         copy.lastProcessAt(machine.lastProcessAt());
         copy.wear(machine.wear());
+        copy.createdAt(machine.createdAt());
+        copy.updatedAt(machine.updatedAt());
         return copy;
     }
 
@@ -157,6 +159,7 @@ public final class DirtySaveService {
         copy.lastMaintenanceAt(island.lastMaintenanceAt());
         copy.lastTickAt(island.lastTickAt());
         copy.createdAt(island.createdAt());
+        copy.updatedAt(island.updatedAt());
         copy.emergencyContractsUsedToday(island.emergencyContractsUsedToday());
         return copy;
     }

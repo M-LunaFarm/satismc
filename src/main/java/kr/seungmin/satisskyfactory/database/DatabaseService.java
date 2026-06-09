@@ -124,6 +124,7 @@ public final class DatabaseService {
         island.lastMaintenanceAt(rs.getLong("last_maintenance_at"));
         island.lastTickAt(rs.getLong("last_tick_at"));
         island.createdAt(rs.getLong("created_at"));
+        island.updatedAt(rs.getLong("updated_at"));
         island.emergencyContractsUsedToday(rs.getInt("emergency_contracts_used_today"));
         return island;
     }
@@ -133,6 +134,7 @@ public final class DatabaseService {
         if (island.createdAt() <= 0) {
             island.createdAt(now);
         }
+        island.updatedAt(now);
         try (Connection connection = connection();
              PreparedStatement statement = connection.prepareStatement("""
                      INSERT INTO factory_islands(island_uuid, owner_uuid, tier, research_points, reputation, maintenance_debt,
@@ -188,6 +190,8 @@ public final class DatabaseService {
                 machine.selectedRecipeId(selectedRecipeId(rs.getString("config_json")));
                 machine.lastProcessAt(rs.getLong("last_process_at"));
                 machine.wear(rs.getDouble("wear"));
+                machine.createdAt(rs.getLong("created_at"));
+                machine.updatedAt(rs.getLong("updated_at"));
                 machines.add(machine);
             }
             return machines;
@@ -198,6 +202,10 @@ public final class DatabaseService {
 
     public void saveMachine(MachineInstance machine) {
         long now = Instant.now().toEpochMilli();
+        if (machine.createdAt() <= 0) {
+            machine.createdAt(now);
+        }
+        machine.updatedAt(now);
         try (Connection connection = connection();
              PreparedStatement statement = connection.prepareStatement("""
                      INSERT INTO machines(machine_id, island_uuid, owner_uuid, type_id, tier, world, x, y, z, direction, status,
@@ -228,8 +236,8 @@ public final class DatabaseService {
             statement.setLong(17, machine.lastProcessAt());
             statement.setDouble(18, machine.wear());
             statement.setString(19, machineConfigJson(machine));
-            statement.setLong(20, now);
-            statement.setLong(21, now);
+            statement.setLong(20, machine.createdAt());
+            statement.setLong(21, machine.updatedAt());
             statement.executeUpdate();
         } catch (SQLException exception) {
             throw new IllegalStateException("Failed to save machine", exception);

@@ -14,6 +14,7 @@ public final class FactoryIsland {
     private long lastMaintenanceAt;
     private long lastTickAt;
     private long createdAt;
+    private long updatedAt;
     private int emergencyContractsUsedToday;
 
     public FactoryIsland(UUID islandUuid, UUID ownerUuid) {
@@ -106,6 +107,14 @@ public final class FactoryIsland {
 
     public void createdAt(long createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public long updatedAt() {
+        return updatedAt;
+    }
+
+    public void updatedAt(long updatedAt) {
+        this.updatedAt = updatedAt;
     }
 
     public int emergencyContractsUsedToday() {

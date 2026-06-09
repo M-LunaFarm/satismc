@@ -96,6 +96,7 @@ class DatabaseServiceTest {
             island.lastMaintenanceAt(1000);
             island.lastTickAt(2000);
             island.createdAt(500);
+            island.updatedAt(600);
             island.emergencyContractsUsedToday(1);
             database.saveIsland(island);
 
@@ -114,6 +115,8 @@ class DatabaseServiceTest {
             machine.selectedRecipeId("flour_from_wheat");
             machine.lastProcessAt(3000);
             machine.wear(1.25);
+            machine.createdAt(700);
+            machine.updatedAt(800);
             database.saveMachine(machine);
 
             ResourceNode node = new ResourceNode(nodeId, islandUuid, "MINERAL", "iron_ore", 0.75, 500, 1000, 120, 1,
@@ -146,6 +149,7 @@ class DatabaseServiceTest {
             assertEquals(MaintenanceStatus.LIMITED, island.maintenanceStatus());
             assertEquals(88, island.factoryScore());
             assertEquals(500, island.createdAt());
+            assertTrue(island.updatedAt() >= 600);
             assertEquals(1, island.emergencyContractsUsedToday());
 
             VirtualInventory input = database.loadInventory(inputInventoryId).orElseThrow();
@@ -163,6 +167,8 @@ class DatabaseServiceTest {
             assertEquals(MachineStatus.ACTIVE, machine.status());
             assertEquals("flour_from_wheat", machine.selectedRecipeId());
             assertEquals(1.25, machine.wear());
+            assertEquals(700, machine.createdAt());
+            assertTrue(machine.updatedAt() >= 800);
 
             ResourceNode node = database.loadNodes(islandUuid).stream()
                     .filter(candidate -> candidate.nodeId().equals(nodeId))
