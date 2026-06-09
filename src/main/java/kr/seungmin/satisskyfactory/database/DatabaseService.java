@@ -187,7 +187,8 @@ public final class DatabaseService {
                 machine.powerNetworkId(uuidOrNull(rs.getString("power_network_id")));
                 machine.itemNetworkId(uuidOrNull(rs.getString("item_network_id")));
                 machine.linkedResourceNodeId(uuidOrNull(rs.getString("linked_resource_node_id")));
-                machine.selectedRecipeId(selectedRecipeId(rs.getString("config_json")));
+                machine.configJson(rs.getString("config_json"));
+                machine.selectedRecipeId(selectedRecipeId(machine.configJson()));
                 machine.lastProcessAt(rs.getLong("last_process_at"));
                 machine.wear(rs.getDouble("wear"));
                 machine.createdAt(rs.getLong("created_at"));
@@ -281,11 +282,79 @@ public final class DatabaseService {
     }
 
     private String machineConfigJson(MachineInstance machine) {
+        String base = validJsonObject(machine.configJson()) ? machine.configJson().trim() : "{}";
         String selectedRecipe = machine.selectedRecipeId();
+        String withoutSelectedRecipe = removeTopLevelStringField(base, "selectedRecipe");
         if (selectedRecipe == null || selectedRecipe.isBlank()) {
+            return withoutSelectedRecipe;
+        }
+        String field = "\"selectedRecipe\":\"" + selectedRecipe.replace("\\", "\\\\").replace("\"", "\\\"") + "\"";
+        if (withoutSelectedRecipe.equals("{}")) {
+            return "{" + field + "}";
+        }
+        return withoutSelectedRecipe.substring(0, withoutSelectedRecipe.length() - 1) + "," + field + "}";
+    }
+
+    private boolean validJsonObject(String json) {
+        if (json == null) {
+            return false;
+        }
+        String trimmed = json.trim();
+        return trimmed.startsWith("{") && trimmed.endsWith("}");
+    }
+
+    private String removeTopLevelStringField(String json, String fieldName) {
+        String trimmed = json.trim();
+        if (trimmed.equals("{}")) {
             return "{}";
         }
-        return "{\"selectedRecipe\":\"" + selectedRecipe.replace("\\", "\\\\").replace("\"", "\\\"") + "\"}";
+        List<String> fields = splitTopLevelFields(trimmed.substring(1, trimmed.length() - 1));
+        String prefix = "\"" + fieldName + "\"";
+        List<String> kept = fields.stream()
+                .filter(field -> !field.trim().startsWith(prefix))
+                .toList();
+        return kept.isEmpty() ? "{}" : kept.stream().collect(java.util.stream.Collectors.joining(",", "{", "}"));
+    }
+
+    private List<String> splitTopLevelFields(String body) {
+        List<String> fields = new ArrayList<>();
+        StringBuilder current = new StringBuilder();
+        boolean quoted = false;
+        boolean escaped = false;
+        int depth = 0;
+        for (int index = 0; index < body.length(); index++) {
+            char value = body.charAt(index);
+            if (escaped) {
+                current.append(value);
+                escaped = false;
+                continue;
+            }
+            if (value == '\\') {
+                current.append(value);
+                escaped = true;
+                continue;
+            }
+            if (value == '"') {
+                quoted = !quoted;
+            } else if (!quoted && (value == '{' || value == '[')) {
+                depth++;
+            } else if (!quoted && (value == '}' || value == ']')) {
+                depth = Math.max(0, depth - 1);
+            } else if (!quoted && depth == 0 && value == ',') {
+                String field = current.toString().trim();
+                if (!field.isEmpty()) {
+                    fields.add(field);
+                }
+                current.setLength(0);
+                continue;
+            }
+            current.append(value);
+        }
+        String field = current.toString().trim();
+        if (!field.isEmpty()) {
+            fields.add(field);
+        }
+        return fields;
     }
 
     public void deleteMachine(UUID machineId) {

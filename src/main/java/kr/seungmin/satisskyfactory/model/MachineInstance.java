@@ -19,6 +19,7 @@ public final class MachineInstance {
     private UUID itemNetworkId;
     private UUID linkedResourceNodeId;
     private String selectedRecipeId;
+    private String configJson;
     private long lastProcessAt;
     private double wear;
     private long createdAt;
@@ -33,6 +34,7 @@ public final class MachineInstance {
         this.location = location;
         this.direction = BlockFace.NORTH;
         this.status = MachineStatus.SLEEPING;
+        this.configJson = "{}";
         this.createdAt = System.currentTimeMillis();
     }
 
@@ -58,6 +60,8 @@ public final class MachineInstance {
     public void linkedResourceNodeId(UUID linkedResourceNodeId) { this.linkedResourceNodeId = linkedResourceNodeId; }
     public String selectedRecipeId() { return selectedRecipeId; }
     public void selectedRecipeId(String selectedRecipeId) { this.selectedRecipeId = selectedRecipeId; }
+    public String configJson() { return configJson; }
+    public void configJson(String configJson) { this.configJson = configJson == null || configJson.isBlank() ? "{}" : configJson; }
     public long lastProcessAt() { return lastProcessAt; }
     public void lastProcessAt(long lastProcessAt) { this.lastProcessAt = lastProcessAt; }
     public double wear() { return wear; }

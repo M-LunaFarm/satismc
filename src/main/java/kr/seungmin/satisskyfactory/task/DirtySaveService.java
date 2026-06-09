@@ -112,6 +112,7 @@ public final class DirtySaveService {
         copy.powerNetworkId(machine.powerNetworkId());
         copy.itemNetworkId(machine.itemNetworkId());
         copy.linkedResourceNodeId(machine.linkedResourceNodeId());
+        copy.configJson(machine.configJson());
         copy.selectedRecipeId(machine.selectedRecipeId());
         copy.lastProcessAt(machine.lastProcessAt());
         copy.wear(machine.wear());

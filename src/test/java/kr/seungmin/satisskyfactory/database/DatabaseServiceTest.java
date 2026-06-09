@@ -112,6 +112,7 @@ class DatabaseServiceTest {
             machine.status(MachineStatus.ACTIVE);
             machine.inputInventoryId(inputInventoryId);
             machine.outputInventoryId(outputInventoryId);
+            machine.configJson("{\"mode\":\"balanced\",\"selectedRecipe\":\"old_recipe\"}");
             machine.selectedRecipeId("flour_from_wheat");
             machine.lastProcessAt(3000);
             machine.wear(1.25);
@@ -166,6 +167,7 @@ class DatabaseServiceTest {
             assertEquals(BlockFace.EAST, machine.direction());
             assertEquals(MachineStatus.ACTIVE, machine.status());
             assertEquals("flour_from_wheat", machine.selectedRecipeId());
+            assertEquals("{\"mode\":\"balanced\",\"selectedRecipe\":\"flour_from_wheat\"}", machine.configJson());
             assertEquals(1.25, machine.wear());
             assertEquals(700, machine.createdAt());
             assertTrue(machine.updatedAt() >= 800);
