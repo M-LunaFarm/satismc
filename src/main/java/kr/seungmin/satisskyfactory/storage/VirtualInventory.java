@@ -9,10 +9,10 @@ public final class VirtualInventory {
     private final UUID islandUuid;
     private final String holderType;
     private final String holderId;
-    private final int capacity;
+    private final long capacity;
     private final Map<String, Long> items = new HashMap<>();
 
-    public VirtualInventory(UUID inventoryId, UUID islandUuid, String holderType, String holderId, int capacity) {
+    public VirtualInventory(UUID inventoryId, UUID islandUuid, String holderType, String holderId, long capacity) {
         this.inventoryId = inventoryId;
         this.islandUuid = islandUuid;
         this.holderType = holderType;
@@ -24,11 +24,19 @@ public final class VirtualInventory {
     public UUID islandUuid() { return islandUuid; }
     public String holderType() { return holderType; }
     public String holderId() { return holderId; }
-    public int capacity() { return capacity; }
+    public long capacity() { return capacity; }
     public synchronized Map<String, Long> items() { return Map.copyOf(items); }
 
     public synchronized long used() {
         return items.values().stream().mapToLong(Long::longValue).sum();
+    }
+
+    public synchronized long remainingCapacity() {
+        long used = used();
+        if (capacity <= used) {
+            return 0;
+        }
+        return capacity - used;
     }
 
     public synchronized long amount(String itemId) {
@@ -36,7 +44,7 @@ public final class VirtualInventory {
     }
 
     public synchronized boolean canAdd(String itemId, long amount) {
-        return amount >= 0 && used() + amount <= capacity;
+        return amount >= 0 && amount <= remainingCapacity();
     }
 
     public synchronized boolean add(String itemId, long amount) {

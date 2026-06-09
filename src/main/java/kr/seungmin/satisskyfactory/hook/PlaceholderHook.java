@@ -110,7 +110,7 @@ public final class PlaceholderHook extends PlaceholderExpansion {
             return String.valueOf(islandStorage.capacity());
         }
         if (key.equals("storage_free")) {
-            return String.valueOf(Math.max(0, islandStorage.capacity() - islandStorage.used()));
+            return String.valueOf(islandStorage.remainingCapacity());
         }
         if (key.equals("power_ratio")) {
             return NumberFormatter.ratio(powerState.ratio());

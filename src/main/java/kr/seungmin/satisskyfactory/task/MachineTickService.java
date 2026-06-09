@@ -622,7 +622,7 @@ public final class MachineTickService {
 
     private boolean canAddAll(VirtualInventory inventory, Map<String, Long> items) {
         long amount = items.values().stream().mapToLong(Long::longValue).sum();
-        return amount >= 0 && inventory.used() + amount <= inventory.capacity();
+        return inventory.canAdd("__batch__", amount);
     }
 
     private Map<String, Long> recipeOutput(RecipeDefinition recipe) {
@@ -753,7 +753,7 @@ public final class MachineTickService {
             }
             long need = Math.max(0, entry.getValue() - target.amount(entry.getKey()));
             long amount = Math.min(need, Math.min(source.amount(entry.getKey()), limit - moved));
-            amount = Math.min(amount, Math.max(0, target.capacity() - target.used()));
+            amount = Math.min(amount, target.remainingCapacity());
             if (amount > 0 && source.remove(entry.getKey(), amount) && target.add(entry.getKey(), amount)) {
                 moved += amount;
             }
@@ -807,7 +807,7 @@ public final class MachineTickService {
                 continue;
             }
             long amount = Math.min(entry.getValue(), limit - moved);
-            amount = Math.min(amount, Math.max(0, target.capacity() - target.used()));
+            amount = Math.min(amount, target.remainingCapacity());
             if (amount > 0 && source.remove(entry.getKey(), amount) && target.add(entry.getKey(), amount)) {
                 moved += amount;
             }

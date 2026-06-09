@@ -69,7 +69,16 @@ class VirtualInventoryTest {
         assertFalse(inventory.canAdd("wheat", 8));
     }
 
-    private VirtualInventory inventory(int capacity) {
+    @Test
+    void capacitySupportsLongValuesWithoutOverflow() {
+        VirtualInventory inventory = inventory((long) Integer.MAX_VALUE + 100L);
+
+        assertTrue(inventory.add("iron_ore", (long) Integer.MAX_VALUE + 1L));
+        assertEquals((long) Integer.MAX_VALUE + 1L, inventory.used());
+        assertFalse(inventory.canAdd("iron_ore", Long.MAX_VALUE));
+    }
+
+    private VirtualInventory inventory(long capacity) {
         UUID islandUuid = UUID.fromString("00000000-0000-0000-0000-000000000001");
         return new VirtualInventory(UUID.randomUUID(), islandUuid, "ISLAND", islandUuid.toString(), capacity);
     }

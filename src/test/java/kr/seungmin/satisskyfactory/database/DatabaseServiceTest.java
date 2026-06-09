@@ -103,7 +103,8 @@ class DatabaseServiceTest {
             VirtualInventory input = new VirtualInventory(inputInventoryId, islandUuid, "MACHINE_INPUT", machineId.toString(), 64);
             input.add("wheat", 16);
             database.saveInventory(input);
-            VirtualInventory output = new VirtualInventory(outputInventoryId, islandUuid, "MACHINE_OUTPUT", machineId.toString(), 128);
+            VirtualInventory output = new VirtualInventory(outputInventoryId, islandUuid, "MACHINE_OUTPUT", machineId.toString(),
+                    (long) Integer.MAX_VALUE + 512L);
             output.add("flour", 7);
             database.saveInventory(output);
 
@@ -157,6 +158,7 @@ class DatabaseServiceTest {
             assertEquals(16, input.amount("wheat"));
             VirtualInventory output = database.findInventoryByHolder(islandUuid, "MACHINE_OUTPUT", machineId.toString()).orElseThrow();
             assertEquals(outputInventoryId, output.inventoryId());
+            assertEquals((long) Integer.MAX_VALUE + 512L, output.capacity());
             assertEquals(7, output.amount("flour"));
 
             MachineInstance machine = database.loadMachines().stream()

@@ -601,7 +601,7 @@ public final class DatabaseService {
                 inv.setString(2, inventory.islandUuid().toString());
                 inv.setString(3, inventory.holderType());
                 inv.setString(4, inventory.holderId());
-                inv.setInt(5, inventory.capacity());
+                inv.setLong(5, inventory.capacity());
                 inv.setLong(6, now);
                 inv.setLong(7, now);
                 inv.executeUpdate();
@@ -638,7 +638,7 @@ public final class DatabaseService {
                         UUID.fromString(rs.getString("island_uuid")),
                         rs.getString("holder_type"),
                         rs.getString("holder_id"),
-                        rs.getInt("capacity")
+                        rs.getLong("capacity")
                 );
                 loadInventoryItems(connection, inventory);
                 return Optional.of(inventory);

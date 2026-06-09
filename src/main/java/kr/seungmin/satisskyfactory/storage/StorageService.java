@@ -10,11 +10,11 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public final class StorageService {
     private final DatabaseService database;
-    private final int defaultCapacity;
+    private final long defaultCapacity;
     private final Map<UUID, VirtualInventory> cache = new ConcurrentHashMap<>();
     private DirtySaveService dirtySaves;
 
-    public StorageService(DatabaseService database, int defaultCapacity) {
+    public StorageService(DatabaseService database, long defaultCapacity) {
         this.database = database;
         this.defaultCapacity = defaultCapacity;
     }
@@ -38,7 +38,7 @@ public final class StorageService {
         return inventory;
     }
 
-    public VirtualInventory createMachineInventory(UUID islandUuid, UUID machineId, String holderType, int capacity) {
+    public VirtualInventory createMachineInventory(UUID islandUuid, UUID machineId, String holderType, long capacity) {
         VirtualInventory inventory = new VirtualInventory(UUID.randomUUID(), islandUuid, holderType, machineId.toString(), capacity);
         saveNow(inventory);
         return inventory;

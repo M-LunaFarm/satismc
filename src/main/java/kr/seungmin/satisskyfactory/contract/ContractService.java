@@ -227,7 +227,7 @@ public final class ContractService {
         }
         long netSpace = template.itemRewards().values().stream().mapToLong(Long::longValue).sum()
                 - template.required().values().stream().mapToLong(Long::longValue).sum();
-        if (netSpace > 0 && inventory.used() + netSpace > inventory.capacity()) {
+        if (netSpace > 0 && !inventory.canAdd("__contract_reward_space__", netSpace)) {
             return false;
         }
         template.required().forEach((item, amount) -> inventory.remove(item, amount));
