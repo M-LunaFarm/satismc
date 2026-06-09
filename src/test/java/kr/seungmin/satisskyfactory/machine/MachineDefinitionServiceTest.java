@@ -6,6 +6,7 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import java.io.File;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class MachineDefinitionServiceTest {
@@ -29,5 +30,18 @@ class MachineDefinitionServiceTest {
     void unknownEnumValuesStayLoadable() {
         assertEquals(MachineIndustry.UNKNOWN, MachineIndustry.fromConfig("not_an_industry"));
         assertEquals(MachineRole.UNKNOWN, MachineRole.fromConfig("not_a_role"));
+    }
+
+    @Test
+    void machineBehaviorComesFromConfigFields() {
+        YamlConfiguration config = YamlConfiguration.loadConfiguration(new File("src/main/resources", "machines.yml"));
+        var definitions = new kr.seungmin.satisskyfactory.config.MachineConfigLoader().load(config);
+
+        assertTrue(definitions.get("harvester_t1").isHarvester());
+        assertTrue(definitions.get("harvester_t2").isHarvester());
+        assertTrue(definitions.get("planter_t1").isPlanter());
+        assertTrue(definitions.get("fertilizer_sprayer_t1").isFertilizerSprayer());
+        assertTrue(definitions.get("miner_drill_t2").nodeType() != null);
+        assertFalse(definitions.get("grinder_t1").isHarvester());
     }
 }

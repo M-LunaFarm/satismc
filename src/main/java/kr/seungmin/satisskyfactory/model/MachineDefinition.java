@@ -88,4 +88,16 @@ public record MachineDefinition(
     public boolean isStorage() {
         return role == MachineRole.STORAGE || typeId.startsWith("storage_");
     }
+
+    public boolean isHarvester() {
+        return !harvestDrops.isEmpty();
+    }
+
+    public boolean isPlanter() {
+        return !plantRules.isEmpty();
+    }
+
+    public boolean isFertilizerSprayer() {
+        return fertilizerItem != null && !fertilizerItem.isBlank();
+    }
 }

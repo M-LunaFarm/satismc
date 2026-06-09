@@ -289,16 +289,16 @@ public final class MachineTickService {
         if (definition.isGenerator()) {
             return processGenerator(machine, definition);
         }
-        if (machine.typeId().equals("harvester_t1")) {
+        if (definition.isHarvester()) {
             return processHarvester(machine, definition);
         }
-        if (machine.typeId().equals("planter_t1")) {
+        if (definition.isPlanter()) {
             return processPlanter(machine, definition);
         }
-        if (machine.typeId().equals("fertilizer_sprayer_t1")) {
+        if (definition.isFertilizerSprayer()) {
             return processFertilizerSprayer(machine, definition);
         }
-        if (definition.nodeType() != null || machine.typeId().equals("miner_drill_t1")) {
+        if (definition.nodeType() != null) {
             return processNodeProducer(machine, definition);
         }
         return processRecipe(machine, definition);
@@ -314,9 +314,8 @@ public final class MachineTickService {
 
     private long cycleMillis(MachineInstance machine, MachineDefinition definition) {
         long definitionCycleMillis = Math.max(1L, definition.cycleTicks()) * 50L;
-        if (definition.nodeType() != null || machine.typeId().equals("miner_drill_t1")
-                || machine.typeId().equals("harvester_t1") || machine.typeId().equals("planter_t1")
-                || machine.typeId().equals("fertilizer_sprayer_t1") || definition.isGenerator()
+        if (definition.nodeType() != null || definition.isHarvester() || definition.isPlanter()
+                || definition.isFertilizerSprayer() || definition.isGenerator()
                 || definition.isStorage() || definition.isLogistics()) {
             return definitionCycleMillis;
         }
