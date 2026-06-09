@@ -54,6 +54,7 @@ public final class ContractService {
 
     public void load(FileConfiguration config) {
         templates.clear();
+        emergency = null;
         dailySlots = Math.max(1, config.getInt("contracts.daily_slots",
                 config.getInt("contracts.daily-slots-base", 3)));
         weeklySlots = Math.max(0, config.getInt("contracts.weekly_slots",
@@ -71,7 +72,9 @@ public final class ContractService {
                 templates.put(id, template(config, "contracts.templates." + id + ".", id));
             }
         }
-        emergency = template(config, "contracts.emergency.", "emergency");
+        emergency = config.isConfigurationSection("contracts.emergency")
+                ? template(config, "contracts.emergency.", "emergency")
+                : emergencyTemplates().stream().findFirst().orElse(null);
     }
 
     public List<ActiveContract> activeContracts(FactoryIsland island) {
@@ -100,7 +103,7 @@ public final class ContractService {
     }
 
     public boolean completeEmergency(FactoryIsland island, OfflinePlayer owner) {
-        if (emergency == null || island.maintenanceDebt() <= 0) {
+        if (island.maintenanceDebt() <= 0) {
             return false;
         }
         int usedToday = database.countContracts(island.islandUuid(), "EMERGENCY", "COMPLETED", startOfToday());
@@ -109,16 +112,23 @@ public final class ContractService {
             database.saveIsland(island);
             return false;
         }
-        boolean completed = complete(island, owner, new ActiveContract(UUID.randomUUID(), emergency, Instant.now().plus(Duration.ofHours(24)).toEpochMilli()));
-        if (completed) {
-            island.emergencyContractsUsedToday(usedToday + 1);
-            database.saveIsland(island);
+        for (ContractTemplate template : emergencyTemplates()) {
+            boolean completed = complete(island, owner, new ActiveContract(
+                    UUID.randomUUID(),
+                    template,
+                    Instant.now().plus(Duration.ofHours(template.expiresHours() > 0 ? template.expiresHours() : 6)).toEpochMilli()
+            ));
+            if (completed) {
+                island.emergencyContractsUsedToday(usedToday + 1);
+                database.saveIsland(island);
+                return true;
+            }
         }
-        return completed;
+        return false;
     }
 
     public Optional<ContractTemplate> emergencyTemplate() {
-        return Optional.ofNullable(emergency);
+        return emergencyTemplates().stream().findFirst().or(() -> Optional.ofNullable(emergency));
     }
 
     public int emergencyUsedToday(FactoryIsland island) {
@@ -131,6 +141,17 @@ public final class ContractService {
 
     public Map<String, ContractTemplate> templates() {
         return Map.copyOf(templates);
+    }
+
+    private List<ContractTemplate> emergencyTemplates() {
+        List<ContractTemplate> configured = templates.values().stream()
+                .filter(template -> template.type().equalsIgnoreCase("EMERGENCY"))
+                .sorted((left, right) -> left.id().compareTo(right.id()))
+                .toList();
+        if (!configured.isEmpty()) {
+            return configured;
+        }
+        return emergency == null ? List.of() : List.of(emergency);
     }
 
     private void ensureDailyContracts(FactoryIsland island) {

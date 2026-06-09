@@ -88,6 +88,12 @@ class DefaultConfigIntegrityTest {
         assertEquals(6000, marketConfig.getLong("market.items.iron_ore.target-daily-amount"));
         assertEquals(1500, marketConfig.getLong("market.items.iron_plate.target-daily-amount"));
         assertEquals(500, marketConfig.getLong("market.items.machine_parts.target-daily-amount"));
+        assertEquals(3, contractsConfig.getInt("contracts.daily-slots-base"));
+        assertEquals(1, contractsConfig.getInt("contracts.weekly-slots-base"));
+        assertEquals(5, contractsConfig.getInt("contracts.emergency-daily-limit"));
+        assertEquals("EMERGENCY", contractsConfig.getString("contracts.templates.emergency_manual_farm.type"));
+        assertEquals(4000, contractsConfig.getLong("contracts.templates.emergency_manual_farm.rewards.debt-payment"));
+        assertEquals(6000, contractsConfig.getLong("contracts.templates.emergency_manual_mine.rewards.debt-payment"));
 
         for (String recipeId : recipes) {
             String base = "recipes." + recipeId + ".";

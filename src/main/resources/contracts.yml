@@ -1,76 +1,70 @@
 contracts:
-  daily_slots: 3
-  weekly_slots: 1
-  story_slots: 1
-  market_slots: 1
-  boosted-slot-types: [DAILY, WEEKLY, STORY, MARKET]
+  daily-slots-base: 3
+  weekly-slots-base: 1
+  story-slots-base: 0
+  market-slots-base: 0
   emergency-daily-limit: 5
+  boosted-slot-types: [DAILY, WEEKLY]
   templates:
+    beginner_wheat:
+      type: DAILY
+      min-tier: 1
+      max-tier: 2
+      required:
+        wheat: 128
+      rewards:
+        money: 5000
+        research-points: 3
+        reputation: 1
+      expires-hours: 24
+    beginner_iron:
+      type: DAILY
+      min-tier: 1
+      max-tier: 2
+      required:
+        iron_ore: 128
+      rewards:
+        money: 7000
+        research-points: 4
+        reputation: 1
+      expires-hours: 24
     bread_supply:
       type: DAILY
-      tier: 1
+      min-tier: 1
       required:
-        bread_box: 8
+        bread_box: 32
       rewards:
-        money: 200
-        research: 4
-        reputation: 2
-        items:
-          fertilizer: 4
-    iron_parts:
-      type: DAILY
-      tier: 1
-      required:
-        iron_plate: 8
-      rewards:
-        money: 350
-        research: 6
-        reputation: 3
-        items:
-          biofuel: 8
-    machine_parts_weekly:
-      type: WEEKLY
-      tier: 1
-      expires-hours: 168
-      required:
-        machine_parts: 16
-      rewards:
-        money: 1200
-        research: 20
-        reputation: 10
-        items:
-          quality_machine_parts: 2
-    first_automation_story:
-      type: STORY
-      tier: 1
-      expires-hours: 168
-      required:
-        flour: 24
-        iron_plate: 8
-      rewards:
-        money: 600
-        research: 30
-        reputation: 8
-        items:
-          biofuel: 12
-    server_food_demand:
-      type: MARKET
-      tier: 1
+        money: 35000
+        research-points: 10
+        reputation: 5
       expires-hours: 24
+    machine_parts_order:
+      type: WEEKLY
+      min-tier: 1
       required:
-        quality_bread_box: 4
+        machine_parts: 64
       rewards:
-        money: 420
-        research: 10
-        reputation: 4
-  emergency:
-    type: EMERGENCY
-    tier: 1
-    expires-hours: 6
-    required:
-      wheat: 16
-    rewards:
-      debt-relief: 150
-      money: 25
-      items:
-        wheat_seeds: 4
+        money: 120000
+        research-points: 30
+        reputation: 20
+      expires-hours: 168
+    emergency_manual_farm:
+      type: EMERGENCY
+      min-tier: 1
+      required:
+        wheat: 64
+      rewards:
+        debt-payment: 4000
+        money: 0
+        research-points: 0
+      expires-hours: 6
+    emergency_manual_mine:
+      type: EMERGENCY
+      min-tier: 1
+      required:
+        iron_ore: 64
+      rewards:
+        debt-payment: 6000
+        money: 0
+        research-points: 0
+      expires-hours: 6
