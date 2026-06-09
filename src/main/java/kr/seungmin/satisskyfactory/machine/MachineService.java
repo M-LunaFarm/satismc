@@ -8,6 +8,7 @@ import kr.seungmin.satisskyfactory.model.MachineStatus;
 import kr.seungmin.satisskyfactory.storage.StorageService;
 import kr.seungmin.satisskyfactory.storage.VirtualInventory;
 import kr.seungmin.satisskyfactory.task.DirtySaveService;
+import kr.seungmin.satisskyfactory.util.LocationKey;
 import org.bukkit.Location;
 import org.bukkit.Chunk;
 import org.bukkit.block.BlockFace;
@@ -31,7 +32,7 @@ public final class MachineService {
     private final MachineDefinitionService definitions;
     private final StorageService storage;
     private final Map<UUID, MachineInstance> machines = new ConcurrentHashMap<>();
-    private final Map<BlockKey, UUID> byLocation = new ConcurrentHashMap<>();
+    private final Map<LocationKey, UUID> byLocation = new ConcurrentHashMap<>();
     private final AtomicLong revision = new AtomicLong();
     private DirtySaveService dirtySaves;
 
@@ -46,13 +47,13 @@ public final class MachineService {
         byLocation.clear();
         for (MachineInstance machine : database.loadMachines()) {
             machines.put(machine.machineId(), machine);
-            byLocation.put(machine.location(), machine.machineId());
+            byLocation.put(LocationKey.from(machine.location()), machine.machineId());
         }
         revision.incrementAndGet();
     }
 
     public Optional<MachineInstance> at(Location location) {
-        UUID id = byLocation.get(BlockKey.from(location));
+        UUID id = byLocation.get(LocationKey.from(location));
         return id == null ? Optional.empty() : Optional.ofNullable(machines.get(id));
     }
 
@@ -75,13 +76,13 @@ public final class MachineService {
 
     public void save(MachineInstance machine) {
         machines.put(machine.machineId(), machine);
-        byLocation.put(machine.location(), machine.machineId());
+        byLocation.put(LocationKey.from(machine.location()), machine.machineId());
         database.saveMachine(machine);
     }
 
     public void saveLater(MachineInstance machine) {
         machines.put(machine.machineId(), machine);
-        byLocation.put(machine.location(), machine.machineId());
+        byLocation.put(LocationKey.from(machine.location()), machine.machineId());
         if (dirtySaves == null) {
             database.saveMachine(machine);
         } else {
@@ -107,7 +108,7 @@ public final class MachineService {
     private void delete(MachineInstance machine) {
         machine.status(MachineStatus.SLEEPING);
         machines.remove(machine.machineId());
-        byLocation.remove(machine.location());
+        byLocation.remove(LocationKey.from(machine.location()));
         if (dirtySaves != null) {
             dirtySaves.forgetMachine(machine.machineId());
         }
@@ -238,13 +239,14 @@ public final class MachineService {
 
     public Collection<MachineInstance> connectedTo(MachineInstance start, Predicate<MachineInstance> traversable) {
         Set<UUID> visitedMachines = new HashSet<>();
-        Set<BlockKey> visitedLocations = new HashSet<>();
-        Queue<BlockKey> queue = new ArrayDeque<>();
-        queue.add(start.location());
-        visitedLocations.add(start.location());
+        Set<LocationKey> visitedLocations = new HashSet<>();
+        Queue<LocationKey> queue = new ArrayDeque<>();
+        LocationKey startLocation = LocationKey.from(start.location());
+        queue.add(startLocation);
+        visitedLocations.add(startLocation);
 
         while (!queue.isEmpty()) {
-            BlockKey location = queue.poll();
+            LocationKey location = queue.poll();
             UUID machineId = byLocation.get(location);
             if (machineId == null || !visitedMachines.add(machineId)) {
                 continue;
@@ -256,7 +258,7 @@ public final class MachineService {
             if (!machine.machineId().equals(start.machineId()) && !traversable.test(machine)) {
                 continue;
             }
-            for (BlockKey neighbor : neighbors(location)) {
+            for (LocationKey neighbor : neighbors(location)) {
                 if (visitedLocations.add(neighbor) && byLocation.containsKey(neighbor)) {
                     queue.add(neighbor);
                 }
@@ -269,7 +271,7 @@ public final class MachineService {
                 .toList();
     }
 
-    private List<BlockKey> neighbors(BlockKey location) {
+    private List<LocationKey> neighbors(LocationKey location) {
         return List.of(
                 location.relative(1, 0, 0),
                 location.relative(-1, 0, 0),
