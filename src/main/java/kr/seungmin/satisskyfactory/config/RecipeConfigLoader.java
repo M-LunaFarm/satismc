@@ -1,0 +1,85 @@
+package kr.seungmin.satisskyfactory.config;
+
+import kr.seungmin.satisskyfactory.recipe.RecipeDefinition;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.file.FileConfiguration;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+public final class RecipeConfigLoader {
+    public List<RecipeDefinition> load(FileConfiguration config) {
+        List<RecipeDefinition> recipes = new ArrayList<>();
+        ConfigurationSection section = config.getConfigurationSection("recipes");
+        if (section == null) {
+            return recipes;
+        }
+        for (String id : section.getKeys(false)) {
+            String base = "recipes." + id + ".";
+            recipes.add(new RecipeDefinition(
+                    id,
+                    machineTypes(config, base),
+                    readMap(section(config, base, "input", "inputs")),
+                    readMap(section(config, base, "output", "outputs")),
+                    readMap(config.getConfigurationSection(base + "byproducts")),
+                    cycleMillis(config, base),
+                    config.getDouble(base + "power-cost", config.getDouble(base + "power", 0.0)),
+                    config.getInt(base + "min-tier", config.getInt(base + "minTier", 1)),
+                    stringList(config, base + "research-required", base + "researchRequired"),
+                    config.getDouble(base + "quality-chance", 0.0),
+                    config.getString(base + "quality-item", "")
+            ));
+        }
+        return recipes;
+    }
+
+    private List<String> machineTypes(FileConfiguration config, String base) {
+        List<String> machines = new ArrayList<>(config.getStringList(base + "machines"));
+        String single = config.getString(base + "machine", "");
+        if (machines.isEmpty() && single != null && !single.isBlank()) {
+            machines.add(single);
+        }
+        return machines;
+    }
+
+    private long cycleMillis(FileConfiguration config, String base) {
+        if (config.contains(base + "cycle-ms")) {
+            return Math.max(1L, config.getLong(base + "cycle-ms"));
+        }
+        if (config.contains(base + "cycle-ticks")) {
+            return Math.max(1L, config.getLong(base + "cycle-ticks") * 50L);
+        }
+        return 0L;
+    }
+
+    private ConfigurationSection section(FileConfiguration config, String base, String first, String second) {
+        ConfigurationSection section = config.getConfigurationSection(base + first);
+        return section == null ? config.getConfigurationSection(base + second) : section;
+    }
+
+    private List<String> stringList(FileConfiguration config, String firstPath, String secondPath) {
+        List<String> values = new ArrayList<>(config.getStringList(firstPath));
+        if (!values.isEmpty()) {
+            return values;
+        }
+        values.addAll(config.getStringList(secondPath));
+        String scalar = config.getString(firstPath, config.getString(secondPath, ""));
+        if (values.isEmpty() && scalar != null && !scalar.isBlank()) {
+            values.add(scalar);
+        }
+        return values;
+    }
+
+    private Map<String, Long> readMap(ConfigurationSection section) {
+        Map<String, Long> result = new HashMap<>();
+        if (section == null) {
+            return result;
+        }
+        for (String key : section.getKeys(false)) {
+            result.put(key, section.getLong(key));
+        }
+        return result;
+    }
+}
