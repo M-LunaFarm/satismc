@@ -21,11 +21,11 @@ public final class CustomItemFactory {
     private final NamespacedKey internalUuidKey;
 
     public CustomItemFactory(JavaPlugin plugin) {
-        this.machineTypeKey = new NamespacedKey(plugin, "machine_type");
-        this.machineTierKey = new NamespacedKey(plugin, "machine_tier");
-        this.itemIdKey = new NamespacedKey(plugin, "item_id");
-        this.legacyFactoryItemKey = new NamespacedKey(plugin, "factory_item");
-        this.internalUuidKey = new NamespacedKey(plugin, "internal_uuid");
+        this.machineTypeKey = CustomItemKeys.machineType(plugin);
+        this.machineTierKey = CustomItemKeys.machineTier(plugin);
+        this.itemIdKey = CustomItemKeys.itemId(plugin);
+        this.legacyFactoryItemKey = CustomItemKeys.legacyFactoryItem(plugin);
+        this.internalUuidKey = CustomItemKeys.internalUuid(plugin);
     }
 
     public ItemStack machineItem(MachineDefinition definition, int amount) {
