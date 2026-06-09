@@ -41,12 +41,22 @@ public final class FactoryIslandService {
     }
 
     public FactoryIsland getOrCreate(SuperiorSkyblockHook.IslandRef island) {
-        return cache.computeIfAbsent(island.islandUuid(), uuid -> {
+        FactoryIsland factoryIsland = cache.computeIfAbsent(island.islandUuid(), uuid -> {
             FactoryIsland loaded = database.findIsland(uuid).orElseGet(() -> new FactoryIsland(uuid, island.ownerUuid()));
             loaded.ownerUuid(island.ownerUuid());
             database.saveIsland(loaded);
             return loaded;
         });
+        synchronizeOwner(factoryIsland, island.ownerUuid());
+        return factoryIsland;
+    }
+
+    private void synchronizeOwner(FactoryIsland island, UUID ownerUuid) {
+        if (island.ownerUuid().equals(ownerUuid)) {
+            return;
+        }
+        island.ownerUuid(ownerUuid);
+        save(island);
     }
 
     public Optional<FactoryIsland> find(UUID islandUuid) {
