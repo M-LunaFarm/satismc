@@ -75,6 +75,18 @@ class DatabaseServiceTest {
     }
 
     @Test
+    void sqliteConnectionsUseRuntimeSafetyPragmas() throws Exception {
+        try (DatabaseHandle handle = openDatabase(tempDir.resolve("pragma-db").toFile())) {
+            try (Connection connection = handle.database().connection();
+                 Statement statement = connection.createStatement()) {
+                assertEquals(1, singleInt(statement, "PRAGMA foreign_keys"));
+                assertEquals(5000, singleInt(statement, "PRAGMA busy_timeout"));
+                assertEquals("wal", singleString(statement, "PRAGMA journal_mode"));
+            }
+        }
+    }
+
+    @Test
     void islandInventoryMachineNodeAndUnlocksSurviveReopen() {
         UUID islandUuid = UUID.fromString("00000000-0000-0000-0000-000000000101");
         UUID ownerUuid = UUID.fromString("00000000-0000-0000-0000-000000000102");
@@ -383,6 +395,20 @@ class DatabaseServiceTest {
         DatabaseService database = new DatabaseService(dataFolder, sqliteFileName);
         database.open();
         return new DatabaseHandle(database);
+    }
+
+    private int singleInt(Statement statement, String sql) throws Exception {
+        try (ResultSet resultSet = statement.executeQuery(sql)) {
+            assertTrue(resultSet.next());
+            return resultSet.getInt(1);
+        }
+    }
+
+    private String singleString(Statement statement, String sql) throws Exception {
+        try (ResultSet resultSet = statement.executeQuery(sql)) {
+            assertTrue(resultSet.next());
+            return resultSet.getString(1);
+        }
     }
 
     private record DatabaseHandle(DatabaseService database) implements AutoCloseable {

@@ -14,6 +14,7 @@ import kr.seungmin.satisskyfactory.storage.MigrationService;
 import kr.seungmin.satisskyfactory.storage.VirtualInventory;
 import org.bukkit.block.BlockFace;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.sqlite.SQLiteConfig;
 
 import java.io.File;
 import java.sql.Connection;
@@ -57,11 +58,18 @@ public final class DatabaseService {
         if (parent != null) {
             parent.mkdirs();
         }
-        HikariConfig config = new HikariConfig();
-        config.setJdbcUrl("jdbc:sqlite:" + database.getAbsolutePath());
-        config.setMaximumPoolSize(4);
-        config.setPoolName("SatisSkyFactory");
-        dataSource = new HikariDataSource(config);
+        SQLiteConfig sqliteConfig = new SQLiteConfig();
+        sqliteConfig.enforceForeignKeys(true);
+        sqliteConfig.setBusyTimeout(5000);
+        sqliteConfig.setJournalMode(SQLiteConfig.JournalMode.WAL);
+        sqliteConfig.setSynchronous(SQLiteConfig.SynchronousMode.NORMAL);
+
+        HikariConfig poolConfig = new HikariConfig();
+        poolConfig.setJdbcUrl("jdbc:sqlite:" + database.getAbsolutePath());
+        poolConfig.setMaximumPoolSize(4);
+        poolConfig.setPoolName("SatisSkyFactory");
+        poolConfig.setDataSourceProperties(sqliteConfig.toProperties());
+        dataSource = new HikariDataSource(poolConfig);
         try (Connection connection = connection()) {
             new MigrationService().migrate(connection);
         } catch (SQLException exception) {
