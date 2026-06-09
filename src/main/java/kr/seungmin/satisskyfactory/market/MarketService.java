@@ -35,7 +35,7 @@ public final class MarketService {
     private final Map<String, Long> targetDailyAmounts = new HashMap<>();
     private final Map<String, Double> itemQualityFactors = new HashMap<>();
     private final Map<String, Double> tagQualityFactors = new HashMap<>();
-    private final List<PersonalTier> personalTiers = new ArrayList<>();
+    private final List<PriceCalculator.PersonalTier> personalTiers = new ArrayList<>();
     private boolean personalSoftCapEnabled = true;
     private int personalSoftCap = 256;
     private double demandFloor = 0.35;
@@ -94,13 +94,17 @@ public final class MarketService {
     }
 
     public long price(String itemId, long amount) {
-        return Math.max(0, Math.round(prices.getOrDefault(itemId, 0L) * amount));
+        return calculator().basePrice(itemId, amount);
     }
 
     public long price(UUID islandUuid, String itemId, long amount) {
-        Factors factors = factors(islandUuid, itemId, amount);
-        return Math.max(0, Math.round(prices.getOrDefault(itemId, 0L) * amount
-                * factors.serverDemandFactor() * factors.personalFactor() * factors.qualityFactor()));
+        String dateKey = dateKey();
+        return calculator().finalPrice(
+                itemId,
+                amount,
+                database.marketDailySold(itemId, dateKey) + amount,
+                database.marketPersonalSold(islandUuid, itemId, dateKey) + amount
+        );
     }
 
     public Optional<SellResult> sell(FactoryIsland island, OfflinePlayer owner, String itemId, long amount) {
@@ -147,9 +151,11 @@ public final class MarketService {
     }
 
     private Optional<SellResult> payout(FactoryIsland island, OfflinePlayer owner, String itemId, long amount) {
-        Factors factors = factors(island.islandUuid(), itemId, amount);
-        long gross = Math.max(0, Math.round(prices.getOrDefault(itemId, 0L) * amount
-                * factors.serverDemandFactor() * factors.personalFactor() * factors.qualityFactor()));
+        String dateKey = dateKey();
+        long serverSold = database.marketDailySold(itemId, dateKey) + amount;
+        long personalSold = database.marketPersonalSold(island.islandUuid(), itemId, dateKey) + amount;
+        PriceCalculator.Factors factors = calculator().factors(itemId, amount, serverSold, personalSold);
+        long gross = calculator().finalPrice(itemId, amount, serverSold, personalSold);
         long debtRepaid = 0;
         if (island.maintenanceDebt() > 0) {
             double repayRate = island.maintenanceStatus() == MaintenanceStatus.LOCKED ? lockedDebtRepayRate : debtRepayRate;
@@ -163,23 +169,11 @@ public final class MarketService {
             island.maintenanceDebt(island.maintenanceDebt() - debtRepaid);
             database.saveIsland(island);
         }
-        String dateKey = dateKey();
         database.recordMarketSale(island.islandUuid(), itemId, dateKey, amount, factors.serverDemandFactor());
         if (debtRepaid > 0) {
             database.addLedger(island.islandUuid(), "MARKET_DEBT_REPAY", debtRepaid, itemId + " x" + amount);
         }
         return Optional.of(new SellResult(gross, paid, debtRepaid, factors.serverDemandFactor(), factors.personalFactor(), factors.qualityFactor()));
-    }
-
-    private Factors factors(UUID islandUuid, String itemId, long amount) {
-        String dateKey = dateKey();
-        long serverSold = database.marketDailySold(itemId, dateKey);
-        long personalSold = database.marketPersonalSold(islandUuid, itemId, dateKey);
-        double target = Math.max(1.0, targetDailyAmounts.getOrDefault(itemId, Math.max(1, personalSoftCap * 4L)));
-        double serverFactor = Math.pow(target / Math.max(1.0, serverSold + amount), demandExponent);
-        serverFactor = clamp(serverFactor, demandFloor, demandCeiling);
-        double personalFactor = personalFactor(personalSold + amount);
-        return new Factors(serverFactor, personalFactor, qualityFactor(itemId));
     }
 
     private void loadPersonalTiers(FileConfiguration config) {
@@ -192,10 +186,10 @@ public final class MarketService {
             long amount = asLong(amountValue, 0);
             double factor = asDouble(factorValue, 1.0);
             if (amount > 0 && factor > 0) {
-                personalTiers.add(new PersonalTier(amount, factor));
+                personalTiers.add(new PriceCalculator.PersonalTier(amount, factor));
             }
         }
-        personalTiers.sort(Comparator.comparingLong(PersonalTier::amount));
+        personalTiers.sort(Comparator.comparingLong(PriceCalculator.PersonalTier::amount));
     }
 
     private void loadQualityFactors(FileConfiguration config) {
@@ -207,35 +201,6 @@ public final class MarketService {
         for (String tag : section.getKeys(false)) {
             tagQualityFactors.put(tag.toLowerCase(), Math.max(0.0, section.getDouble(tag, 1.0)));
         }
-    }
-
-    private double qualityFactor(String itemId) {
-        Double itemFactor = itemQualityFactors.get(itemId);
-        if (itemFactor != null) {
-            return itemFactor;
-        }
-        return items.get(itemId)
-                .map(item -> item.tags().stream()
-                        .map(tag -> tagQualityFactors.getOrDefault(tag.toLowerCase(), 1.0))
-                        .max(Double::compareTo)
-                        .orElse(1.0))
-                .orElse(1.0);
-    }
-
-    private double personalFactor(long totalSold) {
-        if (!personalSoftCapEnabled) {
-            return 1.0;
-        }
-        if (!personalTiers.isEmpty()) {
-            return personalTiers.stream()
-                    .filter(tier -> totalSold <= tier.amount())
-                    .findFirst()
-                    .map(PersonalTier::factor)
-                    .orElseGet(() -> personalTiers.get(personalTiers.size() - 1).factor());
-        }
-        return totalSold > personalSoftCap
-                ? Math.max(demandFloor, (double) personalSoftCap / totalSold)
-                : 1.0;
     }
 
     private long asLong(Object value, long fallback) {
@@ -268,9 +233,19 @@ public final class MarketService {
         return Math.max(min, Math.min(max, value));
     }
 
-    private record Factors(double serverDemandFactor, double personalFactor, double qualityFactor) {
-    }
-
-    private record PersonalTier(long amount, double factor) {
+    private PriceCalculator calculator() {
+        return new PriceCalculator(
+                items,
+                prices,
+                targetDailyAmounts,
+                itemQualityFactors,
+                tagQualityFactors,
+                personalTiers,
+                personalSoftCapEnabled,
+                personalSoftCap,
+                demandFloor,
+                demandCeiling,
+                demandExponent
+        );
     }
 }
