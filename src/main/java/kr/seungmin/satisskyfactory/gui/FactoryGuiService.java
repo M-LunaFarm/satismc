@@ -81,6 +81,11 @@ public final class FactoryGuiService {
                         ChatColor.GRAY + "Agriculture x" + NumberFormatter.ratio(boosts.agricultureBoost()),
                         ChatColor.GRAY + "Machine slots +" + boosts.factorySlotBonus(),
                         ChatColor.GRAY + "Contract slots +" + boosts.contractSlotBonus())));
+        if (player.hasPermission("satisskyfactory.admin")) {
+            holder.action(8, "main_admin", "");
+            inventory.setItem(8, icon(Material.COMMAND_BLOCK, ChatColor.RED + "Admin",
+                    List.of(ChatColor.GRAY + "Open factory administration.")));
+        }
         holder.action(16, "main_research", "");
         holder.action(20, "main_contracts", "");
         inventory.setItem(20, icon(Material.WRITABLE_BOOK, ChatColor.GOLD + "Contracts",
@@ -91,6 +96,29 @@ public final class FactoryGuiService {
         holder.action(24, "main_storage", "");
         inventory.setItem(24, icon(Material.CHEST, ChatColor.YELLOW + "Storage",
                 List.of(ChatColor.GRAY + "Browse island virtual storage.")));
+        player.openInventory(inventory);
+    }
+
+    public void openAdmin(Player player, FactoryIsland island, int machineCount, PowerNetworkService.NetworkState powerState) {
+        FactoryGuiHolder holder = new FactoryGuiHolder("admin", island.islandUuid(), null);
+        Inventory inventory = Bukkit.createInventory(holder, 27, title("admin-title", "Factory Admin"));
+        holder.inventory(inventory);
+        inventory.setItem(4, icon(Material.COMMAND_BLOCK, ChatColor.RED + "Admin",
+                List.of(ChatColor.GRAY + "Island: " + island.islandUuid(),
+                        ChatColor.GRAY + "Machines: " + machineCount,
+                        ChatColor.GRAY + "Power ratio: " + NumberFormatter.ratio(powerState.ratio()))));
+        holder.action(10, "admin_reload", "");
+        inventory.setItem(10, icon(Material.REDSTONE_TORCH, ChatColor.YELLOW + "Reload",
+                List.of(ChatColor.GRAY + "Reload configs and rebuild networks.")));
+        holder.action(12, "admin_debug_island", "");
+        inventory.setItem(12, icon(Material.MAP, ChatColor.AQUA + "Island Debug",
+                List.of(ChatColor.GRAY + "Send island id to chat.")));
+        holder.action(14, "admin_debug_networks", "");
+        inventory.setItem(14, icon(Material.REDSTONE, ChatColor.RED + "Network Debug",
+                List.of(ChatColor.GRAY + "Send power and machine state to chat.")));
+        holder.action(22, "admin_back", "");
+        inventory.setItem(22, icon(Material.ARROW, ChatColor.YELLOW + "Back",
+                List.of(ChatColor.GRAY + "Return to the main factory menu.")));
         player.openInventory(inventory);
     }
 

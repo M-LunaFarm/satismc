@@ -312,7 +312,9 @@ public final class SatisSkyFactoryPlugin extends JavaPlugin {
                 maintenance,
                 itemNetworks,
                 power,
-                messages
+                messages,
+                boosts,
+                this::reloadPluginConfig
         ), this);
         getServer().getPluginManager().registerEvents(new FactoryLifecycleListener(
                 islands,

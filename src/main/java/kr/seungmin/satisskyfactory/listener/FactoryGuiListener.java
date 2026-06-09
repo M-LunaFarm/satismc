@@ -10,6 +10,7 @@ import kr.seungmin.satisskyfactory.item.ItemDefinition;
 import kr.seungmin.satisskyfactory.item.ItemRegistry;
 import kr.seungmin.satisskyfactory.logistics.ItemNetworkService;
 import kr.seungmin.satisskyfactory.machine.FactoryIslandService;
+import kr.seungmin.satisskyfactory.machine.IslandBoostService;
 import kr.seungmin.satisskyfactory.machine.MachineDefinitionService;
 import kr.seungmin.satisskyfactory.machine.MachineService;
 import kr.seungmin.satisskyfactory.machine.MaintenanceService;
@@ -57,11 +58,14 @@ public final class FactoryGuiListener implements Listener {
     private final ItemNetworkService itemNetworks;
     private final PowerNetworkService power;
     private final MessageService messages;
+    private final IslandBoostService boosts;
+    private final Runnable reload;
 
     public FactoryGuiListener(FactoryIslandService islands, SuperiorSkyblockHook skyblock, ContractService contracts, ResearchService research, FactoryGuiService gui,
                               MachineService machines, RecipeService recipes, StorageService storage, ItemRegistry items, CustomItemFactory itemFactory,
                               MarketService market, MachineDefinitionService definitions, MaintenanceService maintenance,
-                              ItemNetworkService itemNetworks, PowerNetworkService power, MessageService messages) {
+                              ItemNetworkService itemNetworks, PowerNetworkService power, MessageService messages,
+                              IslandBoostService boosts, Runnable reload) {
         this.islands = islands;
         this.skyblock = skyblock;
         this.contracts = contracts;
@@ -78,6 +82,8 @@ public final class FactoryGuiListener implements Listener {
         this.itemNetworks = itemNetworks;
         this.power = power;
         this.messages = messages;
+        this.boosts = boosts;
+        this.reload = reload;
     }
 
     @EventHandler
@@ -133,6 +139,23 @@ public final class FactoryGuiListener implements Listener {
         }
         if (action.type().equals("main_market")) {
             gui.openMarket(player, island, market);
+            return;
+        }
+        if (action.type().equals("main_admin")) {
+            if (!player.hasPermission("satisskyfactory.admin")) {
+                messages.send(player, "no-permission");
+                return;
+            }
+            gui.openAdmin(player, island, machines.byIsland(island.islandUuid()).size(), power.state(island.islandUuid()));
+            return;
+        }
+        if (action.type().equals("admin_back")) {
+            gui.openMain(player, island, machines.byIsland(island.islandUuid()).size(), power.state(island.islandUuid()),
+                    boosts.boosts(island.islandUuid()));
+            return;
+        }
+        if (action.type().startsWith("admin_")) {
+            handleAdminAction(player, island, action.type());
             return;
         }
         if (action.type().equals("contracts_back")) {
@@ -229,6 +252,29 @@ public final class FactoryGuiListener implements Listener {
                         .filter(ref -> ref.islandUuid().equals(island.islandUuid()))
                         .map(ref -> skyblock.isPlayerIslandMember(player, ref))
                         .orElse(false));
+    }
+
+    private void handleAdminAction(Player player, FactoryIsland island, String actionType) {
+        if (!player.hasPermission("satisskyfactory.admin")) {
+            messages.send(player, "no-permission");
+            return;
+        }
+        if (actionType.equals("admin_reload")) {
+            reload.run();
+            messages.send(player, "reloaded");
+        } else if (actionType.equals("admin_debug_island")) {
+            messages.send(player, "debug-island", Map.of("island", island.islandUuid().toString()));
+        } else if (actionType.equals("admin_debug_networks")) {
+            PowerNetworkService.NetworkState state = power.state(island.islandUuid());
+            messages.send(player, "debug-networks", Map.of(
+                    "machines", String.valueOf(machines.byIsland(island.islandUuid()).size()),
+                    "ratio", String.valueOf(state.ratio()),
+                    "generation", String.valueOf(state.generation()),
+                    "consumption", String.valueOf(state.consumption()),
+                    "battery", state.batteryStored() + "/" + state.batteryCapacity()
+            ));
+        }
+        gui.openAdmin(player, island, machines.byIsland(island.islandUuid()).size(), power.state(island.islandUuid()));
     }
 
     private void withdrawStorageItem(Player player, FactoryIsland island, String itemId, int page, long requested) {
