@@ -7,6 +7,7 @@ import kr.seungmin.satisskyfactory.model.MachineInstance;
 import kr.seungmin.satisskyfactory.model.MachineStatus;
 import kr.seungmin.satisskyfactory.storage.StorageService;
 import kr.seungmin.satisskyfactory.storage.VirtualInventory;
+import kr.seungmin.satisskyfactory.task.DirtySaveService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -56,6 +57,27 @@ class MachineServiceTest {
             assertEquals(10, storage.islandStorage(bundle.machine().islandUuid()).amount("wheat"));
             assertTrue(storage.get(bundle.input().inventoryId()).isEmpty());
             assertTrue(storage.get(bundle.output().inventoryId()).isEmpty());
+            assertTrue(handle.database().loadInventory(bundle.input().inventoryId()).isEmpty());
+            assertTrue(handle.database().loadInventory(bundle.output().inventoryId()).isEmpty());
+        }
+    }
+
+    @Test
+    void forceRemovePersistsFlushedItemsBeforeDeletingDirtyBuffers() {
+        try (DatabaseHandle handle = openDatabase("force-remove-dirty")) {
+            StorageService storage = new StorageService(handle.database(), 1000);
+            DirtySaveService dirtySaves = new DirtySaveService(null, handle.database());
+            storage.dirtySaves(dirtySaves);
+            MachineService machines = new MachineService(handle.database(), new MachineDefinitionService(), storage);
+            machines.dirtySaves(dirtySaves);
+            MachineBundle bundle = machineWithInput(storage, machines, "00000000-0000-0000-0000-000000004501");
+            bundle.input().add("iron_ore", 12);
+            storage.saveNow(bundle.input());
+
+            machines.forceRemove(bundle.machine());
+
+            UUID islandStorageId = storage.islandStorage(bundle.machine().islandUuid()).inventoryId();
+            assertEquals(12, handle.database().loadInventory(islandStorageId).orElseThrow().amount("iron_ore"));
             assertTrue(handle.database().loadInventory(bundle.input().inventoryId()).isEmpty());
             assertTrue(handle.database().loadInventory(bundle.output().inventoryId()).isEmpty());
         }

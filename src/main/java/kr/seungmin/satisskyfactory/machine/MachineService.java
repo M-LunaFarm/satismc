@@ -175,7 +175,7 @@ public final class MachineService {
             new ArrayList<>(buffer.items().keySet()).forEach(itemId -> buffer.set(itemId, 0));
             storage.save(buffer);
         }
-        storage.save(islandStorage);
+        storage.saveNow(islandStorage);
         return true;
     }
 
