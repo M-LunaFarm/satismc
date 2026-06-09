@@ -15,11 +15,12 @@ maintenance:
     warning-days: 1
     limited-days: 3
     locked-days: 5
-  limited-efficiency: 0.45
+  limited-efficiency: 0.65
   limited:
-    efficiency: 0.45
+    efficiency: 0.65
     max-operating-tier: 2
     block-new-machine-placement: true
+    block-upgrades: true
   locked-threshold: 1500
   locked:
     allow-basic-recovery-machines: true
