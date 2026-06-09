@@ -18,6 +18,7 @@ import kr.seungmin.satisskyfactory.recipe.RecipeService;
 import kr.seungmin.satisskyfactory.research.ResearchService;
 import kr.seungmin.satisskyfactory.storage.StorageService;
 import kr.seungmin.satisskyfactory.storage.VirtualInventory;
+import kr.seungmin.satisskyfactory.util.SchedulerUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -106,7 +107,7 @@ public final class MachineTickService {
 
     public void start(long intervalTicks) {
         stop();
-        task = Bukkit.getScheduler().runTaskTimer(plugin, this::tick, intervalTicks, intervalTicks);
+        task = SchedulerUtil.repeating(plugin, this::tick, intervalTicks);
     }
 
     public void stop() {

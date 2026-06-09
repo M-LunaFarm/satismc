@@ -6,14 +6,11 @@ import kr.seungmin.satisskyfactory.machine.IslandBoostService;
 import kr.seungmin.satisskyfactory.model.FactoryIsland;
 import kr.seungmin.satisskyfactory.storage.StorageService;
 import kr.seungmin.satisskyfactory.storage.VirtualInventory;
+import kr.seungmin.satisskyfactory.util.TimeUtil;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 
-import java.time.Duration;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -111,7 +108,7 @@ public final class ContractService {
             boolean completed = complete(island, owner, new ActiveContract(
                     UUID.randomUUID(),
                     template,
-                    Instant.now().plus(Duration.ofHours(template.expiresHours() > 0 ? template.expiresHours() : 6)).toEpochMilli()
+                    TimeUtil.hoursFromNowMillis(template.expiresHours() > 0 ? template.expiresHours() : 6)
             ));
             if (completed) {
                 island.emergencyContractsUsedToday(usedToday + 1);
@@ -170,7 +167,7 @@ public final class ContractService {
         if (slots <= 0) {
             return;
         }
-        long expiresAt = Instant.now().plus(Duration.ofHours(defaultExpiresHours)).toEpochMilli();
+        long expiresAt = TimeUtil.hoursFromNowMillis(defaultExpiresHours);
         int activeCount = (int) database.loadContracts(island.islandUuid(), "ACTIVE").stream()
                 .map(stored -> templates.get(stored.templateId()))
                 .filter(template -> template != null && template.type().equalsIgnoreCase(type))
@@ -202,7 +199,7 @@ public final class ContractService {
                     json(rewards(template)),
                     "ACTIVE",
                     template.expiresHours() > 0
-                            ? Instant.now().plus(Duration.ofHours(template.expiresHours())).toEpochMilli()
+                            ? TimeUtil.hoursFromNowMillis(template.expiresHours())
                             : expiresAt
             ));
             activeCount++;
@@ -210,7 +207,7 @@ public final class ContractService {
     }
 
     private void expireOldContracts(FactoryIsland island) {
-        long now = Instant.now().toEpochMilli();
+        long now = TimeUtil.nowMillis();
         for (DatabaseService.StoredContract contract : database.loadContracts(island.islandUuid(), "ACTIVE")) {
             if (contract.expiresAt() > 0 && contract.expiresAt() < now) {
                 database.updateContractStatus(contract.contractId(), "EXPIRED", contract.progressJson());
@@ -343,6 +340,6 @@ public final class ContractService {
     }
 
     private long startOfToday() {
-        return LocalDate.now(ZoneId.systemDefault()).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli();
+        return TimeUtil.startOfTodayMillis();
     }
 }

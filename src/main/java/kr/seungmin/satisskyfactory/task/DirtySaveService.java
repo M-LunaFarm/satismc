@@ -5,7 +5,7 @@ import kr.seungmin.satisskyfactory.model.FactoryIsland;
 import kr.seungmin.satisskyfactory.model.MachineInstance;
 import kr.seungmin.satisskyfactory.model.ResourceNode;
 import kr.seungmin.satisskyfactory.storage.VirtualInventory;
-import org.bukkit.Bukkit;
+import kr.seungmin.satisskyfactory.util.SchedulerUtil;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 
@@ -31,7 +31,7 @@ public final class DirtySaveService {
 
     public void start(long intervalTicks) {
         stop();
-        task = Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, this::flushSafely, intervalTicks, intervalTicks);
+        task = SchedulerUtil.asyncRepeating(plugin, this::flushSafely, intervalTicks);
     }
 
     public void stop() {

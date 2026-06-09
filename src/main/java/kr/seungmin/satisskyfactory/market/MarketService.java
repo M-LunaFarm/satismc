@@ -8,14 +8,13 @@ import kr.seungmin.satisskyfactory.model.FactoryIsland;
 import kr.seungmin.satisskyfactory.model.MaintenanceStatus;
 import kr.seungmin.satisskyfactory.storage.StorageService;
 import kr.seungmin.satisskyfactory.storage.VirtualInventory;
+import kr.seungmin.satisskyfactory.util.TimeUtil;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.time.LocalDate;
-import java.time.ZoneId;
 import java.util.List;
 import java.util.HashMap;
 import java.util.Map;
@@ -226,7 +225,7 @@ public final class MarketService {
     }
 
     private String dateKey() {
-        return LocalDate.now(ZoneId.systemDefault()).toString();
+        return TimeUtil.todayKey();
     }
 
     private double clamp(double value, double min, double max) {
