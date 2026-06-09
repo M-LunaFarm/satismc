@@ -22,4 +22,15 @@ class SatisSkyFactoryPluginTest {
 
         assertEquals(200, SatisSkyFactoryPlugin.dirtySavePeriodTicks(config));
     }
+
+    @Test
+    void activeParticleLimitFollowsVisualsToggleAndCapsPerTick() {
+        YamlConfiguration config = new YamlConfiguration();
+        config.set("visuals.particles", true);
+
+        assertEquals(64, SatisSkyFactoryPlugin.activeParticleLimit(config, 300));
+
+        config.set("visuals.particles", false);
+        assertEquals(0, SatisSkyFactoryPlugin.activeParticleLimit(config, 300));
+    }
 }

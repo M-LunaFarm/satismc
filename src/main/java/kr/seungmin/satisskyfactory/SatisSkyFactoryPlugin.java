@@ -176,7 +176,8 @@ public final class SatisSkyFactoryPlugin extends JavaPlugin {
                 configs.file("maintenance.yml").getInt("maintenance.limited.max-operating-tier", 2),
                 configs.file("maintenance.yml").getDouble("maintenance.locked.recovery-efficiency", 0.30),
                 configs.file("maintenance.yml").getInt("maintenance.locked.max-operating-tier", 1),
-                configs.file("maintenance.yml").getDouble("maintenance.break-wear", 100.0)
+                configs.file("maintenance.yml").getDouble("maintenance.break-wear", 100.0),
+                activeParticleLimit(configs.main(), configInt("settings.max-machines-per-tick", "settings.max-machines-per-cycle", 300))
         );
         ticker.start(configLong("settings.tick-period-ticks", "settings.tick-interval", 20));
         maintenanceTicker = new MaintenanceTickService(this, islands, skyblock, maintenance);
@@ -192,6 +193,13 @@ public final class SatisSkyFactoryPlugin extends JavaPlugin {
             return Math.max(1L, config.getLong("settings.dirty-save-period-ticks", 1200L));
         }
         return Math.max(1L, config.getLong("settings.dirty-save-interval", 1200L));
+    }
+
+    static int activeParticleLimit(FileConfiguration config, int maxMachinesPerTick) {
+        if (!config.getBoolean("visuals.particles", true)) {
+            return 0;
+        }
+        return Math.max(1, Math.min(Math.max(1, maxMachinesPerTick), 64));
     }
 
     private void configureSkyblockHook() {

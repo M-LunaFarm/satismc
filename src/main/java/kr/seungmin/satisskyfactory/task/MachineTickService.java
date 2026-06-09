@@ -21,6 +21,7 @@ import kr.seungmin.satisskyfactory.storage.VirtualInventory;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.Particle;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.Ageable;
@@ -63,8 +64,10 @@ public final class MachineTickService {
     private final double lockedRecoveryEfficiency;
     private final int lockedMaxOperatingTier;
     private final double breakWear;
+    private final int activeParticleLimit;
     private BukkitTask task;
     private int tickCursor;
+    private int remainingActiveParticles;
     private long machineSnapshotRevision = Long.MIN_VALUE;
     private List<MachineInstance> machineSnapshot = List.of();
 
@@ -74,7 +77,8 @@ public final class MachineTickService {
                               int maxBackfillCycles, boolean offlineProductionEnabled, long offlineMaxMillis,
                               double offlineEfficiency, int nodeLinkRadius, Set<String> recoveryTypes,
                               double limitedEfficiency, int limitedMaxOperatingTier,
-                              double lockedRecoveryEfficiency, int lockedMaxOperatingTier, double breakWear) {
+                              double lockedRecoveryEfficiency, int lockedMaxOperatingTier, double breakWear,
+                              int activeParticleLimit) {
         this.plugin = plugin;
         this.machines = machines;
         this.definitions = definitions;
@@ -97,6 +101,7 @@ public final class MachineTickService {
         this.lockedRecoveryEfficiency = Math.max(0.05, Math.min(1.0, lockedRecoveryEfficiency));
         this.lockedMaxOperatingTier = Math.max(1, lockedMaxOperatingTier);
         this.breakWear = Math.max(1.0, breakWear);
+        this.activeParticleLimit = Math.max(0, activeParticleLimit);
     }
 
     public void start(long intervalTicks) {
@@ -121,6 +126,7 @@ public final class MachineTickService {
             return;
         }
         int limit = Math.min(maxPerCycle, snapshot.size());
+        remainingActiveParticles = activeParticleLimit;
         int start = Math.floorMod(tickCursor, snapshot.size());
         for (int offset = 0; offset < limit; offset++) {
             MachineInstance machine = snapshot.get((start + offset) % snapshot.size());
@@ -834,6 +840,22 @@ public final class MachineTickService {
         machine.status(status);
         machine.lastProcessAt(Instant.now().toEpochMilli());
         machines.saveLater(machine);
+        if (status == MachineStatus.ACTIVE) {
+            spawnActiveParticle(machine);
+        }
+    }
+
+    private void spawnActiveParticle(MachineInstance machine) {
+        if (remainingActiveParticles <= 0) {
+            return;
+        }
+        Location origin = location(machine.location());
+        if (origin == null) {
+            return;
+        }
+        remainingActiveParticles--;
+        origin.getWorld().spawnParticle(Particle.CLOUD, origin.clone().add(0.5, 1.05, 0.5),
+                1, 0.12, 0.08, 0.12, 0.0);
     }
 
     private Location location(BlockKey key) {
