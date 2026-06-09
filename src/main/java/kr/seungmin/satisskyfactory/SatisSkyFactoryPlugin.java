@@ -31,6 +31,7 @@ import kr.seungmin.satisskyfactory.task.DirtySaveService;
 import kr.seungmin.satisskyfactory.task.MachineTickService;
 import kr.seungmin.satisskyfactory.task.MaintenanceTickService;
 import org.bukkit.command.PluginCommand;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.Set;
@@ -180,7 +181,17 @@ public final class SatisSkyFactoryPlugin extends JavaPlugin {
         ticker.start(configLong("settings.tick-period-ticks", "settings.tick-interval", 20));
         maintenanceTicker = new MaintenanceTickService(this, islands, skyblock, maintenance);
         maintenanceTicker.start(configLong("settings.maintenance-check-period-ticks", "settings.maintenance-check-interval", 1200));
-        dirtySaves.start(configLong("settings.dirty-save-period-ticks", "settings.dirty-save-interval", 200));
+        dirtySaves.start(dirtySavePeriodTicks(configs.main()));
+    }
+
+    static long dirtySavePeriodTicks(FileConfiguration config) {
+        if (config.contains("database.save-interval-seconds")) {
+            return Math.max(1L, config.getLong("database.save-interval-seconds", 60L) * 20L);
+        }
+        if (config.contains("settings.dirty-save-period-ticks")) {
+            return Math.max(1L, config.getLong("settings.dirty-save-period-ticks", 1200L));
+        }
+        return Math.max(1L, config.getLong("settings.dirty-save-interval", 1200L));
     }
 
     private void configureSkyblockHook() {

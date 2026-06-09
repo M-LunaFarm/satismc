@@ -5,8 +5,8 @@ settings:
   tick-period-ticks: 20
   maintenance-check-interval: 1200
   maintenance-check-period-ticks: 1200
-  dirty-save-interval: 200
-  dirty-save-period-ticks: 200
+  dirty-save-interval: 1200
+  dirty-save-period-ticks: 1200
   max-machines-per-cycle: 300
   max-machines-per-tick: 300
   max-backfill-cycles: 60
