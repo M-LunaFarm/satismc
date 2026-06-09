@@ -70,6 +70,7 @@ class PowerNetworkServiceTest {
             assertEquals(100.0, network.batteryCapacity());
             assertEquals(1.0, network.powerRatio());
             assertEquals(Set.of(generatorId, grinderId, batteryId), network.connectedMachineIds());
+            assertEquals(network.connectedMachineIds(), network.nodeMachineIds());
             assertEquals(network.networkId(), generator.powerNetworkId());
             assertTrue(database.loadPowerNetworks(islandUuid).stream()
                     .anyMatch(stored -> stored.connectedMachineIds().equals(network.connectedMachineIds())));

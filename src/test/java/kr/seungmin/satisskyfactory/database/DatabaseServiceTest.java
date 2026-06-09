@@ -343,6 +343,7 @@ class DatabaseServiceTest {
             assertEquals(100.0, network.batteryCapacity());
             assertEquals(1.0, network.powerRatio());
             assertEquals(Set.of(generatorId, grinderId, batteryId), network.connectedMachineIds());
+            assertEquals(network.connectedMachineIds(), network.nodeMachineIds());
             MachineInstance generator = handle.database().loadMachines().stream()
                     .filter(machine -> machine.machineId().equals(generatorId))
                     .findFirst()

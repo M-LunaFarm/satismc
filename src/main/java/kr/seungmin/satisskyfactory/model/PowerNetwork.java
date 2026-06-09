@@ -17,4 +17,8 @@ public record PowerNetwork(
     public PowerNetwork {
         connectedMachineIds = Set.copyOf(connectedMachineIds);
     }
+
+    public Set<UUID> nodeMachineIds() {
+        return connectedMachineIds;
+    }
 }
