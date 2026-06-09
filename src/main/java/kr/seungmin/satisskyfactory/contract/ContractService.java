@@ -21,7 +21,14 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 public final class ContractService {
-    public record ActiveContract(UUID contractId, ContractTemplate template, long expiresAt) {
+    public record ActiveContract(Contract contract, ContractTemplate template) {
+        public UUID contractId() {
+            return contract.contractId();
+        }
+
+        public long expiresAt() {
+            return contract.expiresAt();
+        }
     }
 
     private final StorageService storage;
@@ -73,7 +80,8 @@ public final class ContractService {
         expireOldContracts(island);
         ensureDailyContracts(island);
         return database.loadContracts(island.islandUuid(), "ACTIVE").stream()
-                .map(stored -> new ActiveContract(stored.contractId(), templates.get(stored.templateId()), stored.expiresAt()))
+                .map(this::contract)
+                .map(contract -> new ActiveContract(contract, templates.get(contract.templateId())))
                 .filter(active -> active.template() != null)
                 .toList();
     }
@@ -106,9 +114,9 @@ public final class ContractService {
         }
         for (ContractTemplate template : emergencyTemplates()) {
             boolean completed = complete(island, owner, new ActiveContract(
-                    UUID.randomUUID(),
-                    template,
-                    TimeUtil.hoursFromNowMillis(template.expiresHours() > 0 ? template.expiresHours() : 6)
+                    contract(UUID.randomUUID(), island.islandUuid(), template, "{}",
+                            Contract.Status.ACTIVE, TimeUtil.hoursFromNowMillis(template.expiresHours() > 0 ? template.expiresHours() : 6)),
+                    template
             ));
             if (completed) {
                 island.emergencyContractsUsedToday(usedToday + 1);
@@ -188,20 +196,16 @@ public final class ContractService {
             if (database.hasContractForTemplate(island.islandUuid(), template.id(), "ACTIVE")) {
                 continue;
             }
-            database.saveContract(new DatabaseService.StoredContract(
+            database.saveContract(storedContract(contract(
                     UUID.randomUUID(),
                     island.islandUuid(),
-                    template.id(),
-                    template.type(),
-                    template.tier(),
-                    json(template.required()),
+                    template,
                     "{}",
-                    json(rewards(template)),
-                    "ACTIVE",
+                    Contract.Status.ACTIVE,
                     template.expiresHours() > 0
                             ? TimeUtil.hoursFromNowMillis(template.expiresHours())
                             : expiresAt
-            ));
+            )));
             activeCount++;
         }
     }
@@ -239,18 +243,7 @@ public final class ContractService {
             island.maintenanceDebt(Math.max(0, island.maintenanceDebt() - template.debtRelief()));
         }
         database.saveIsland(island);
-        database.saveContract(new DatabaseService.StoredContract(
-                active.contractId(),
-                island.islandUuid(),
-                template.id(),
-                template.type(),
-                template.tier(),
-                json(template.required()),
-                json(template.required()),
-                json(rewards(template)),
-                "COMPLETED",
-                active.expiresAt()
-        ));
+        database.saveContract(storedContract(active.contract().completed(template.required())));
         return true;
     }
 
@@ -337,6 +330,133 @@ public final class ContractService {
         return values.entrySet().stream()
                 .map(entry -> "\"" + entry.getKey() + "\":" + entry.getValue())
                 .collect(Collectors.joining(",", "{", "}"));
+    }
+
+    private Contract contract(UUID contractId, UUID islandUuid, ContractTemplate template, String progressJson,
+                              Contract.Status status, long expiresAt) {
+        return new Contract(
+                contractId,
+                islandUuid,
+                template.id(),
+                template.tier(),
+                Contract.Type.fromStoredValue(template.type()),
+                template.required(),
+                rewardsModel(template),
+                map(progressJson),
+                status,
+                expiresAt
+        );
+    }
+
+    private Contract contract(DatabaseService.StoredContract stored) {
+        return new Contract(
+                stored.contractId(),
+                stored.islandUuid(),
+                stored.templateId(),
+                stored.tier(),
+                Contract.Type.fromStoredValue(stored.contractType()),
+                map(stored.requiredJson()),
+                rewardsModel(stored.rewardsJson()),
+                map(stored.progressJson()),
+                Contract.Status.fromStoredValue(stored.status()),
+                stored.expiresAt()
+        );
+    }
+
+    private DatabaseService.StoredContract storedContract(Contract contract) {
+        return new DatabaseService.StoredContract(
+                contract.contractId(),
+                contract.islandUuid(),
+                contract.templateId(),
+                contract.type().name(),
+                contract.tier(),
+                json(contract.requiredItems()),
+                json(contract.progress()),
+                json(rewards(contract.rewards())),
+                contract.status().name(),
+                contract.expiresAt()
+        );
+    }
+
+    private Contract.Rewards rewardsModel(ContractTemplate template) {
+        return new Contract.Rewards(template.money(), template.research(), template.reputation(),
+                template.debtRelief(), template.itemRewards());
+    }
+
+    private Contract.Rewards rewardsModel(String rewardsJson) {
+        Map<String, Long> values = map(rewardsJson);
+        Map<String, Long> items = new HashMap<>();
+        values.forEach((key, value) -> {
+            if (key.startsWith("item:")) {
+                items.put(key.substring("item:".length()), value);
+            }
+        });
+        return new Contract.Rewards(
+                values.getOrDefault("money", 0L),
+                values.getOrDefault("research", 0L),
+                values.getOrDefault("reputation", 0L),
+                values.getOrDefault("debt-relief", 0L),
+                items
+        );
+    }
+
+    private Map<String, Long> rewards(Contract.Rewards rewards) {
+        Map<String, Long> values = new HashMap<>();
+        values.put("money", rewards.money());
+        values.put("research", rewards.researchPoints());
+        values.put("reputation", rewards.reputation());
+        values.put("debt-relief", rewards.debtRelief());
+        rewards.items().forEach((item, amount) -> values.put("item:" + item, amount));
+        return values;
+    }
+
+    private Map<String, Long> map(String json) {
+        if (json == null || json.isBlank() || json.equals("{}")) {
+            return Map.of();
+        }
+        Map<String, Long> values = new HashMap<>();
+        String trimmed = json.trim();
+        if (!trimmed.startsWith("{") || !trimmed.endsWith("}")) {
+            return Map.of();
+        }
+        String body = trimmed.substring(1, trimmed.length() - 1).trim();
+        if (body.isEmpty()) {
+            return Map.of();
+        }
+        for (String part : body.split(",")) {
+            int colon = valueSeparator(part);
+            if (colon < 0) {
+                continue;
+            }
+            String key = part.substring(0, colon).trim();
+            if (key.startsWith("\"") && key.endsWith("\"") && key.length() >= 2) {
+                key = key.substring(1, key.length() - 1);
+            }
+            try {
+                values.put(key, Long.parseLong(part.substring(colon + 1).trim()));
+            } catch (NumberFormatException ignored) {
+                // Ignore malformed legacy fields instead of failing all contract loading.
+            }
+        }
+        return values;
+    }
+
+    private int valueSeparator(String entry) {
+        boolean quoted = false;
+        boolean escaped = false;
+        for (int index = 0; index < entry.length(); index++) {
+            char current = entry.charAt(index);
+            if (escaped) {
+                escaped = false;
+            } else if (current == '\\') {
+                escaped = true;
+            } else if (current == '"') {
+                quoted = !quoted;
+            } else if (current == ':' && !quoted) {
+                return index;
+            }
+        }
+        return -1;
     }
 
     private long startOfToday() {

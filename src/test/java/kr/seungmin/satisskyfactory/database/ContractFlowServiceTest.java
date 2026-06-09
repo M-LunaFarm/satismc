@@ -44,6 +44,9 @@ class ContractFlowServiceTest {
                     .findFirst()
                     .orElseThrow();
 
+            assertEquals("bread_supply", breadSupply.contract().templateId());
+            assertEquals("bread_box", breadSupply.contract().requiredItems().keySet().iterator().next());
+            assertEquals(35000, breadSupply.contract().rewards().money());
             assertTrue(contracts.completeContract(island, null, breadSupply.contractId()).isPresent());
 
             VirtualInventory updated = storage.islandStorage(islandUuid);
@@ -52,6 +55,7 @@ class ContractFlowServiceTest {
             assertEquals(10, island.researchPoints());
             assertEquals(5, island.reputation());
             assertFalse(database.loadContracts(islandUuid, "COMPLETED").isEmpty());
+            assertEquals("{\"bread_box\":32}", database.loadContracts(islandUuid, "COMPLETED").getFirst().progressJson());
         }
     }
 
