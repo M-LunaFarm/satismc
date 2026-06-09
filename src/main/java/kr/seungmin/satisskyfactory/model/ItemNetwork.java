@@ -1,5 +1,6 @@
 package kr.seungmin.satisskyfactory.model;
 
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -10,9 +11,14 @@ public record ItemNetwork(
         UUID bufferInventoryId,
         boolean dirty,
         long updatedAt,
-        Set<UUID> connectedMachineIds
+        Set<UUID> connectedMachineIds,
+        List<Route> routes
 ) {
     public ItemNetwork {
         connectedMachineIds = Set.copyOf(connectedMachineIds);
+        routes = List.copyOf(routes);
+    }
+
+    public record Route(UUID fromMachineId, UUID toMachineId) {
     }
 }

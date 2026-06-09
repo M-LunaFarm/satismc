@@ -62,9 +62,14 @@ class ItemNetworkServiceTest {
             assertEquals(32, network.throughputPerMinute());
             assertEquals(bufferInventoryId, network.bufferInventoryId());
             assertEquals(Set.of(conveyorId, grinderId, storageId), network.connectedMachineIds());
+            assertEquals(Set.of(
+                            new ItemNetwork.Route(conveyorId, grinderId),
+                            new ItemNetwork.Route(conveyorId, storageId)),
+                    Set.copyOf(network.routes()));
             assertEquals(network.networkId(), conveyor.itemNetworkId());
             assertTrue(database.loadItemNetworks(islandUuid).stream()
-                    .anyMatch(stored -> stored.connectedMachineIds().equals(network.connectedMachineIds())));
+                    .anyMatch(stored -> stored.connectedMachineIds().equals(network.connectedMachineIds())
+                            && Set.copyOf(stored.routes()).equals(Set.copyOf(network.routes()))));
         } finally {
             database.close();
         }

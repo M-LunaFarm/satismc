@@ -277,7 +277,10 @@ class DatabaseServiceTest {
                     bufferInventoryId,
                     false,
                     1234L,
-                    Set.of(conveyorId, grinderId, storageId)
+                    Set.of(conveyorId, grinderId, storageId),
+                    java.util.List.of(
+                            new ItemNetwork.Route(conveyorId, grinderId),
+                            new ItemNetwork.Route(conveyorId, storageId))
             )));
         }
 
@@ -287,6 +290,10 @@ class DatabaseServiceTest {
             assertEquals(32, network.throughputPerMinute());
             assertEquals(bufferInventoryId, network.bufferInventoryId());
             assertEquals(Set.of(conveyorId, grinderId, storageId), network.connectedMachineIds());
+            assertEquals(Set.of(
+                            new ItemNetwork.Route(conveyorId, grinderId),
+                            new ItemNetwork.Route(conveyorId, storageId)),
+                    Set.copyOf(network.routes()));
             MachineInstance conveyor = handle.database().loadMachines().stream()
                     .filter(machine -> machine.machineId().equals(conveyorId))
                     .findFirst()

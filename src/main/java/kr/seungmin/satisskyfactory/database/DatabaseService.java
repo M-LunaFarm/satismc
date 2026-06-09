@@ -443,7 +443,8 @@ public final class DatabaseService {
                             uuidOrNull(rs.getString("buffer_inventory_id")),
                             rs.getInt("dirty") != 0,
                             rs.getLong("updated_at"),
-                            loadNetworkMachineIds(connection, networkId, "ITEM")
+                            loadNetworkMachineIds(connection, networkId, "ITEM"),
+                            itemRoutes(connection, networkId)
                     ));
                 }
             }
@@ -451,6 +452,33 @@ public final class DatabaseService {
         } catch (SQLException exception) {
             throw new IllegalStateException("Failed to load item networks", exception);
         }
+    }
+
+    private List<ItemNetwork.Route> itemRoutes(Connection connection, UUID networkId) throws SQLException {
+        UUID bufferOwnerMachineId = null;
+        try (PreparedStatement statement = connection.prepareStatement("""
+                SELECT machine_id FROM machines
+                WHERE item_network_id = ? AND input_inventory_id = (
+                  SELECT buffer_inventory_id FROM item_networks WHERE network_id = ?
+                )
+                LIMIT 1
+                """)) {
+            statement.setString(1, networkId.toString());
+            statement.setString(2, networkId.toString());
+            try (ResultSet rs = statement.executeQuery()) {
+                if (rs.next()) {
+                    bufferOwnerMachineId = UUID.fromString(rs.getString("machine_id"));
+                }
+            }
+        }
+        if (bufferOwnerMachineId == null) {
+            return List.of();
+        }
+        UUID root = bufferOwnerMachineId;
+        return loadNetworkMachineIds(connection, networkId, "ITEM").stream()
+                .filter(machineId -> !machineId.equals(root))
+                .map(machineId -> new ItemNetwork.Route(root, machineId))
+                .toList();
     }
 
     public void replacePowerNetworks(UUID islandUuid, List<PowerNetwork> networks) {

@@ -49,6 +49,7 @@ public final class NetworkRebuildService {
         Set<UUID> machineIds = connected.stream()
                 .map(MachineInstance::machineId)
                 .collect(java.util.stream.Collectors.toCollection(java.util.LinkedHashSet::new));
+        List<ItemNetwork.Route> routes = routes(connected);
         UUID networkId = networkId(islandUuid, connected);
         int throughput = connected.stream()
                 .map(machine -> definitions.get(machine.typeId()).orElse(null))
@@ -65,7 +66,16 @@ public final class NetworkRebuildService {
             assigned.add(machine.machineId());
             assignments.put(machine.machineId(), networkId);
         }
-        return new ItemNetwork(networkId, islandUuid, throughput, bufferInventoryId, false, now, machineIds);
+        return new ItemNetwork(networkId, islandUuid, throughput, bufferInventoryId, false, now, machineIds, routes);
+    }
+
+    private List<ItemNetwork.Route> routes(List<MachineInstance> connected) {
+        return connected.stream()
+                .filter(this::isLogisticsRoot)
+                .flatMap(root -> connected.stream()
+                        .filter(machine -> !machine.machineId().equals(root.machineId()))
+                        .map(machine -> new ItemNetwork.Route(root.machineId(), machine.machineId())))
+                .toList();
     }
 
     private boolean isLogisticsRoot(MachineInstance machine) {
