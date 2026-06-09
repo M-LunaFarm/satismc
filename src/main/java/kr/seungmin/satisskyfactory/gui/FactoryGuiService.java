@@ -4,6 +4,7 @@ import kr.seungmin.satisskyfactory.config.MessageService;
 import kr.seungmin.satisskyfactory.contract.ContractService;
 import kr.seungmin.satisskyfactory.contract.ContractTemplate;
 import kr.seungmin.satisskyfactory.economy.EconomyService;
+import kr.seungmin.satisskyfactory.item.ItemDefinition;
 import kr.seungmin.satisskyfactory.item.ItemRegistry;
 import kr.seungmin.satisskyfactory.machine.FactoryIslandService;
 import kr.seungmin.satisskyfactory.machine.IslandBoostService;
@@ -127,7 +128,7 @@ public final class FactoryGuiService {
         int start = safePage * pageSize;
         int end = Math.min(entries.size(), start + pageSize);
         for (Map.Entry<String, Long> entry : entries.subList(start, end)) {
-            ItemRegistry.FactoryItem item = items.get(entry.getKey()).orElse(new ItemRegistry.FactoryItem(
+            ItemDefinition item = items.get(entry.getKey()).orElse(new ItemDefinition(
                     entry.getKey(), Material.PAPER, entry.getKey(), 0, false, 0, List.of()));
             ItemStack stack = new ItemStack(item.material(), (int) Math.max(1, Math.min(64, entry.getValue())));
             ItemMeta meta = stack.getItemMeta();
@@ -366,7 +367,7 @@ public final class FactoryGuiService {
         int slot = 0;
         VirtualInventory virtual = storage.islandStorage(island.islandUuid());
         for (String itemId : itemIds.subList(start, end)) {
-            ItemRegistry.FactoryItem item = items.get(itemId).orElse(new ItemRegistry.FactoryItem(
+            ItemDefinition item = items.get(itemId).orElse(new ItemDefinition(
                     itemId, Material.PAPER, itemId, 0, false, market.prices().getOrDefault(itemId, 0L), List.of()));
             long stored = virtual.amount(itemId);
             long unitPrice = market.price(island.islandUuid(), itemId, 1);

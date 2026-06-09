@@ -2,6 +2,7 @@ package kr.seungmin.satisskyfactory.market;
 
 import kr.seungmin.satisskyfactory.database.DatabaseService;
 import kr.seungmin.satisskyfactory.economy.EconomyService;
+import kr.seungmin.satisskyfactory.item.ItemDefinition;
 import kr.seungmin.satisskyfactory.item.ItemRegistry;
 import kr.seungmin.satisskyfactory.model.FactoryIsland;
 import kr.seungmin.satisskyfactory.model.MaintenanceStatus;
@@ -136,7 +137,7 @@ public final class MarketService {
 
     private long itemBasePrice(String itemId) {
         return items.get(itemId)
-                .map(ItemRegistry.FactoryItem::basePrice)
+                .map(ItemDefinition::basePrice)
                 .filter(price -> price > 0)
                 .orElse(1L);
     }

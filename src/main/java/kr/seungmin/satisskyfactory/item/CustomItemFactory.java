@@ -43,7 +43,7 @@ public final class CustomItemFactory {
         return stack;
     }
 
-    public ItemStack factoryItem(ItemRegistry.FactoryItem item, int amount) {
+    public ItemStack factoryItem(ItemDefinition item, int amount) {
         ItemStack stack = new ItemStack(item.material(), Math.max(1, amount));
         ItemMeta meta = stack.getItemMeta();
         meta.setDisplayName(ChatColor.WHITE + item.displayName());
@@ -84,7 +84,7 @@ public final class CustomItemFactory {
         return Optional.ofNullable(pdc.get(legacyFactoryItemKey, PersistentDataType.STRING));
     }
 
-    private List<String> itemLore(ItemRegistry.FactoryItem item) {
+    private List<String> itemLore(ItemDefinition item) {
         java.util.ArrayList<String> lore = new java.util.ArrayList<>();
         if (item.virtualOnly()) {
             lore.add(ChatColor.DARK_GRAY + "Virtual factory item");

@@ -6,6 +6,7 @@ import kr.seungmin.satisskyfactory.gui.FactoryGuiHolder;
 import kr.seungmin.satisskyfactory.gui.FactoryGuiService;
 import kr.seungmin.satisskyfactory.hook.SuperiorSkyblockHook;
 import kr.seungmin.satisskyfactory.item.CustomItemFactory;
+import kr.seungmin.satisskyfactory.item.ItemDefinition;
 import kr.seungmin.satisskyfactory.item.ItemRegistry;
 import kr.seungmin.satisskyfactory.logistics.ItemNetworkService;
 import kr.seungmin.satisskyfactory.machine.FactoryIslandService;
@@ -231,7 +232,7 @@ public final class FactoryGuiListener implements Listener {
     }
 
     private void withdrawStorageItem(Player player, FactoryIsland island, String itemId, int page, long requested) {
-        if (items.get(itemId).map(ItemRegistry.FactoryItem::virtualOnly).orElse(false)) {
+        if (items.get(itemId).map(ItemDefinition::virtualOnly).orElse(false)) {
             messages.send(player, "virtual-only-withdraw");
             gui.openStorage(player, island, page);
             return;

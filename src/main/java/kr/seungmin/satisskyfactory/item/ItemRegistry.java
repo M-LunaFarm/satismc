@@ -11,11 +11,7 @@ import java.util.Map;
 import java.util.Optional;
 
 public final class ItemRegistry {
-    public record FactoryItem(String id, Material material, String displayName, int customModelData,
-                              boolean virtualOnly, long basePrice, List<String> tags) {
-    }
-
-    private final Map<String, FactoryItem> items = new LinkedHashMap<>();
+    private final Map<String, ItemDefinition> items = new LinkedHashMap<>();
 
     public void load(FileConfiguration config) {
         items.clear();
@@ -28,7 +24,7 @@ public final class ItemRegistry {
             if (material == null) {
                 material = Material.STONE;
             }
-            items.put(id, new FactoryItem(
+            items.put(id, new ItemDefinition(
                     id,
                     material,
                     section.getString(id + ".display", section.getString(id + ".display-name", id)),
@@ -40,7 +36,7 @@ public final class ItemRegistry {
         }
     }
 
-    public Optional<FactoryItem> get(String id) {
+    public Optional<ItemDefinition> get(String id) {
         return Optional.ofNullable(items.get(id));
     }
 
@@ -48,11 +44,11 @@ public final class ItemRegistry {
         return items.values().stream()
                 .filter(item -> !item.virtualOnly())
                 .filter(item -> item.material() == material)
-                .map(FactoryItem::id)
+                .map(ItemDefinition::id)
                 .findFirst();
     }
 
-    public Map<String, FactoryItem> all() {
+    public Map<String, ItemDefinition> all() {
         return Collections.unmodifiableMap(items);
     }
 }

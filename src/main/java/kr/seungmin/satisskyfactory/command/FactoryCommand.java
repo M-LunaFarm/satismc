@@ -5,6 +5,7 @@ import kr.seungmin.satisskyfactory.contract.ContractService;
 import kr.seungmin.satisskyfactory.gui.FactoryGuiService;
 import kr.seungmin.satisskyfactory.hook.SuperiorSkyblockHook;
 import kr.seungmin.satisskyfactory.item.CustomItemFactory;
+import kr.seungmin.satisskyfactory.item.ItemDefinition;
 import kr.seungmin.satisskyfactory.item.ItemRegistry;
 import kr.seungmin.satisskyfactory.machine.FactoryIslandService;
 import kr.seungmin.satisskyfactory.machine.IslandBoostService;
@@ -311,7 +312,7 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
             messages.send(player, "invalid-amount");
             return;
         }
-        if (items.get(itemId).map(ItemRegistry.FactoryItem::virtualOnly).orElse(false)) {
+        if (items.get(itemId).map(ItemDefinition::virtualOnly).orElse(false)) {
             messages.send(player, "virtual-only-withdraw");
             return;
         }
