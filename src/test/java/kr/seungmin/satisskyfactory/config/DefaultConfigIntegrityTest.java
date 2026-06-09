@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -183,7 +184,7 @@ class DefaultConfigIntegrityTest {
                 issues.add("default node " + i + " unknown item " + itemId);
             }
         }
-        assertEquals(2, defaultNodes.size());
+        assertEquals(4, defaultNodes.size());
         assertEquals("ORE", String.valueOf(defaultNodes.get(0).get("node-type")));
         assertEquals("iron_ore", String.valueOf(defaultNodes.get(0).get("resource-id")));
         assertEquals(12000L, ((Number) defaultNodes.get(0).get("max-remaining")).longValue());
@@ -192,6 +193,14 @@ class DefaultConfigIntegrityTest {
         assertEquals("wood_log", String.valueOf(defaultNodes.get(1).get("resource-id")));
         assertEquals(8000L, ((Number) defaultNodes.get(1).get("max-remaining")).longValue());
         assertEquals(250L, ((Number) defaultNodes.get(1).get("regen-per-hour")).longValue());
+        assertEquals("FISHING", String.valueOf(defaultNodes.get(2).get("node-type")));
+        assertEquals("raw_fish", String.valueOf(defaultNodes.get(2).get("resource-id")));
+        assertEquals(6000L, ((Number) defaultNodes.get(2).get("max-remaining")).longValue());
+        assertEquals(220L, ((Number) defaultNodes.get(2).get("regen-per-hour")).longValue());
+        assertEquals("PASTURE", String.valueOf(defaultNodes.get(3).get("node-type")));
+        assertEquals("animal_waste", String.valueOf(defaultNodes.get(3).get("resource-id")));
+        assertEquals(6000L, ((Number) defaultNodes.get(3).get("max-remaining")).longValue());
+        assertEquals(220L, ((Number) defaultNodes.get(3).get("regen-per-hour")).longValue());
 
         for (String itemId : keys(marketConfig, "market.items")) {
             if (!items.contains(itemId)) {
@@ -278,6 +287,28 @@ class DefaultConfigIntegrityTest {
         }
 
         assertTrue(issues.isEmpty(), String.join("\n", issues));
+    }
+
+    @Test
+    void expansionMachinesDeclareTheirIndustriesAndRoles() {
+        YamlConfiguration machines = load("machines.yml");
+        Map<String, List<String>> expected = Map.of(
+                "tree_farm_t1", List.of("FORESTRY", "PRODUCER"),
+                "fish_trap_t1", List.of("FISHING", "PRODUCER"),
+                "auto_fisher_t1", List.of("FISHING", "PROCESSOR"),
+                "feeder_t1", List.of("RANCHING", "PROCESSOR"),
+                "collector_t1", List.of("RANCHING", "PRODUCER"),
+                "milker_t1", List.of("RANCHING", "PROCESSOR"),
+                "sawmill_t1", List.of("FORESTRY", "PROCESSOR"),
+                "charcoal_kiln_t1", List.of("FORESTRY", "PROCESSOR"),
+                "fish_processor_t1", List.of("FISHING", "PROCESSOR")
+        );
+
+        expected.forEach((machineId, values) -> {
+            String base = "machines." + machineId + ".";
+            assertEquals(values.get(0), machines.getString(base + "industry"), machineId + " industry");
+            assertEquals(values.get(1), machines.getString(base + "role"), machineId + " role");
+        });
     }
 
     private YamlConfiguration load(String name) {

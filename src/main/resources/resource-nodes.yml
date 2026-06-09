@@ -2,7 +2,7 @@ resource-nodes:
   regeneration:
     enabled: true
     minimum-interval-ms: 1000
-  nodes-per-island: 2
+  nodes-per-island: 4
   default-new-island-nodes:
     - node-type: ORE
       resource-id: iron_ore
@@ -24,3 +24,23 @@ resource-nodes:
       offset-x: -8
       offset-y: 0
       offset-z: 8
+    - node-type: FISHING
+      resource-id: raw_fish
+      purity-min: 0.5
+      purity-max: 1.0
+      max-remaining: 6000
+      regen-per-hour: 220
+      required-machine-tier: 1
+      offset-x: 8
+      offset-y: 0
+      offset-z: -8
+    - node-type: PASTURE
+      resource-id: animal_waste
+      purity-min: 0.5
+      purity-max: 1.0
+      max-remaining: 6000
+      regen-per-hour: 220
+      required-machine-tier: 1
+      offset-x: -8
+      offset-y: 0
+      offset-z: -8

@@ -336,6 +336,8 @@ machines:
     wear-per-cycle: 0.0
   tree_farm_t1:
     display: "Tree Farm T1"
+    industry: FORESTRY
+    role: PRODUCER
     material: OAK_SAPLING
     placed-block: COMPOSTER
     tier: 1
@@ -350,6 +352,8 @@ machines:
     node-type: FOREST
   fish_trap_t1:
     display: "Fish Trap T1"
+    industry: FISHING
+    role: PRODUCER
     material: FISHING_ROD
     placed-block: BARREL
     tier: 1
@@ -364,6 +368,8 @@ machines:
     node-type: FISHING
   auto_fisher_t1:
     display: "Auto Fisher T1"
+    industry: FISHING
+    role: PROCESSOR
     material: FISHING_ROD
     placed-block: BARREL
     tier: 2
@@ -380,6 +386,8 @@ machines:
     required-unlocks: [advanced_processing]
   feeder_t1:
     display: "Pasture Feeder T1"
+    industry: RANCHING
+    role: PROCESSOR
     material: WHEAT
     placed-block: HAY_BLOCK
     tier: 1
@@ -395,6 +403,8 @@ machines:
     allowed-recipes: [feed_pasture]
   collector_t1:
     display: "Pasture Collector T1"
+    industry: RANCHING
+    role: PRODUCER
     material: HAY_BLOCK
     placed-block: HAY_BLOCK
     tier: 1
@@ -409,6 +419,8 @@ machines:
     node-type: PASTURE
   milker_t1:
     display: "Milker T1"
+    industry: RANCHING
+    role: PROCESSOR
     material: BUCKET
     placed-block: CAULDRON
     tier: 2
@@ -425,6 +437,8 @@ machines:
     required-unlocks: [advanced_processing]
   sawmill_t1:
     display: "Sawmill T1"
+    industry: FORESTRY
+    role: PROCESSOR
     material: STONECUTTER
     placed-block: STONECUTTER
     tier: 2
@@ -439,6 +453,8 @@ machines:
     required-unlocks: [advanced_processing]
   charcoal_kiln_t1:
     display: "Charcoal Kiln T1"
+    industry: FORESTRY
+    role: PROCESSOR
     material: SMOKER
     placed-block: SMOKER
     tier: 2
@@ -453,6 +469,8 @@ machines:
     required-unlocks: [advanced_processing]
   fish_processor_t1:
     display: "Fish Processor T1"
+    industry: FISHING
+    role: PROCESSOR
     material: BARREL
     placed-block: BARREL
     tier: 2
