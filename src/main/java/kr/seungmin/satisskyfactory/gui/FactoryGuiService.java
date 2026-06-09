@@ -20,6 +20,7 @@ import kr.seungmin.satisskyfactory.research.ResearchService;
 import kr.seungmin.satisskyfactory.research.UnlockDefinition;
 import kr.seungmin.satisskyfactory.storage.StorageService;
 import kr.seungmin.satisskyfactory.storage.VirtualInventory;
+import kr.seungmin.satisskyfactory.util.NumberFormatter;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -67,17 +68,17 @@ public final class FactoryGuiService {
                         ChatColor.GRAY + "Machines: " + machineCount,
                         ChatColor.GRAY + "Storage used: " + storage.islandStorage(island.islandUuid()).used())));
         inventory.setItem(12, icon(Material.REDSTONE, ChatColor.RED + "Power",
-                List.of(ChatColor.GRAY + "Ratio: " + String.format(java.util.Locale.US, "%.2f", powerState.ratio()),
-                        ChatColor.GRAY + "Generation: " + String.format(java.util.Locale.US, "%.1f", powerState.generation()),
-                        ChatColor.GRAY + "Consumption: " + String.format(java.util.Locale.US, "%.1f", powerState.consumption()),
-                        ChatColor.GRAY + "Battery: " + powerState.batteryStored() + "/" + String.format(java.util.Locale.US, "%.0f", powerState.batteryCapacity()))));
+                List.of(ChatColor.GRAY + "Ratio: " + NumberFormatter.ratio(powerState.ratio()),
+                        ChatColor.GRAY + "Generation: " + NumberFormatter.decimal(powerState.generation(), 1),
+                        ChatColor.GRAY + "Consumption: " + NumberFormatter.decimal(powerState.consumption(), 1),
+                        ChatColor.GRAY + "Battery: " + NumberFormatter.decimal(powerState.batteryStored(), 1) + "/" + NumberFormatter.whole(powerState.batteryCapacity()))));
         inventory.setItem(14, icon(Material.EMERALD, ChatColor.GREEN + "Economy",
                 List.of(ChatColor.GRAY + "Debt: " + island.maintenanceDebt(),
                         ChatColor.GRAY + "Status: " + island.maintenanceStatus(),
                         ChatColor.GRAY + "Reputation: " + island.reputation())));
         inventory.setItem(16, icon(Material.EXPERIENCE_BOTTLE, ChatColor.AQUA + "Research",
                 List.of(ChatColor.GRAY + "Points: " + island.researchPoints(),
-                        ChatColor.GRAY + "Agriculture x" + String.format(java.util.Locale.US, "%.2f", boosts.agricultureBoost()),
+                        ChatColor.GRAY + "Agriculture x" + NumberFormatter.ratio(boosts.agricultureBoost()),
                         ChatColor.GRAY + "Machine slots +" + boosts.factorySlotBonus(),
                         ChatColor.GRAY + "Contract slots +" + boosts.contractSlotBonus())));
         holder.action(16, "main_research", "");
@@ -150,7 +151,7 @@ public final class FactoryGuiService {
         List<String> lore = new ArrayList<>();
         lore.add(ChatColor.GRAY + "Type: " + machine.typeId());
         lore.add(messages.raw("machine-status", Map.of("status", machine.status().name())));
-        lore.add(ChatColor.GRAY + "Wear: " + String.format(java.util.Locale.US, "%.2f", machine.wear()));
+        lore.add(ChatColor.GRAY + "Wear: " + NumberFormatter.ratio(machine.wear()));
         lore.add(ChatColor.GRAY + "Island: " + machine.islandUuid());
         if (definition != null) {
             lore.add(ChatColor.GRAY + "Power: " + definition.powerConsumption());
@@ -257,7 +258,7 @@ public final class FactoryGuiService {
                             ChatColor.GRAY + "Research: " + template.research(),
                             ChatColor.GRAY + "Reputation: " + template.reputation(),
                             ChatColor.GRAY + "Items: " + template.itemRewards(),
-                            ChatColor.GRAY + "Expires: " + Math.max(0, (active.expiresAt() - System.currentTimeMillis()) / 60000) + "m")));
+                            ChatColor.GRAY + "Expires: " + NumberFormatter.minutesUntil(active.expiresAt(), System.currentTimeMillis()) + "m")));
         }
         contracts.emergencyTemplate().ifPresent(template -> {
             int used = contracts.emergencyUsedToday(island);
@@ -292,7 +293,7 @@ public final class FactoryGuiService {
         inventory.setItem(4, icon(Material.WRITABLE_BOOK, ChatColor.GOLD + template.id(),
                 List.of(ChatColor.GRAY + "Type: " + template.type(),
                         ChatColor.GRAY + "Tier: " + template.tier(),
-                        ChatColor.GRAY + "Expires: " + Math.max(0, (active.expiresAt() - System.currentTimeMillis()) / 60000) + "m")));
+                        ChatColor.GRAY + "Expires: " + NumberFormatter.minutesUntil(active.expiresAt(), System.currentTimeMillis()) + "m")));
         inventory.setItem(11, icon(Material.CHEST, ChatColor.YELLOW + "Required Items",
                 contractLines(template.required(), "No items required.")));
         inventory.setItem(15, icon(Material.EMERALD, ChatColor.GREEN + "Rewards",
@@ -405,7 +406,7 @@ public final class FactoryGuiService {
             inventory.setItem(slot++, icon(unlocked ? Material.LIME_DYE : (ready ? Material.YELLOW_DYE : Material.GRAY_DYE),
                     (unlocked ? ChatColor.GREEN : ChatColor.YELLOW) + unlock.displayName(),
                     List.of(ChatColor.GRAY + "Research: " + island.researchPoints() + "/" + unlock.cost(),
-                            ChatColor.GRAY + "Money: " + String.format(java.util.Locale.US, "%.0f", balance) + "/" + unlock.moneyCost(),
+                            ChatColor.GRAY + "Money: " + NumberFormatter.whole(balance) + "/" + unlock.moneyCost(),
                             ChatColor.GRAY + "Reputation: " + island.reputation() + "/" + unlock.requiredReputation(),
                             ChatColor.GRAY + "Id: " + unlock.id(),
                             ChatColor.GRAY + "Requires: " + unlock.requires(),

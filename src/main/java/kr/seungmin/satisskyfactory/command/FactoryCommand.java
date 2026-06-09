@@ -21,6 +21,7 @@ import kr.seungmin.satisskyfactory.node.ResourceNodeService;
 import kr.seungmin.satisskyfactory.power.PowerNetworkService;
 import kr.seungmin.satisskyfactory.research.ResearchService;
 import kr.seungmin.satisskyfactory.storage.StorageService;
+import kr.seungmin.satisskyfactory.util.NumberFormatter;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -316,7 +317,7 @@ public final class FactoryCommand implements CommandExecutor, TabCompleter {
         messages.send(player, "status-storage", Map.of("used", String.valueOf(storage.islandStorage(island.islandUuid()).used())));
         var boost = boosts.boosts(island.islandUuid());
         messages.send(player, "status-boosts", Map.of(
-                "agriculture", String.format(Locale.US, "%.2f", boost.agricultureBoost()),
+                "agriculture", NumberFormatter.ratio(boost.agricultureBoost()),
                 "machine", String.valueOf(boost.factorySlotBonus()),
                 "contract", String.valueOf(boost.contractSlotBonus())));
     }

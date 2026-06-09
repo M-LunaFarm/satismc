@@ -10,6 +10,7 @@ import kr.seungmin.satisskyfactory.power.PowerNetworkService;
 import kr.seungmin.satisskyfactory.research.ResearchService;
 import kr.seungmin.satisskyfactory.storage.StorageService;
 import kr.seungmin.satisskyfactory.storage.VirtualInventory;
+import kr.seungmin.satisskyfactory.util.NumberFormatter;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
@@ -112,27 +113,27 @@ public final class PlaceholderHook extends PlaceholderExpansion {
             return String.valueOf(Math.max(0, islandStorage.capacity() - islandStorage.used()));
         }
         if (key.equals("power_ratio")) {
-            return String.format(Locale.US, "%.2f", powerState.ratio());
+            return NumberFormatter.ratio(powerState.ratio());
         }
         if (key.equals("power_generation")) {
-            return String.format(Locale.US, "%.1f", powerState.generation());
+            return NumberFormatter.decimal(powerState.generation(), 1);
         }
         if (key.equals("power_consumption")) {
-            return String.format(Locale.US, "%.1f", powerState.consumption());
+            return NumberFormatter.decimal(powerState.consumption(), 1);
         }
         if (key.equals("battery_stored")) {
             return String.valueOf(powerState.batteryStored());
         }
         if (key.equals("battery_capacity")) {
-            return String.format(Locale.US, "%.0f", powerState.batteryCapacity());
+            return NumberFormatter.whole(powerState.batteryCapacity());
         }
         if (key.equals("battery_percent")) {
             return powerState.batteryCapacity() <= 0
                     ? "0"
-                    : String.format(Locale.US, "%.0f", powerState.batteryStored() * 100.0 / powerState.batteryCapacity());
+                    : NumberFormatter.whole(powerState.batteryStored() * 100.0 / powerState.batteryCapacity());
         }
         if (key.equals("agriculture_boost")) {
-            return String.format(Locale.US, "%.2f", boosts.boosts(island.islandUuid()).agricultureBoost());
+            return NumberFormatter.ratio(boosts.boosts(island.islandUuid()).agricultureBoost());
         }
         if (key.equals("machine_limit_bonus")) {
             return String.valueOf(boosts.boosts(island.islandUuid()).factorySlotBonus());

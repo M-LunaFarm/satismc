@@ -16,6 +16,7 @@ import kr.seungmin.satisskyfactory.node.ResourceNodeService;
 import kr.seungmin.satisskyfactory.power.PowerNetworkService;
 import kr.seungmin.satisskyfactory.research.ResearchService;
 import kr.seungmin.satisskyfactory.storage.StorageService;
+import kr.seungmin.satisskyfactory.util.NumberFormatter;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -277,10 +278,10 @@ public final class AdminFactoryCommand {
                 var state = power.state(context.factoryIsland().islandUuid());
                 messages.send(sender, "debug-networks", Map.of(
                         "machines", String.valueOf(machines.byIsland(context.factoryIsland().islandUuid()).size()),
-                        "ratio", String.format(Locale.US, "%.2f", state.ratio()),
-                        "generation", String.format(Locale.US, "%.1f", state.generation()),
-                        "consumption", String.format(Locale.US, "%.1f", state.consumption()),
-                        "battery", state.batteryStored() + "/" + String.format(Locale.US, "%.0f", state.batteryCapacity())));
+                        "ratio", NumberFormatter.ratio(state.ratio()),
+                        "generation", NumberFormatter.decimal(state.generation(), 1),
+                        "consumption", NumberFormatter.decimal(state.consumption(), 1),
+                        "battery", NumberFormatter.decimal(state.batteryStored(), 1) + "/" + NumberFormatter.whole(state.batteryCapacity())));
             }
         });
     }
