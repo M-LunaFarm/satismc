@@ -15,6 +15,7 @@ import kr.seungmin.satisskyfactory.power.PowerNetworkService;
 import kr.seungmin.satisskyfactory.recipe.RecipeDefinition;
 import kr.seungmin.satisskyfactory.recipe.RecipeService;
 import kr.seungmin.satisskyfactory.research.ResearchService;
+import kr.seungmin.satisskyfactory.research.UnlockDefinition;
 import kr.seungmin.satisskyfactory.storage.StorageService;
 import kr.seungmin.satisskyfactory.storage.VirtualInventory;
 import org.bukkit.Bukkit;
@@ -388,7 +389,7 @@ public final class FactoryGuiService {
         int slot = 10;
         Set<String> unlockedIds = research.unlocked(island);
         double balance = economy.balance(player);
-        for (ResearchService.ResearchUnlock unlock : research.all().values()) {
+        for (UnlockDefinition unlock : research.all().values()) {
             if (slot >= 17) {
                 break;
             }

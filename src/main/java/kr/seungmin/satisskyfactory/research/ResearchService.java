@@ -15,10 +15,6 @@ import java.util.Map;
 import java.util.Set;
 
 public final class ResearchService {
-    public record ResearchUnlock(String id, String displayName, long cost, long moneyCost, long requiredReputation,
-                                 List<String> requires, List<String> grants, int factoryTier) {
-    }
-
     public enum UnlockResult {
         UNLOCKED,
         UNKNOWN,
@@ -32,7 +28,7 @@ public final class ResearchService {
 
     private final DatabaseService database;
     private final EconomyService economy;
-    private final Map<String, ResearchUnlock> unlocks = new HashMap<>();
+    private final Map<String, UnlockDefinition> unlocks = new HashMap<>();
     private boolean blockTierUpgradesWhenLimited;
 
     public ResearchService(DatabaseService database, EconomyService economy) {
@@ -53,7 +49,7 @@ public final class ResearchService {
             return;
         }
         for (String id : section.getKeys(false)) {
-            unlocks.put(id, new ResearchUnlock(
+            unlocks.put(id, new UnlockDefinition(
                     id,
                     section.getString(id + ".display-name", section.getString(id + ".display", id)),
                     section.getLong(id + ".cost-research-points", section.getLong(id + ".cost", 0)),
@@ -75,7 +71,7 @@ public final class ResearchService {
     }
 
     public UnlockResult unlock(FactoryIsland island, OfflinePlayer owner, String unlockId) {
-        ResearchUnlock unlock = unlocks.get(unlockId);
+        UnlockDefinition unlock = unlocks.get(unlockId);
         if (unlock == null) {
             return UnlockResult.UNKNOWN;
         }
@@ -114,7 +110,7 @@ public final class ResearchService {
         return database.loadUnlocks(island.islandUuid());
     }
 
-    public Map<String, ResearchUnlock> all() {
+    public Map<String, UnlockDefinition> all() {
         return Map.copyOf(unlocks);
     }
 
