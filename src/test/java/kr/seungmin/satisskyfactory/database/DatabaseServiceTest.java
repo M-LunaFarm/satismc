@@ -111,7 +111,7 @@ class DatabaseServiceTest {
             machine.status(MachineStatus.ACTIVE);
             machine.inputInventoryId(inputInventoryId);
             machine.outputInventoryId(outputInventoryId);
-            machine.selectedRecipeId("grind_wheat");
+            machine.selectedRecipeId("flour_from_wheat");
             machine.lastProcessAt(3000);
             machine.wear(1.25);
             database.saveMachine(machine);
@@ -161,7 +161,7 @@ class DatabaseServiceTest {
             assertEquals("grinder_t1", machine.typeId());
             assertEquals(BlockFace.EAST, machine.direction());
             assertEquals(MachineStatus.ACTIVE, machine.status());
-            assertEquals("grind_wheat", machine.selectedRecipeId());
+            assertEquals("flour_from_wheat", machine.selectedRecipeId());
             assertEquals(1.25, machine.wear());
 
             ResourceNode node = database.loadNodes(islandUuid).stream()

@@ -5,26 +5,24 @@ recipes:
     inputs:
       biofuel: 1
     outputs: {}
-  grind_wheat:
+  flour_from_wheat:
     machines: [grinder_t1]
     min-tier: 1
     cycle-ms: 3000
     inputs:
-      wheat: 2
+      wheat: 4
     outputs:
       flour: 1
-    byproducts:
-      wheat_seeds: 1
-    power-cost: 5.0
-  grind_iron:
+    power-cost: 3.0
+  crushed_iron_from_ore:
     machines: [grinder_t1]
     min-tier: 1
     cycle-ms: 4000
     inputs:
       iron_ore: 2
     outputs:
-      crushed_iron: 1
-    power-cost: 5.0
+      crushed_iron: 2
+    power-cost: 3.0
   make_feed:
     machine: grinder_t1
     cycle-ms: 3000
@@ -33,44 +31,44 @@ recipes:
     output:
       feed: 3
     power: 5.0
-  smelt_crushed_iron:
+  iron_ingot_from_crushed_iron:
     machines: [furnace_t1]
     cycle-ms: 6000
-    input:
-      crushed_iron: 1
-    output:
+    inputs:
+      crushed_iron: 2
+    outputs:
       iron_ingot: 1
-    power: 7.0
-  assemble_plate:
-    machine: assembler_t1
+    power-cost: 5.0
+  iron_plate_from_ingot:
+    machines: [assembler_t1]
     cycle-ms: 5000
-    input:
-      iron_ingot: 2
-    output:
+    power-cost: 4.0
+    inputs:
+      iron_ingot: 1
+    outputs:
       iron_plate: 1
-    power: 8.0
-  assemble_machine_parts:
+  machine_parts_t1:
     machines: [assembler_t1]
     min-tier: 1
     cycle-ms: 8000
+    power-cost: 5.0
     inputs:
-      iron_plate: 2
+      iron_plate: 4
     outputs:
       machine_parts: 1
     quality-chance: 0.03
     quality-item: quality_machine_parts
-    power-cost: 8.0
-  package_bread:
+  bread_box:
     machines: [packager_t1]
     min-tier: 1
     cycle-ms: 5000
+    power-cost: 3.0
     inputs:
-      flour: 3
+      flour: 8
     outputs:
       bread_box: 1
     quality-chance: 0.05
     quality-item: quality_bread_box
-    power-cost: 4.0
   saw_logs:
     machine: sawmill_t1
     cycle-ms: 4000

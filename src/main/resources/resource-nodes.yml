@@ -1,51 +1,26 @@
-defaults:
-  nodes-per-island: 4
 resource-nodes:
   regeneration:
     enabled: true
     minimum-interval-ms: 1000
-nodes:
-  iron_basic:
-    type: MINERAL
-    resource-id: iron_ore
-    purity-min: 0.75
-    purity-max: 1.1
-    max-remaining: 100000
-    regen-per-hour: 100
-    required-machine-tier: 1
-    offset-x: 8
-    offset-y: 0
-    offset-z: 8
-  forest_basic:
-    type: FOREST
-    resource-id: wood_log
-    purity-min: 0.7
-    purity-max: 1.0
-    max-remaining: 60000
-    regen-per-hour: 300
-    required-machine-tier: 1
-    offset-x: -8
-    offset-y: 0
-    offset-z: 8
-  fishing_basic:
-    type: FISHING
-    resource-id: raw_fish
-    purity-min: 0.65
-    purity-max: 1.0
-    max-remaining: 50000
-    regen-per-hour: 250
-    required-machine-tier: 1
-    offset-x: 8
-    offset-y: 0
-    offset-z: -8
-  pasture_basic:
-    type: PASTURE
-    resource-id: animal_waste
-    purity-min: 0.6
-    purity-max: 1.0
-    max-remaining: 50000
-    regen-per-hour: 220
-    required-machine-tier: 1
-    offset-x: -8
-    offset-y: 0
-    offset-z: -8
+  nodes-per-island: 2
+  default-new-island-nodes:
+    - node-type: ORE
+      resource-id: iron_ore
+      purity-min: 0.6
+      purity-max: 1.0
+      max-remaining: 12000
+      regen-per-hour: 300
+      required-machine-tier: 1
+      offset-x: 8
+      offset-y: 0
+      offset-z: 8
+    - node-type: FOREST
+      resource-id: wood_log
+      purity-min: 0.5
+      purity-max: 1.0
+      max-remaining: 8000
+      regen-per-hour: 250
+      required-machine-tier: 1
+      offset-x: -8
+      offset-y: 0
+      offset-z: 8

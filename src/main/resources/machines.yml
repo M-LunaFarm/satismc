@@ -1,18 +1,21 @@
 machines:
   harvester_t1:
-    display: "Harvester T1"
+    display: "§a수확기 T1"
+    industry: AGRICULTURE
+    role: PRODUCER
     material: IRON_HOE
     placed-block: DISPENSER
     custom-model-data: 2001
     tier: 1
     input-capacity: 128
     output-capacity: 512
-    power-consumption: 4.0
+    power-consumption: 2.0
+    cycle-ms: 6000
     cycle-ticks: 80
-    range: 4
+    range: 3
     factory-score: 10
     maintenance-score: 8
-    wear-per-cycle: 0.03
+    wear-per-cycle: 0.02
     harvest-drops:
       WHEAT: wheat
       CARROTS: carrot
@@ -43,18 +46,21 @@ machines:
       SUGAR_CANE: sugar_cane
     required-unlocks: [tier_2]
   planter_t1:
-    display: "Planter T1"
-    material: IRON_HOE
+    display: "§a파종기 T1"
+    industry: AGRICULTURE
+    role: PRODUCER
+    material: WOODEN_HOE
     placed-block: DROPPER
     tier: 1
-    input-capacity: 128
-    output-capacity: 64
-    power-consumption: 3.0
+    input-capacity: 256
+    output-capacity: 0
+    power-consumption: 1.5
+    cycle-ms: 5000
     cycle-ticks: 80
-    range: 4
+    range: 3
     factory-score: 8
     maintenance-score: 6
-    wear-per-cycle: 0.025
+    wear-per-cycle: 0.01
     planting:
       wheat_seeds:
         crop: WHEAT
@@ -91,19 +97,22 @@ machines:
       quality-chance: 0.08
       quality-item: quality_crop
   miner_drill_t1:
-    display: "Miner Drill T1"
+    display: "§7광맥 드릴 T1"
+    industry: MINING
+    role: PRODUCER
     material: IRON_PICKAXE
     placed-block: BLAST_FURNACE
     custom-model-data: 2101
     tier: 1
-    input-capacity: 64
+    input-capacity: 0
     output-capacity: 512
-    power-consumption: 6.0
+    power-consumption: 4.0
+    cycle-ms: 5000
     cycle-ticks: 80
     amount-per-cycle: 2
     factory-score: 15
     maintenance-score: 14
-    wear-per-cycle: 0.04
+    wear-per-cycle: 0.03
     node-type: MINERAL
   miner_drill_t2:
     display: "Miner Drill T2"
@@ -122,95 +131,116 @@ machines:
     node-type: MINERAL
     required-unlocks: [tier_2]
   grinder_t1:
-    display: "Grinder T1"
+    display: "§f분쇄기 T1"
+    industry: MANUFACTURING
+    role: PROCESSOR
     material: STONECUTTER
     placed-block: STONECUTTER
     tier: 1
-    input-capacity: 256
+    input-capacity: 512
     output-capacity: 512
-    power-consumption: 5.0
+    power-consumption: 3.0
+    cycle-ms: 4000
     cycle-ticks: 60
     factory-score: 14
     maintenance-score: 12
-    wear-per-cycle: 0.03
-    allowed-recipes: [grind_wheat, grind_iron, make_feed, scrap_to_biofuel, fish_waste_fertilizer, animal_waste_fertilizer]
+    wear-per-cycle: 0.02
+    allowed-recipes: [flour_from_wheat, crushed_iron_from_ore, make_feed, scrap_to_biofuel, fish_waste_fertilizer, animal_waste_fertilizer]
   furnace_t1:
-    display: "Furnace T1"
-    material: FURNACE
-    placed-block: FURNACE
+    display: "§6제련기 T1"
+    industry: MANUFACTURING
+    role: PROCESSOR
+    material: BLAST_FURNACE
+    placed-block: BLAST_FURNACE
     tier: 1
-    input-capacity: 256
+    input-capacity: 512
     output-capacity: 512
-    power-consumption: 7.0
+    power-consumption: 5.0
+    cycle-ms: 6000
     cycle-ticks: 80
-    factory-score: 18
+    factory-score: 20
     maintenance-score: 16
-    wear-per-cycle: 0.035
-    allowed-recipes: [smelt_crushed_iron]
+    wear-per-cycle: 0.03
+    allowed-recipes: [iron_ingot_from_crushed_iron]
   assembler_t1:
-    display: "Assembler T1"
+    display: "§b조립기 T1"
+    industry: MANUFACTURING
+    role: PROCESSOR
     material: CRAFTING_TABLE
     placed-block: CRAFTING_TABLE
     tier: 1
-    input-capacity: 256
-    output-capacity: 512
-    power-consumption: 8.0
-    cycle-ticks: 80
-    factory-score: 22
-    maintenance-score: 22
-    wear-per-cycle: 0.04
-    allowed-recipes: [assemble_plate, assemble_machine_parts]
-  packager_t1:
-    display: "Packager T1"
-    material: BARREL
-    placed-block: BARREL
-    tier: 1
-    input-capacity: 256
+    input-capacity: 512
     output-capacity: 512
     power-consumption: 4.0
+    cycle-ms: 8000
+    cycle-ticks: 80
+    factory-score: 20
+    maintenance-score: 22
+    wear-per-cycle: 0.03
+    allowed-recipes: [iron_plate_from_ingot, machine_parts_t1]
+  packager_t1:
+    display: "§d포장기 T1"
+    industry: MANUFACTURING
+    role: PROCESSOR
+    material: CARTOGRAPHY_TABLE
+    placed-block: CARTOGRAPHY_TABLE
+    tier: 1
+    input-capacity: 512
+    output-capacity: 512
+    power-consumption: 3.0
+    cycle-ms: 5000
     cycle-ticks: 60
-    factory-score: 18
+    factory-score: 15
     maintenance-score: 16
-    wear-per-cycle: 0.025
-    allowed-recipes: [package_bread]
+    wear-per-cycle: 0.02
+    allowed-recipes: [bread_box]
   bio_generator_t1:
-    display: "Bio Generator T1"
-    material: COMPOSTER
-    placed-block: COMPOSTER
+    display: "§a바이오 발전기 T1"
+    industry: POWER
+    role: GENERATOR
+    material: FURNACE
+    placed-block: FURNACE
     custom-model-data: 2201
     tier: 1
     input-capacity: 256
-    output-capacity: 64
-    power-generation: 24.0
+    output-capacity: 0
+    power-generation: 12.0
+    power-consumption: 0.0
+    cycle-ms: 5000
     cycle-ticks: 60
-    factory-score: 16
+    factory-score: 12
     maintenance-score: 14
-    wear-per-cycle: 0.04
+    wear-per-cycle: 0.01
     allowed-recipes: [biofuel_to_power]
   battery_t1:
-    display: "Battery T1"
-    material: COPPER_BLOCK
-    placed-block: COPPER_BLOCK
+    display: "§e배터리 T1"
+    industry: POWER
+    role: BATTERY
+    material: BARREL
+    placed-block: BARREL
     tier: 1
     input-capacity: 64
     output-capacity: 64
-    battery-capacity: 2000.0
+    battery-capacity: 1000.0
     cycle-ticks: 100
-    factory-score: 12
+    factory-score: 8
     maintenance-score: 10
     wear-per-cycle: 0.01
   conveyor_t1:
-    display: "Conveyor T1"
-    material: CHAIN
-    placed-block: CHAIN
+    display: "§7컨베이어 T1"
+    industry: LOGISTICS
+    role: LOGISTICS
+    material: HOPPER
+    placed-block: HOPPER
     custom-model-data: 2301
     tier: 1
     input-capacity: 64
     output-capacity: 64
     power-consumption: 2.0
     cycle-ticks: 40
-    logistics-throughput: 32
-    factory-score: 3
+    logistics-throughput: 120
+    logistics-throughput-per-minute: 120
+    factory-score: 1
     maintenance-score: 2
     wear-per-cycle: 0.015
   conveyor_t2:
@@ -291,13 +321,15 @@ machines:
     wear-per-cycle: 0.015
     required-unlocks: [smart_logistics]
   storage_t1:
-    display: "Storage T1"
+    display: "§e소형 가상 저장고"
+    industry: LOGISTICS
+    role: STORAGE
     material: CHEST
     placed-block: CHEST
     custom-model-data: 2401
     tier: 1
-    input-capacity: 5000
-    output-capacity: 0
+    input-capacity: 0
+    output-capacity: 4096
     cycle-ticks: 100
     factory-score: 10
     maintenance-score: 6

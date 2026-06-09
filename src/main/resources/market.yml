@@ -20,37 +20,37 @@ market:
   locked-debt-repay-rate: 0.70
   items:
     wheat:
-      base-price: 1
+      base-price: 20
       target-daily-amount: 5000
     flour:
-      base-price: 4
+      base-price: 60
       target-daily-amount: 3000
     bread_box:
-      base-price: 18
+      base-price: 650
       target-daily-amount: 500
     quality_bread_box:
-      base-price: 28
+      base-price: 800
       target-daily-amount: 128
     iron_ore:
-      base-price: 3
+      base-price: 30
       target-daily-amount: 6000
     crushed_iron:
-      base-price: 7
+      base-price: 45
       target-daily-amount: 1024
     iron_ingot:
-      base-price: 12
+      base-price: 90
       target-daily-amount: 768
     iron_plate:
-      base-price: 28
+      base-price: 140
       target-daily-amount: 1500
     machine_parts:
-      base-price: 72
+      base-price: 300
       target-daily-amount: 500
     quality_machine_parts:
-      base-price: 120
+      base-price: 400
       target-daily-amount: 80
     biofuel:
-      base-price: 10
+      base-price: 50
       target-daily-amount: 768
     wood_log:
       base-price: 2

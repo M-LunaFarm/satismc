@@ -73,7 +73,7 @@ class DefaultConfigIntegrityTest {
         Set<String> items = keys(itemsConfig, "items");
         Set<String> machines = keys(machinesConfig, "machines");
         Set<String> recipes = keys(recipesConfig, "recipes");
-        Set<String> nodes = keys(nodesConfig, "nodes");
+        List<java.util.Map<?, ?>> defaultNodes = nodesConfig.getMapList("resource-nodes.default-new-island-nodes");
         Set<String> contracts = keys(contractsConfig, "contracts.templates");
         Set<String> research = keys(researchConfig, "research.unlocks");
         List<String> issues = new ArrayList<>();
@@ -83,11 +83,17 @@ class DefaultConfigIntegrityTest {
         assertEquals(0.25, marketConfig.getDouble("market.demand-exponent"));
         assertEquals(1000, marketConfig.getMapList("market.personal-soft-cap.tiers").get(0).get("amount"));
         assertEquals(5000, marketConfig.getLong("market.items.wheat.target-daily-amount"));
+        assertEquals(20, marketConfig.getLong("market.items.wheat.base-price"));
         assertEquals(3000, marketConfig.getLong("market.items.flour.target-daily-amount"));
+        assertEquals(60, marketConfig.getLong("market.items.flour.base-price"));
         assertEquals(500, marketConfig.getLong("market.items.bread_box.target-daily-amount"));
+        assertEquals(650, marketConfig.getLong("market.items.bread_box.base-price"));
         assertEquals(6000, marketConfig.getLong("market.items.iron_ore.target-daily-amount"));
+        assertEquals(30, marketConfig.getLong("market.items.iron_ore.base-price"));
         assertEquals(1500, marketConfig.getLong("market.items.iron_plate.target-daily-amount"));
+        assertEquals(140, marketConfig.getLong("market.items.iron_plate.base-price"));
         assertEquals(500, marketConfig.getLong("market.items.machine_parts.target-daily-amount"));
+        assertEquals(300, marketConfig.getLong("market.items.machine_parts.base-price"));
         assertEquals(3, contractsConfig.getInt("contracts.daily-slots-base"));
         assertEquals(1, contractsConfig.getInt("contracts.weekly-slots-base"));
         assertEquals(5, contractsConfig.getInt("contracts.emergency-daily-limit"));
@@ -103,6 +109,16 @@ class DefaultConfigIntegrityTest {
         assertEquals("스마트 물류", researchConfig.getString("research.unlocks.smart_logistics.display-name"));
         assertEquals(List.of("splitter_t1", "merger_t1", "filter_splitter_t1"),
                 researchConfig.getStringList("research.unlocks.smart_logistics.unlocks"));
+        assertEquals(20, itemsConfig.getLong("items.wheat.base-price"));
+        assertEquals(60, itemsConfig.getLong("items.flour.base-price"));
+        assertEquals(650, itemsConfig.getLong("items.bread_box.base-price"));
+        assertEquals(30, itemsConfig.getLong("items.iron_ore.base-price"));
+        assertEquals(45, itemsConfig.getLong("items.crushed_iron.base-price"));
+        assertEquals(90, itemsConfig.getLong("items.iron_ingot.base-price"));
+        assertEquals(140, itemsConfig.getLong("items.iron_plate.base-price"));
+        assertEquals(300, itemsConfig.getLong("items.machine_parts.base-price"));
+        assertEquals(20, itemsConfig.getLong("items.biomass.base-price"));
+        assertEquals(50, itemsConfig.getLong("items.biofuel.base-price"));
 
         for (String recipeId : recipes) {
             String base = "recipes." + recipeId + ".";
@@ -160,13 +176,22 @@ class DefaultConfigIntegrityTest {
             }
         }
 
-        for (String nodeId : nodes) {
-            String itemId = nodesConfig.getString("nodes." + nodeId + ".resource-id",
-                    nodesConfig.getString("nodes." + nodeId + ".resource", ""));
+        for (int i = 0; i < defaultNodes.size(); i++) {
+            Object itemValue = defaultNodes.get(i).get("resource-id");
+            String itemId = itemValue == null ? "" : String.valueOf(itemValue);
             if (!itemId.isBlank() && !items.contains(itemId)) {
-                issues.add("node " + nodeId + " unknown item " + itemId);
+                issues.add("default node " + i + " unknown item " + itemId);
             }
         }
+        assertEquals(2, defaultNodes.size());
+        assertEquals("ORE", String.valueOf(defaultNodes.get(0).get("node-type")));
+        assertEquals("iron_ore", String.valueOf(defaultNodes.get(0).get("resource-id")));
+        assertEquals(12000L, ((Number) defaultNodes.get(0).get("max-remaining")).longValue());
+        assertEquals(300L, ((Number) defaultNodes.get(0).get("regen-per-hour")).longValue());
+        assertEquals("FOREST", String.valueOf(defaultNodes.get(1).get("node-type")));
+        assertEquals("wood_log", String.valueOf(defaultNodes.get(1).get("resource-id")));
+        assertEquals(8000L, ((Number) defaultNodes.get(1).get("max-remaining")).longValue());
+        assertEquals(250L, ((Number) defaultNodes.get(1).get("regen-per-hour")).longValue());
 
         for (String itemId : keys(marketConfig, "market.items")) {
             if (!items.contains(itemId)) {
@@ -237,8 +262,8 @@ class DefaultConfigIntegrityTest {
         }
 
         for (String recipeId : List.of(
-                "biofuel_to_power", "grind_wheat", "grind_iron", "make_feed",
-                "smelt_crushed_iron", "assemble_plate", "assemble_machine_parts", "package_bread")) {
+                "biofuel_to_power", "flour_from_wheat", "crushed_iron_from_ore", "make_feed",
+                "iron_ingot_from_crushed_iron", "iron_plate_from_ingot", "machine_parts_t1", "bread_box")) {
             String base = "recipes." + recipeId + ".";
             if (!recipes.isConfigurationSection(base.substring(0, base.length() - 1))) {
                 issues.add("missing core recipe " + recipeId);
