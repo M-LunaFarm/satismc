@@ -19,15 +19,25 @@ class ConfigLoaderTest {
         config.set("machines.grinder_t1.industry", "MANUFACTURING");
         config.set("machines.grinder_t1.role", "PROCESSOR");
         config.set("machines.grinder_t1.cycle-ms", 4000);
+        config.set("machines.grinder_t1.power-consumption", 3.0);
+        config.set("machines.grinder_t1.power-generation", 0.0);
+        config.set("machines.grinder_t1.logistics-throughput-per-minute", 0);
         config.set("machines.grinder_t1.allowed-recipes", java.util.List.of("flour_from_wheat"));
 
         var machine = new MachineConfigLoader().load(config).get("grinder_t1");
 
         assertEquals("분쇄기", machine.displayName());
         assertEquals(Material.STONECUTTER, machine.material());
+        assertEquals(Material.STONECUTTER, machine.itemMaterial());
         assertEquals(MachineIndustry.MANUFACTURING, machine.industry());
         assertEquals(MachineRole.PROCESSOR, machine.role());
+        assertEquals(MachineRole.PROCESSOR, machine.machineRole());
+        assertEquals(Material.STONECUTTER, machine.placedBlockMaterial());
         assertEquals(80, machine.cycleTicks());
+        assertEquals(4000, machine.cycleMs());
+        assertEquals(3.0, machine.powerConsumptionPerSecond());
+        assertEquals(0.0, machine.powerGenerationPerSecond());
+        assertEquals(0, machine.logisticsThroughputPerMinute());
         assertEquals(java.util.List.of("flour_from_wheat"), machine.allowedRecipes());
     }
 

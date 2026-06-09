@@ -45,6 +45,34 @@ public record MachineDefinition(
     public record PlantRule(Material crop, Material soil) {
     }
 
+    public Material itemMaterial() {
+        return material;
+    }
+
+    public Material placedBlockMaterial() {
+        return placedMaterial;
+    }
+
+    public long cycleMs() {
+        return cycleTicks * 50L;
+    }
+
+    public double powerConsumptionPerSecond() {
+        return powerConsumption;
+    }
+
+    public double powerGenerationPerSecond() {
+        return powerGeneration;
+    }
+
+    public int logisticsThroughputPerMinute() {
+        return logisticsThroughput;
+    }
+
+    public MachineRole machineRole() {
+        return role;
+    }
+
     public boolean isGenerator() {
         return role == MachineRole.GENERATOR || powerGeneration > 0;
     }
