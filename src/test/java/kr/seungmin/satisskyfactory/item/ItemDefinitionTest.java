@@ -23,6 +23,7 @@ class ItemDefinitionTest {
         );
 
         assertEquals("iron_plate", item.id());
+        assertEquals("iron_plate", item.itemId());
         assertEquals(Material.LIGHT_WEIGHTED_PRESSURE_PLATE, item.material());
         assertEquals("철판", item.displayName());
         assertEquals(0, item.customModelData());

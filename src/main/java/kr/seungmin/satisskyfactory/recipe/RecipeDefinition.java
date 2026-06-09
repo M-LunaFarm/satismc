@@ -16,6 +16,26 @@ public record RecipeDefinition(
         double qualityChance,
         String qualityItem
 ) {
+    public String recipeId() {
+        return id;
+    }
+
+    public Map<String, Long> inputs() {
+        return input;
+    }
+
+    public Map<String, Long> outputs() {
+        return output;
+    }
+
+    public long cycleMs() {
+        return cycleMillis;
+    }
+
+    public double powerCost() {
+        return power;
+    }
+
     public boolean supports(String machineType) {
         return machineTypes.contains(machineType);
     }

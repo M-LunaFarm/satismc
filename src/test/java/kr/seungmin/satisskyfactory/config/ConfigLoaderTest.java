@@ -62,9 +62,14 @@ class ConfigLoaderTest {
 
         assertEquals(1, recipes.size());
         assertTrue(recipes.getFirst().supports("grinder_t1"));
+        assertEquals("flour_from_wheat", recipes.getFirst().recipeId());
         assertEquals(3000, recipes.getFirst().cycleMillis());
+        assertEquals(3000, recipes.getFirst().cycleMs());
         assertEquals(3.0, recipes.getFirst().power());
+        assertEquals(3.0, recipes.getFirst().powerCost());
         assertEquals(4, recipes.getFirst().input().get("wheat"));
+        assertEquals(4, recipes.getFirst().inputs().get("wheat"));
         assertEquals(1, recipes.getFirst().output().get("flour"));
+        assertEquals(1, recipes.getFirst().outputs().get("flour"));
     }
 }

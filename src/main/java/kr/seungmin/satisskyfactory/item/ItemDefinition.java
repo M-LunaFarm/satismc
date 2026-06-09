@@ -14,4 +14,7 @@ public record ItemDefinition(
         boolean qualityEnabled,
         List<String> tags
 ) {
+    public String itemId() {
+        return id;
+    }
 }
