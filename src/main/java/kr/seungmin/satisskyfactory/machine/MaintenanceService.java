@@ -2,6 +2,7 @@ package kr.seungmin.satisskyfactory.machine;
 
 import kr.seungmin.satisskyfactory.database.DatabaseService;
 import kr.seungmin.satisskyfactory.economy.EconomyService;
+import kr.seungmin.satisskyfactory.maintenance.FactoryScoreService;
 import kr.seungmin.satisskyfactory.model.FactoryIsland;
 import kr.seungmin.satisskyfactory.model.MaintenanceStatus;
 import org.bukkit.OfflinePlayer;
@@ -13,7 +14,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public final class MaintenanceService {
-    private final MachineService machines;
+    private final FactoryScoreService factoryScores;
     private final EconomyService economy;
     private final DatabaseService database;
     private boolean enabled = true;
@@ -37,7 +38,11 @@ public final class MaintenanceService {
     private Map<String, Long> brokenRepairCost;
 
     public MaintenanceService(MachineService machines, EconomyService economy, DatabaseService database) {
-        this.machines = machines;
+        this(new FactoryScoreService(machines), economy, database);
+    }
+
+    public MaintenanceService(FactoryScoreService factoryScores, EconomyService economy, DatabaseService database) {
+        this.factoryScores = factoryScores;
         this.economy = economy;
         this.database = database;
     }
@@ -70,16 +75,16 @@ public final class MaintenanceService {
     public long chargeIfDue(FactoryIsland island, OfflinePlayer owner, Object rawIsland) {
         long now = Instant.now().toEpochMilli();
         if (!enabled) {
-            island.factoryScore(machines.factoryScore(island.islandUuid(), island.tier()));
+            factoryScores.refreshFactoryScore(island);
             island.maintenanceStatus(MaintenanceStatus.NORMAL);
             return 0;
         }
         if (island.lastMaintenanceAt() > 0 && now - island.lastMaintenanceAt() < intervalMillis) {
-            island.factoryScore(machines.factoryScore(island.islandUuid(), island.tier()));
+            factoryScores.refreshFactoryScore(island);
             updateStatus(island);
             return 0;
         }
-        island.factoryScore(machines.factoryScore(island.islandUuid(), island.tier()));
+        factoryScores.refreshFactoryScore(island);
         if (isNewIslandGracePeriod(island, now)) {
             updateStatus(island);
             return 0;
@@ -105,13 +110,13 @@ public final class MaintenanceService {
     }
 
     public void setDebt(FactoryIsland island, long debt) {
-        island.factoryScore(machines.factoryScore(island.islandUuid(), island.tier()));
+        factoryScores.refreshFactoryScore(island);
         island.maintenanceDebt(Math.max(0, Math.min(debtLimit(maintenanceFee(island)), debt)));
         updateStatus(island);
     }
 
     private long maintenanceFee(FactoryIsland island) {
-        long score = Math.max(1, exponentialFormula ? island.factoryScore() : machines.maintenanceScore(island.islandUuid()));
+        long score = Math.max(1, exponentialFormula ? island.factoryScore() : factoryScores.maintenanceScore(island.islandUuid()));
         long calculated = exponentialFormula
                 ? Math.round(baseCost * Math.pow(score, exponent))
                 : baseCost + perMachineCost * score;
