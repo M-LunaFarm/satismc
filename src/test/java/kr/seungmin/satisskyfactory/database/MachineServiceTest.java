@@ -4,6 +4,7 @@ import kr.seungmin.satisskyfactory.machine.MachineDefinitionService;
 import kr.seungmin.satisskyfactory.machine.MachineService;
 import kr.seungmin.satisskyfactory.model.BlockKey;
 import kr.seungmin.satisskyfactory.model.MachineInstance;
+import kr.seungmin.satisskyfactory.model.MachineStatus;
 import kr.seungmin.satisskyfactory.storage.StorageService;
 import kr.seungmin.satisskyfactory.storage.VirtualInventory;
 import org.junit.jupiter.api.Test;
@@ -54,6 +55,54 @@ class MachineServiceTest {
                     .noneMatch(machine -> machine.machineId().equals(bundle.machine().machineId())));
             assertEquals(10, storage.islandStorage(bundle.machine().islandUuid()).amount("wheat"));
             assertEquals(0, storage.get(bundle.input().inventoryId()).orElseThrow().amount("wheat"));
+        }
+    }
+
+    @Test
+    void reactivateWakesRecoverableMachinesAndBumpsRevision() {
+        try (DatabaseHandle handle = openDatabase("reactivate")) {
+            StorageService storage = new StorageService(handle.database(), 1000);
+            MachineService machines = new MachineService(handle.database(), new MachineDefinitionService(), storage);
+            MachineBundle bundle = machineWithInput(storage, machines, "00000000-0000-0000-0000-000000004201");
+            long before = machines.revision();
+            bundle.machine().status(MachineStatus.NO_INPUT);
+
+            machines.reactivate(bundle.machine());
+
+            assertEquals(MachineStatus.SLEEPING, bundle.machine().status());
+            assertTrue(machines.revision() > before);
+        }
+    }
+
+    @Test
+    void reactivateDoesNotWakeTerminalMachineStates() {
+        try (DatabaseHandle handle = openDatabase("reactivate-terminal")) {
+            StorageService storage = new StorageService(handle.database(), 1000);
+            MachineService machines = new MachineService(handle.database(), new MachineDefinitionService(), storage);
+            MachineBundle bundle = machineWithInput(storage, machines, "00000000-0000-0000-0000-000000004301");
+            long before = machines.revision();
+            bundle.machine().status(MachineStatus.BROKEN);
+
+            machines.reactivate(bundle.machine());
+
+            assertEquals(MachineStatus.BROKEN, bundle.machine().status());
+            assertEquals(before, machines.revision());
+        }
+    }
+
+    @Test
+    void reactivatePowerBlockedWakesNoPowerMachinesOnIsland() {
+        try (DatabaseHandle handle = openDatabase("reactivate-power")) {
+            StorageService storage = new StorageService(handle.database(), 1000);
+            MachineService machines = new MachineService(handle.database(), new MachineDefinitionService(), storage);
+            MachineBundle bundle = machineWithInput(storage, machines, "00000000-0000-0000-0000-000000004401");
+            long before = machines.revision();
+            bundle.machine().status(MachineStatus.NO_POWER);
+
+            machines.reactivatePowerBlocked(bundle.machine().islandUuid());
+
+            assertEquals(MachineStatus.SLEEPING, bundle.machine().status());
+            assertTrue(machines.revision() > before);
         }
     }
 

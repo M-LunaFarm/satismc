@@ -372,6 +372,7 @@ public final class FactoryGuiListener implements Listener {
         }
         hand.setAmount(0);
         storage.save(inventory);
+        machines.reactivate(machine);
         messages.send(player, "deposited", Map.of("item", itemId, "amount", String.valueOf(amount)));
         gui.openMachine(player, machine);
     }
@@ -402,6 +403,7 @@ public final class FactoryGuiListener implements Listener {
             messages.send(player, "inventory-full");
         }
         storage.save(inventory);
+        machines.reactivate(machine);
         messages.send(player, "withdrew", Map.of("item", itemId, "amount", String.valueOf(amount - returned)));
         gui.openMachine(player, machine);
     }
@@ -457,6 +459,7 @@ public final class FactoryGuiListener implements Listener {
         }
         machine.selectedRecipeId(recipeId == null || recipeId.isBlank() ? null : recipeId);
         machines.save(machine);
+        machines.reactivate(machine);
         if (machine.selectedRecipeId() == null) {
             messages.send(player, "recipe-selection-cleared");
         } else {

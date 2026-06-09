@@ -31,6 +31,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 
 import java.time.Instant;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -38,6 +39,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Queue;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
@@ -67,10 +69,11 @@ public final class MachineTickService {
     private final double breakWear;
     private final int activeParticleLimit;
     private BukkitTask task;
-    private int tickCursor;
     private int remainingActiveParticles;
     private long machineSnapshotRevision = Long.MIN_VALUE;
     private List<MachineInstance> machineSnapshot = List.of();
+    private final Queue<UUID> activeMachineQueue = new ArrayDeque<>();
+    private final Set<UUID> queuedMachines = new HashSet<>();
 
     public MachineTickService(JavaPlugin plugin, MachineService machines, MachineDefinitionService definitions, StorageService storage,
                               RecipeService recipes, ResearchService research, ResourceNodeService nodes, PowerNetworkService power,
@@ -123,27 +126,35 @@ public final class MachineTickService {
         Set<UUID> touchedIslands = new HashSet<>();
         List<MachineInstance> snapshot = machineSnapshot();
         if (snapshot.isEmpty()) {
-            tickCursor = 0;
+            activeMachineQueue.clear();
+            queuedMachines.clear();
             return;
         }
-        int limit = Math.min(maxPerCycle, snapshot.size());
+        if (activeMachineQueue.isEmpty()) {
+            seedActiveQueue(snapshot);
+        }
+        int limit = Math.min(maxPerCycle, activeMachineQueue.size());
         remainingActiveParticles = activeParticleLimit;
-        int start = Math.floorMod(tickCursor, snapshot.size());
-        for (int offset = 0; offset < limit; offset++) {
-            MachineInstance machine = snapshot.get((start + offset) % snapshot.size());
+        for (int processed = 0; processed < limit; processed++) {
+            UUID machineId = activeMachineQueue.poll();
+            if (machineId == null) {
+                break;
+            }
+            queuedMachines.remove(machineId);
+            MachineInstance machine = machines.find(machineId).orElse(null);
+            if (machine == null) {
+                continue;
+            }
             definitions.get(machine.typeId()).ifPresent(definition -> {
-                int cycles = cyclesDue(machine, definition);
-                if (cycles > 0) {
+                ProcessResult result = processMachine(machine, definition);
+                if (result.cycles() > 0) {
                     touchedIslands.add(machine.islandUuid());
                 }
-                for (int cycle = 0; cycle < cycles; cycle++) {
-                    if (!process(machine, definition, cycle > 0)) {
-                        break;
-                    }
+                if (result.requeue()) {
+                    enqueue(machine.machineId());
                 }
             });
         }
-        tickCursor = (start + limit) % snapshot.size();
         refreshTouchedIslands(touchedIslands, now);
     }
 
@@ -154,11 +165,48 @@ public final class MachineTickService {
                     .sorted(Comparator.comparing(machine -> machine.machineId().toString()))
                     .toList();
             machineSnapshotRevision = revision;
-            if (!machineSnapshot.isEmpty()) {
-                tickCursor = Math.floorMod(tickCursor, machineSnapshot.size());
-            }
+            activeMachineQueue.clear();
+            queuedMachines.clear();
+            seedActiveQueue(machineSnapshot);
         }
         return machineSnapshot;
+    }
+
+    private void seedActiveQueue(List<MachineInstance> snapshot) {
+        snapshot.stream()
+                .filter(this::shouldEnterActiveQueue)
+                .map(MachineInstance::machineId)
+                .forEach(this::enqueue);
+    }
+
+    private boolean shouldEnterActiveQueue(MachineInstance machine) {
+        return machine.status() == MachineStatus.ACTIVE || machine.status() == MachineStatus.SLEEPING;
+    }
+
+    private void enqueue(UUID machineId) {
+        if (queuedMachines.add(machineId)) {
+            activeMachineQueue.offer(machineId);
+        }
+    }
+
+    private ProcessResult processMachine(MachineInstance machine, MachineDefinition definition) {
+        int cycles = cyclesDue(machine, definition);
+        if (cycles <= 0) {
+            return new ProcessResult(0, true);
+        }
+        boolean requeue = true;
+        int completedCycles = 0;
+        for (int cycle = 0; cycle < cycles; cycle++) {
+            if (!process(machine, definition, cycle > 0)) {
+                requeue = shouldEnterActiveQueue(machine);
+                break;
+            }
+            completedCycles++;
+        }
+        return new ProcessResult(completedCycles, requeue && shouldEnterActiveQueue(machine));
+    }
+
+    private record ProcessResult(int cycles, boolean requeue) {
     }
 
     private void refreshTouchedIslands(Set<UUID> touchedIslands, long now) {
@@ -339,6 +387,7 @@ public final class MachineTickService {
             return false;
         }
         setStatus(machine, MachineStatus.ACTIVE);
+        machines.reactivatePowerBlocked(machine.islandUuid());
         return true;
     }
 
@@ -662,6 +711,7 @@ public final class MachineTickService {
             long transfer = moveAny(output, buffer, remaining, definition);
             if (transfer > 0) {
                 storage.save(output);
+                machines.reactivate(target);
                 moved += transfer;
                 remaining -= transfer;
             }
@@ -679,6 +729,7 @@ public final class MachineTickService {
                 long transfer = fillInput(buffer, input, target, targetDefinition, definition, remaining);
                 if (transfer > 0) {
                     storage.save(input);
+                    machines.reactivate(target);
                     moved += transfer;
                     remaining -= transfer;
                 }
@@ -703,6 +754,7 @@ public final class MachineTickService {
                     long transfer = fillInput(storageInventory, input, target, targetDefinition, definition, remaining);
                     if (transfer > 0) {
                         storage.save(input);
+                        machines.reactivate(target);
                         moved += transfer;
                         movedFromStorage += transfer;
                         remaining -= transfer;

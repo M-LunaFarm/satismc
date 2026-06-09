@@ -90,6 +90,33 @@ public final class MachineService {
         }
     }
 
+    public void reactivate(MachineInstance machine) {
+        if (machine.status() == MachineStatus.BROKEN || machine.status() == MachineStatus.INVALID_LOCATION
+                || machine.status() == MachineStatus.CHUNK_UNLOADED || machine.status() == MachineStatus.MAINTENANCE_LOCKED) {
+            return;
+        }
+        if (machine.status() != MachineStatus.ACTIVE) {
+            machine.status(MachineStatus.SLEEPING);
+        }
+        saveLater(machine);
+        revision.incrementAndGet();
+    }
+
+    public void reactivatePowerBlocked(UUID islandUuid) {
+        boolean changed = false;
+        for (MachineInstance machine : byIsland(islandUuid)) {
+            if (machine.status() != MachineStatus.NO_POWER) {
+                continue;
+            }
+            machine.status(MachineStatus.SLEEPING);
+            saveLater(machine);
+            changed = true;
+        }
+        if (changed) {
+            revision.incrementAndGet();
+        }
+    }
+
     public boolean remove(MachineInstance machine) {
         if (hasBufferedItems(machine)) {
             return false;

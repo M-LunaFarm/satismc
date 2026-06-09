@@ -90,6 +90,7 @@ public final class PowerNetworkService {
                 connectedMachineIds
         );
         database.replacePowerNetworks(islandUuid, List.of(network));
+        machines.reactivatePowerBlocked(islandUuid);
         return List.of(network);
     }
 
