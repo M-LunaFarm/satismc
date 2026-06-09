@@ -75,6 +75,14 @@ public final class SuperiorSkyblockHook {
                 .or(() -> locationFrom(invoke(island.raw(), "getHome")));
     }
 
+    public UUID getIslandUuid(IslandRef island) {
+        return island.islandUuid();
+    }
+
+    public UUID getIslandOwnerUuid(IslandRef island) {
+        return island.ownerUuid();
+    }
+
     public boolean canBuildFactory(Player player, Location location) {
         Optional<IslandRef> locationIsland = getIslandAt(location);
         if (locationIsland.isEmpty()) {
