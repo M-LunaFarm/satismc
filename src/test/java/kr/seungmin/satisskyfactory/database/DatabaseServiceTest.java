@@ -168,6 +168,10 @@ class DatabaseServiceTest {
             assertEquals("grinder_t1", machine.typeId());
             assertEquals(BlockFace.EAST, machine.direction());
             assertEquals(MachineStatus.ACTIVE, machine.status());
+            assertEquals("world", machine.world());
+            assertEquals(10, machine.x());
+            assertEquals(64, machine.y());
+            assertEquals(12, machine.z());
             assertEquals("flour_from_wheat", machine.selectedRecipeId());
             assertEquals("{\"mode\":\"balanced\",\"selectedRecipe\":\"flour_from_wheat\"}", machine.configJson());
             assertEquals(1.25, machine.wear());
@@ -179,6 +183,10 @@ class DatabaseServiceTest {
                     .findFirst()
                     .orElseThrow();
             assertEquals("iron_ore", node.resourceId());
+            assertEquals("world", node.world());
+            assertEquals(20, node.x());
+            assertEquals(64, node.y());
+            assertEquals(20, node.z());
             assertEquals(500, node.remaining());
             assertEquals(0.75, node.purity());
             assertEquals(3500, node.createdAt());

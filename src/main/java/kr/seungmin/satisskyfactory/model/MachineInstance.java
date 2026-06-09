@@ -44,6 +44,10 @@ public final class MachineInstance {
     public String typeId() { return typeId; }
     public int tier() { return tier; }
     public BlockKey location() { return location; }
+    public String world() { return location.world(); }
+    public int x() { return location.x(); }
+    public int y() { return location.y(); }
+    public int z() { return location.z(); }
     public BlockFace direction() { return direction; }
     public void direction(BlockFace direction) { this.direction = direction; }
     public MachineStatus status() { return status; }

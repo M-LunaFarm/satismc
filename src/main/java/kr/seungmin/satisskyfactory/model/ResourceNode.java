@@ -43,6 +43,10 @@ public final class ResourceNode {
     public long regenPerHour() { return regenPerHour; }
     public int requiredMachineTier() { return requiredMachineTier; }
     public BlockKey location() { return location; }
+    public String world() { return location.world(); }
+    public int x() { return location.x(); }
+    public int y() { return location.y(); }
+    public int z() { return location.z(); }
     public long createdAt() { return createdAt; }
     public void createdAt(long createdAt) { this.createdAt = createdAt; }
     public long updatedAt() { return updatedAt; }
