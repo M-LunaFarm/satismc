@@ -78,6 +78,17 @@ class DefaultConfigIntegrityTest {
         Set<String> research = keys(researchConfig, "research.unlocks");
         List<String> issues = new ArrayList<>();
 
+        assertEquals(0.55, marketConfig.getDouble("market.factor-min"));
+        assertEquals(1.35, marketConfig.getDouble("market.factor-max"));
+        assertEquals(0.25, marketConfig.getDouble("market.demand-exponent"));
+        assertEquals(1000, marketConfig.getMapList("market.personal-soft-cap.tiers").get(0).get("amount"));
+        assertEquals(5000, marketConfig.getLong("market.items.wheat.target-daily-amount"));
+        assertEquals(3000, marketConfig.getLong("market.items.flour.target-daily-amount"));
+        assertEquals(500, marketConfig.getLong("market.items.bread_box.target-daily-amount"));
+        assertEquals(6000, marketConfig.getLong("market.items.iron_ore.target-daily-amount"));
+        assertEquals(1500, marketConfig.getLong("market.items.iron_plate.target-daily-amount"));
+        assertEquals(500, marketConfig.getLong("market.items.machine_parts.target-daily-amount"));
+
         for (String recipeId : recipes) {
             String base = "recipes." + recipeId + ".";
             for (String machineId : recipeMachines(recipesConfig, base)) {

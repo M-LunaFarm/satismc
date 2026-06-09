@@ -54,11 +54,11 @@ class EconomyFlowServiceTest {
             Optional<MarketService.SellResult> result = market.sell(island, null, "flour", 10);
 
             assertTrue(result.isPresent());
-            assertEquals(50, result.get().gross());
-            assertEquals(18, result.get().debtRepaid());
-            assertEquals(32, result.get().paidToPlayer());
-            assertEquals(32.0, economy.deposited());
-            assertEquals(82, island.maintenanceDebt());
+            assertEquals(54, result.get().gross());
+            assertEquals(19, result.get().debtRepaid());
+            assertEquals(35, result.get().paidToPlayer());
+            assertEquals(35.0, economy.deposited());
+            assertEquals(81, island.maintenanceDebt());
             assertEquals(10, storage.islandStorage(islandUuid).amount("flour"));
             assertEquals(10, database.marketDailySold("flour", LocalDate.now(ZoneId.systemDefault()).toString()));
             assertEquals(10, database.marketPersonalSold(islandUuid, "flour", LocalDate.now(ZoneId.systemDefault()).toString()));
@@ -87,11 +87,11 @@ class EconomyFlowServiceTest {
 
             MarketService.SellResult result = market.sell(island, null, "flour", 10).orElseThrow();
 
-            assertEquals(50, result.gross());
-            assertEquals(35, result.debtRepaid());
-            assertEquals(15, result.paidToPlayer());
-            assertEquals(65, island.maintenanceDebt());
-            assertEquals(15.0, economy.deposited());
+            assertEquals(54, result.gross());
+            assertEquals(38, result.debtRepaid());
+            assertEquals(16, result.paidToPlayer());
+            assertEquals(62, island.maintenanceDebt());
+            assertEquals(16.0, economy.deposited());
         }
     }
 
@@ -140,8 +140,8 @@ class EconomyFlowServiceTest {
             storage.save(inventory);
 
             MarketService.SellResult first = market.sell(island, null, "flour", 10).orElseThrow();
-            assertEquals(50, first.gross());
-            assertEquals(1.25, first.serverDemandFactor());
+            assertEquals(54, first.gross());
+            assertEquals(1.35, first.serverDemandFactor());
             assertEquals(1.0, first.personalFactor());
 
             database.recordMarketSale(islandUuid, "flour", LocalDate.now(ZoneId.systemDefault()).toString(), 4096, 0.5);
@@ -149,7 +149,7 @@ class EconomyFlowServiceTest {
 
             assertTrue(capped.gross() < first.gross());
             assertTrue(capped.serverDemandFactor() < first.serverDemandFactor());
-            assertEquals(0.55, capped.personalFactor());
+            assertEquals(0.85, capped.personalFactor());
         }
     }
 

@@ -1,18 +1,18 @@
 market:
-  factor-min: 0.35
-  factor-max: 1.25
-  demand-exponent: 0.35
+  factor-min: 0.55
+  factor-max: 1.35
+  demand-exponent: 0.25
   quality-factor:
     tags:
       quality: 1.15
   personal-soft-cap:
     enabled: true
     tiers:
-      - amount: 256
+      - amount: 1000
         factor: 1.0
-      - amount: 1024
+      - amount: 5000
         factor: 0.85
-      - amount: 4096
+      - amount: 20000
         factor: 0.7
       - amount: 999999999
         factor: 0.55
@@ -21,19 +21,19 @@ market:
   items:
     wheat:
       base-price: 1
-      target-daily-amount: 2048
+      target-daily-amount: 5000
     flour:
       base-price: 4
-      target-daily-amount: 1024
+      target-daily-amount: 3000
     bread_box:
       base-price: 18
-      target-daily-amount: 256
+      target-daily-amount: 500
     quality_bread_box:
       base-price: 28
       target-daily-amount: 128
     iron_ore:
       base-price: 3
-      target-daily-amount: 2048
+      target-daily-amount: 6000
     crushed_iron:
       base-price: 7
       target-daily-amount: 1024
@@ -42,10 +42,10 @@ market:
       target-daily-amount: 768
     iron_plate:
       base-price: 28
-      target-daily-amount: 384
+      target-daily-amount: 1500
     machine_parts:
       base-price: 72
-      target-daily-amount: 160
+      target-daily-amount: 500
     quality_machine_parts:
       base-price: 120
       target-daily-amount: 80
