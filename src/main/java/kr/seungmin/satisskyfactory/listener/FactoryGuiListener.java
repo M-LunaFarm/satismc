@@ -387,6 +387,11 @@ public final class FactoryGuiListener implements Listener {
         }
         Map.Entry<String, Long> entry = inventory.items().entrySet().iterator().next();
         String itemId = entry.getKey();
+        if (items.isVirtualOnly(itemId)) {
+            messages.send(player, "virtual-only-withdraw");
+            gui.openMachine(player, machine);
+            return;
+        }
         long amount = Math.min(64, entry.getValue());
         if (amount <= 0 || !inventory.remove(itemId, amount)) {
             messages.send(player, "no-items-to-withdraw");

@@ -82,6 +82,9 @@ public final class MarketService {
             return;
         }
         for (String itemId : marketItems.getKeys(false)) {
+            if (items.isVirtualOnly(itemId)) {
+                continue;
+            }
             prices.put(itemId, marketItems.contains(itemId + ".base-price")
                     ? marketItems.getLong(itemId + ".base-price", 1)
                     : itemBasePrice(itemId));

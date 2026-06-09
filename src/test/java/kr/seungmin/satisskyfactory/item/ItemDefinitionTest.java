@@ -1,12 +1,14 @@
 package kr.seungmin.satisskyfactory.item;
 
 import org.bukkit.Material;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ItemDefinitionTest {
     @Test
@@ -31,5 +33,20 @@ class ItemDefinitionTest {
         assertEquals(140, item.basePrice());
         assertEquals(true, item.qualityEnabled());
         assertEquals(List.of("manufacturing"), item.tags());
+    }
+
+    @Test
+    void registryIdentifiesVirtualOnlyItems() {
+        YamlConfiguration config = new YamlConfiguration();
+        config.set("items.power_charge.material", "REDSTONE");
+        config.set("items.power_charge.virtual-only", true);
+        config.set("items.flour.material", "SUGAR");
+
+        ItemRegistry registry = new ItemRegistry();
+        registry.load(config);
+
+        assertTrue(registry.isVirtualOnly("power_charge"));
+        assertFalse(registry.isVirtualOnly("flour"));
+        assertFalse(registry.isVirtualOnly("missing_item"));
     }
 }

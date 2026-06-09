@@ -30,6 +30,10 @@ public final class ItemRegistry {
                 .findFirst();
     }
 
+    public boolean isVirtualOnly(String itemId) {
+        return get(itemId).map(ItemDefinition::virtualOnly).orElse(false);
+    }
+
     public Map<String, ItemDefinition> all() {
         return Collections.unmodifiableMap(items);
     }

@@ -24,6 +24,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class EconomyFlowServiceTest {
@@ -197,6 +198,27 @@ class EconomyFlowServiceTest {
             market.load(config);
 
             assertEquals(120, market.price("flour", 2));
+        }
+    }
+
+    @Test
+    void marketIgnoresVirtualOnlyItemsEvenWhenConfigured() {
+        try (DatabaseHandle handle = openDatabase("market-virtual-only")) {
+            ItemRegistry items = new ItemRegistry();
+            items.load(load("items.yml"));
+            MarketService market = new MarketService(
+                    new StorageService(handle.database(), 1000),
+                    new TrackingEconomy(),
+                    handle.database(),
+                    items
+            );
+            YamlConfiguration config = load("market.yml");
+            config.set("market.items.power_charge.base-price", 999);
+            config.set("market.items.power_charge.target-daily-amount", 1);
+
+            market.load(config);
+
+            assertFalse(market.prices().containsKey("power_charge"));
         }
     }
 
